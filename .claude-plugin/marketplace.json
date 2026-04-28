@@ -1,0 +1,14 @@
+{
+  "name": "hsryuuu-toolkit-local",
+  "owner": {
+    "name": "happyhsryu"
+  },
+  "plugins": [
+    {
+      "name": "hsryuuu-toolkit",
+      "source": "./",
+      "description": "Personal curated skills toolkit",
+      "version": "0.1.0"
+    }
+  ]
+}
