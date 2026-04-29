@@ -2,7 +2,7 @@
 
 > `hsryuuu-toolkit` plugin에 등록된 스킬 목록. 분류 기준은 [.claude/CLAUDE.md](../.claude/CLAUDE.md) 참고.
 >
-> Last updated: 2026-04-28
+> Last updated: 2026-04-29
 
 ## 요약
 
@@ -10,8 +10,8 @@
 |---|---|
 | `skills/` (독립 스킬) | 8 |
 | `skills-workflow/` (워크플로우) | 0 |
-| `skills-system/` (메타·스캐폴딩) | 2 |
-| **합계** | **10** |
+| `skills-system/` (메타·스캐폴딩) | 3 |
+| **합계** | **11** |
 
 ---
 
@@ -48,6 +48,7 @@ _(현재 등록된 스킬 없음)_
 |---|---|---|
 | [create-claude-plugin](../skills-system/create-claude-plugin/SKILL.md) | 로컬 Claude Code plugin 스캐폴딩 — 디렉토리, plugin.json, marketplace.json, settings.json 등록, 로드 검증 | "플러그인 만들기", "plugin scaffold", "로컬 marketplace 등록" |
 | [project-setup](../skills-system/project-setup/SKILL.md) | 대상 프로젝트 `.claude/`에 검증 스킬·작업 문서 골격 설치 (사용자가 메뉴에서 선택) | "프로젝트 셋업", "프로젝트 초기화", "/project-setup" |
+| [recommend-project-setting](../skills-system/recommend-project-setting/SKILL.md) | 진행 중 프로젝트의 현재 `.claude/` 세팅을 스캔하고 누락 자산·부분 갭(CLAUDE.md 핵심 섹션 등)을 추천 후 선택 설치 | "프로젝트 세팅 추천", ".claude 보강", "/recommend-project-setting" |
 
 ---
 
