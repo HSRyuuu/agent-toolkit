@@ -1,6 +1,6 @@
 # Skill Catalog
 
-> `hsryuuu-toolkit` plugin에 등록된 스킬 목록. 분류 기준은 [.claude/CLAUDE.md](../.claude/CLAUDE.md) 참고.
+> `agent-toolkit` plugin에 등록된 스킬 목록. 분류 기준은 [.claude/CLAUDE.md](../.claude/CLAUDE.md) 참고.
 >
 > Last updated: 2026-04-29
 

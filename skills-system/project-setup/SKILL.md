@@ -1,6 +1,6 @@
 ---
 name: project-setup
-description: 이용 가능한 스킬·문서 골격을 사용자에게 보여주고, 사용자가 선택한 항목만 대상 프로젝트의 `.claude/`에 설치합니다. 선택지는 검증·관리 스킬 3종(manage-skills, verify-implementation, update-project-docs), 코드와 동기화하는 작업 문서 5종(CLAUDE.md, PROJECT_OVERVIEW.md, SOURCE_MAP.md, DB_SCHEMA.md, DEPLOY.md, DESIGN.md), 에이전트가 자기개선용으로 자동 누적하는 LESSONS.md. CLAUDE.md와 PROJECT_OVERVIEW.md는 필수로 권장하며 나머지는 선택. hsryuuu-toolkit 플러그인의 `templates/project-setup/` 디렉토리를 골격 원본으로 사용하며 그 디렉토리가 없으면 동작하지 않습니다. 기존 파일이 있으면 절대 임의로 덮어쓰지 않고 반드시 사용자에게 묻습니다. CLAUDE.md를 설치할 경우 사용자가 선택한 문서만 "문서 매핑" 표에 남도록 자동 정리합니다. 트리거 - "프로젝트 셋업", "검증 스킬 설치", "manage-skills 설치", "verify-implementation 설치", "update-project-docs 설치", "프로젝트 초기화", "/project-setup".
+description: 이용 가능한 스킬·문서 골격을 사용자에게 보여주고, 사용자가 선택한 항목만 대상 프로젝트의 `.claude/`에 설치합니다. 선택지는 검증·관리 스킬 3종(manage-skills, verify-implementation, update-project-docs), 코드와 동기화하는 작업 문서 5종(CLAUDE.md, PROJECT_OVERVIEW.md, SOURCE_MAP.md, DB_SCHEMA.md, DEPLOY.md, DESIGN.md), 에이전트가 자기개선용으로 자동 누적하는 LESSONS.md. CLAUDE.md와 PROJECT_OVERVIEW.md는 필수로 권장하며 나머지는 선택. agent-toolkit 플러그인의 `templates/project-setup/` 디렉토리를 골격 원본으로 사용하며 그 디렉토리가 없으면 동작하지 않습니다. 기존 파일이 있으면 절대 임의로 덮어쓰지 않고 반드시 사용자에게 묻습니다. CLAUDE.md를 설치할 경우 사용자가 선택한 문서만 "문서 매핑" 표에 남도록 자동 정리합니다. 트리거 - "프로젝트 셋업", "검증 스킬 설치", "manage-skills 설치", "verify-implementation 설치", "update-project-docs 설치", "프로젝트 초기화", "/project-setup".
 ---
 
 # Project Setup — 검증 스킬·작업 문서 골격 설치

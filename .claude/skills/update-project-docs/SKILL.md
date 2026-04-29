@@ -1,11 +1,11 @@
 ---
 name: update-project-docs
-description: hsryuuu-toolkit 저장소의 개발용 문서(.claude/CLAUDE.md, README.md, docs/catalog.md)를 현재 디렉토리/플러그인 상태에 맞게 동기화한다. 새 스킬을 추가·이동·삭제했거나, plugin.json의 skills 배열을 변경했거나, 디렉토리 정책(skills/ vs skills-workflow/ vs skills-system/)을 바꿨을 때 사용한다. 트리거 - "프로젝트 문서 업데이트", "catalog 갱신", "툴킷 README 정리", "update project docs", "skills 카탈로그 다시 생성".
+description: agent-toolkit 저장소의 개발용 문서(.claude/CLAUDE.md, README.md, docs/catalog.md)를 현재 디렉토리/플러그인 상태에 맞게 동기화한다. 새 스킬을 추가·이동·삭제했거나, plugin.json의 skills 배열을 변경했거나, 디렉토리 정책(skills/ vs skills-workflow/ vs skills-system/)을 바꿨을 때 사용한다. 트리거 - "프로젝트 문서 업데이트", "catalog 갱신", "툴킷 README 정리", "update project docs", "skills 카탈로그 다시 생성".
 ---
 
-# Update Project Docs (hsryuuu-toolkit 전용)
+# Update Project Docs (agent-toolkit 전용)
 
-이 스킬은 **이 저장소(hsryuuu-toolkit)** 의 세 가지 문서가 실제 디렉토리·플러그인 상태와 어긋나지 않도록 갱신한다.
+이 스킬은 **이 저장소(agent-toolkit)** 의 세 가지 문서가 실제 디렉토리·플러그인 상태와 어긋나지 않도록 갱신한다.
 
 대상 문서:
 - `.claude/CLAUDE.md` — 저장소의 정체성·디렉토리 구조·스킬 분류 기준 (사람·에이전트가 처음 읽는 문서)
@@ -65,7 +65,7 @@ done
 ```markdown
 # Skill Catalog
 
-> `hsryuuu-toolkit` plugin에 등록된 스킬 목록. 분류 기준은 [.claude/CLAUDE.md](../.claude/CLAUDE.md) 참고.
+> `agent-toolkit` plugin에 등록된 스킬 목록. 분류 기준은 [.claude/CLAUDE.md](../.claude/CLAUDE.md) 참고.
 >
 > Last updated: YYYY-MM-DD
 
@@ -139,7 +139,7 @@ _(현재 등록된 스킬 없음)_  ← 비어있을 때만 이렇게.
 저장소 루트에 처음 들어온 사람이 30초 안에 "이게 뭔지" 파악할 수 있게 만든다. 권장 구성:
 
 ```markdown
-# hsryuuu-toolkit
+# agent-toolkit
 
 > 개인용 Claude Code plugin. 스킬·에이전트·훅·커맨드를 한 곳에 모아 일상 워크플로우에 쓴다.
 
@@ -153,7 +153,7 @@ _(현재 등록된 스킬 없음)_  ← 비어있을 때만 이렇게.
 
 ## 어떻게 로드되나
 
-로컬 directory marketplace(`hsryuuu-toolkit-local`)로 등록되어 있어,
+로컬 directory marketplace(`agent-toolkit-local`)로 등록되어 있어,
 이 디렉토리를 그대로 편집하면 다음 Claude Code 세션부터 반영된다.
 
 자세한 정책·디렉토리 분류 기준은 [.claude/CLAUDE.md](.claude/CLAUDE.md) 참고.

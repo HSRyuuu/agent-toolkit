@@ -1,4 +1,4 @@
-# hsryuuu-toolkit
+# agent-toolkit
 
 > 개인용 Claude Code plugin. AI 에이전트를 일상적으로 쓰는 데 필요한 자산(초반은 skills 중심, 향후 hooks·agents·commands도 가능)을 한 곳에 모은다.
 
@@ -6,13 +6,13 @@
 
 - **개인 큐레이션 베이스** — 직접 만든 것, 외부 OSS에서 가져와 다듬은 것, 실험 중인 것까지 자유롭게 담는다.
 - **단일 plugin, 다중 자산** — Claude Code가 지원하는 자산 종류(`skills/`, `agents/`, `hooks/`, `commands/`)를 한 plugin 안에 섞어 담는다.
-- **재배포 미고려** — 로컬 directory marketplace(`hsryuuu-toolkit-local`)로만 사용.
+- **재배포 미고려** — 로컬 directory marketplace(`agent-toolkit-local`)로만 사용.
 - **편한 게 우선** — 형식 강박 없음. 필요하면 추가하고, 안 맞으면 지운다.
 
 ## 디렉토리 구조
 
 ```
-hsryuuu-toolkit/
+agent-toolkit/
 ├── .claude-plugin/
 │   ├── plugin.json         # plugin 메타
 │   └── marketplace.json    # 로컬 marketplace 메타
@@ -45,5 +45,5 @@ hsryuuu-toolkit/
 ## 등록 상태
 
 `~/.claude/settings.json`:
-- `extraKnownMarketplaces.hsryuuu-toolkit-local` (directory source → 이 디렉토리)
-- `enabledPlugins["hsryuuu-toolkit@hsryuuu-toolkit-local"]: true`
+- `extraKnownMarketplaces.agent-toolkit-local` (directory source → 이 디렉토리)
+- `enabledPlugins["agent-toolkit@agent-toolkit-local"]: true`

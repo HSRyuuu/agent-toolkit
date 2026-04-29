@@ -42,11 +42,11 @@ Three names look similar but mean different things. Keeping them distinct up fro
 
 | Name                 | Example                                   | What it identifies                                                                                                                                                                         |
 | -------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **plugin name**      | `hsryuuu-toolkit`                         | The plugin itself. Goes in `plugin.json` and is the part before `@` in `enabledPlugins`.                                                                                                   |
-| **marketplace name** | `hsryuuu-toolkit-local`                   | The marketplace that exposes the plugin. Goes in `marketplace.json` and `extraKnownMarketplaces`. Convention: append `-local` to the plugin name so it's obvious it's a local-only source. |
-| **directory path**   | `/Users/.../dev/personal/hsryuuu-toolkit` | Where the plugin lives on disk. The `extraKnownMarketplaces` entry points here. Use an **absolute** path.                                                                                  |
+| **plugin name**      | `agent-toolkit`                         | The plugin itself. Goes in `plugin.json` and is the part before `@` in `enabledPlugins`.                                                                                                   |
+| **marketplace name** | `agent-toolkit-local`                   | The marketplace that exposes the plugin. Goes in `marketplace.json` and `extraKnownMarketplaces`. Convention: append `-local` to the plugin name so it's obvious it's a local-only source. |
+| **directory path**   | `/Users/.../dev/personal/agent-toolkit` | Where the plugin lives on disk. The `extraKnownMarketplaces` entry points here. Use an **absolute** path.                                                                                  |
 
-The `enabledPlugins` key is the composite `<plugin-name>@<marketplace-name>` — e.g. `hsryuuu-toolkit@hsryuuu-toolkit-local`. This composite is how Claude Code joins the on/off switch to the source.
+The `enabledPlugins` key is the composite `<plugin-name>@<marketplace-name>` — e.g. `agent-toolkit@agent-toolkit-local`. This composite is how Claude Code joins the on/off switch to the source.
 
 ## Step 2 — Create the plugin directory and metadata files
 
