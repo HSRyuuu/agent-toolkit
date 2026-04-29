@@ -47,8 +47,8 @@ _(현재 등록된 스킬 없음)_
 | 이름 | 한 줄 설명 | 주요 트리거 |
 |---|---|---|
 | [create-claude-plugin](../skills-system/create-claude-plugin/SKILL.md) | 로컬 Claude Code plugin 스캐폴딩 — 디렉토리, plugin.json, marketplace.json, settings.json 등록, 로드 검증 | "플러그인 만들기", "plugin scaffold", "로컬 marketplace 등록" |
-| [project-setup](../skills-system/project-setup/SKILL.md) | 대상 프로젝트 `.claude/`에 검증 스킬·작업 문서 골격 설치 (사용자가 메뉴에서 선택) | "프로젝트 셋업", "프로젝트 초기화", "/project-setup" |
-| [recommend-project-setting](../skills-system/recommend-project-setting/SKILL.md) | 진행 중 프로젝트의 현재 `.claude/` 세팅을 스캔하고 누락 자산·부분 갭(CLAUDE.md 핵심 섹션 등)을 추천 후 선택 설치 | "프로젝트 세팅 추천", ".claude 보강", "/recommend-project-setting" |
+| [project-setup](../skills-system/project-setup/SKILL.md) | 대상 프로젝트에 검증 스킬·작업 문서 골격 설치 (스킬은 `.claude/skills/`, 작업 문서 5종은 기본 `docs/`·사용자 지정 가능, LESSONS.md는 `.claude/` 고정). 메뉴 선택형, 설치 전 PATHS 공지 단계 포함 | "프로젝트 셋업", "프로젝트 초기화", "/project-setup" |
+| [recommend-project-setting](../skills-system/recommend-project-setting/SKILL.md) | 진행 중 프로젝트의 현재 세팅(`.claude/`·`docs/` 양쪽)을 스캔하고 누락 자산·부분 갭(CLAUDE.md 핵심 섹션 등)을 추천. 기본 read-only, 사용자 명시 요청 시 PATHS 공지 후 선택 설치 | "프로젝트 세팅 추천", ".claude 보강", "/recommend-project-setting" |
 
 ---
 

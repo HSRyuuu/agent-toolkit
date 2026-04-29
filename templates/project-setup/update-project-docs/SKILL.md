@@ -1,372 +1,192 @@
 ---
 name: update-project-docs
-description: `.claude/`의 에이전트 작업 문서(CLAUDE.md, PROJECT_OVERVIEW.md, SOURCE_MAP.md, DB_SCHEMA.md, DEPLOY.md)를 코드베이스 실제 상태와 비교하여 드리프트를 탐지하고 동기화합니다. 대규모 작업 완료 후, 새 도메인/테이블/엔드포인트 추가 후, PR 전 문서 정합성 점검 시 사용. 트리거 - "문서 동기화", "claude 문서 업데이트", "source map 갱신", "db schema 동기화", "/update-project-docs".
+description: CLAUDE.md "문서 매핑" 표에 등록된 작업 문서들을 **기존 포맷을 그대로 유지한 채** 최신 코드 상태와 사용자 입력에 맞춰 보강·갱신합니다. 매핑 표가 진실의 원천이며, 거기 적힌 경로의 문서만 대상으로 한다 (`.claude/`든 `docs/`든 사용자가 지정한 어떤 디렉토리든). 새 문서를 만들지 않고, 매핑되지 않은 문서를 손대지 않으며, 자동 적용 없이 항상 사용자 승인을 받는다. 트리거 - "문서 동기화", "claude 문서 업데이트", "source map 갱신", "/update-project-docs".
 disable-model-invocation: true
-argument-hint: "[선택사항: claude | overview | source-map | db-schema | deploy]"
+argument-hint: "[선택사항: 매핑 표의 특정 문서명 — 예: SOURCE_MAP.md, source-map, db-schema]"
 ---
 
-# Update Project Docs — 에이전트 작업 문서 최신화
+# Update Project Docs — 매핑된 작업 문서 최신화
 
-`.claude/` 폴더의 작업 문서가 시간이 지나면서 코드베이스와 어긋나는 것을 막는다. **현재 코드 상태를 진실의 원천으로 삼아** 문서의 드리프트를 탐지하고, 사용자 승인 후 수정한다.
-
-## 적용 범위
-
-| 문서 | 검증 초점 |
-|------|----------|
-| `.claude/CLAUDE.md` | 도메인 규칙, 문서 매핑, 정보 소유권 표 정확성 |
-| `.claude/PROJECT_OVERVIEW.md` | 기술 스택 버전, 마일스톤, 핵심 링크 |
-| `.claude/SOURCE_MAP.md` | 등록된 파일 경로 존재 여부, 누락된 주요 파일 |
-| `.claude/DB_SCHEMA.md` | 마이그레이션·엔티티·Enum과 테이블 정의 일치 |
-| `.claude/DEPLOY.md` | CI/CD 워크플로, 환경변수, 인프라 설정 |
-
-## 실행 시점
-
-- 대규모 기능 구현이 완료된 후
-- 새 도메인·테이블·API 엔드포인트를 추가한 후
-- 마이그레이션 파일을 추가/수정한 후
-- 의존성을 업그레이드한 후 (Next.js, Spring Boot, Python 등 메이저 버전)
-- 디렉토리 구조 변경(이동·리네이밍) 후
-- PR 직전 문서 정합성 점검
+CLAUDE.md "문서 매핑" 표에 등록된 문서들이 코드와 어긋날 때, **기존 포맷을 그대로 따라** 새 정보를 추가하거나 구식 항목을 갱신한다.
 
 ## 핵심 원칙
 
-1. **코드가 진실의 원천** — 문서가 코드와 다르면 코드를 따르도록 문서를 수정한다. 그 반대는 하지 않는다.
-2. **모호하면 묻는다** — 코드만으로 판단할 수 없는 비즈니스 규칙·인프라 스펙은 `AskUserQuestion`으로 사용자에게 묻는다.
-3. **수정 전 승인** — 자동으로 적용하지 않는다. 발견된 드리프트를 모두 보고한 뒤 사용자 승인을 받고 수정한다.
-4. **형식 보존** — 기존 마크다운 형식(테이블 정렬, 섹션 순서, 강조 스타일)을 그대로 유지한다.
+1. **매핑 표가 진실의 원천** — `CLAUDE.md`의 "## 문서 매핑" (또는 "## Document Mapping") 표에 적힌 경로의 문서만 손댄다. 매핑되지 않은 문서는 건드리지 않고, 새 문서를 만들지도 않는다.
+2. **포맷 보존이 최우선** — 기존 섹션 헤더·표 컬럼·강조 스타일을 그대로 둔다. 새 내용은 *기존 형식 안*에 끼워 넣는다.
+3. **얕게 본다** — 코드를 깊게 분석하지 않는다. git 변경 목록과 가벼운 시그널을 모은 뒤 **사용자 입력으로 부족한 부분을 채운다**. 정확성은 사용자 승인으로 담보한다.
+4. **수정 전 승인** — 자동 적용 안 함. 변경 제안을 보여주고 사용자가 고른 것만 적용한다.
+5. **모호하면 묻는다** — 코드만으로 결정할 수 없는 비즈니스 규칙·인프라 스펙은 `AskUserQuestion`으로 묻는다.
+
+## 실행 시점
+
+- 대규모 기능 구현 후
+- 새 도메인·테이블·API·환경변수가 생긴 후
+- 의존성 메이저 업그레이드 후
+- 디렉토리 구조 변경 후
+- PR 직전 정합성 점검
 
 ## 워크플로우
 
-### Step 0 — 대상 결정
-
-선택적 인수가 제공된 경우 해당 문서만 검사한다:
-
-| 인수 | 대상 |
-|------|------|
-| `claude` | CLAUDE.md만 |
-| `overview` | PROJECT_OVERVIEW.md만 |
-| `source-map` | SOURCE_MAP.md만 |
-| `db-schema` | DB_SCHEMA.md만 |
-| `deploy` | DEPLOY.md만 |
-| (없음) | 5개 문서 모두 |
-
-### Step 1 — 프로젝트 스택 자동 탐지
-
-문서 검증 전에 프로젝트의 실제 구조를 파악한다. 결과는 이후 단계에서 어떤 검사를 돌릴지 결정한다.
+### Step 1 — CLAUDE.md 매핑 표에서 대상 추출
 
 ```bash
-# 빌드 도구 / 언어 감지
-ls package.json pyproject.toml pom.xml build.gradle build.gradle.kts Cargo.toml go.mod 2>/dev/null
-
-# 프론트엔드 / 백엔드 분리 여부
-ls -d frontend backend client server web api 2>/dev/null
-
-# 마이그레이션 도구 감지
-ls -d \
-  backend/src/main/resources/db/migration \
-  prisma/migrations \
-  alembic \
-  db/migrate \
-  migrations \
-  2>/dev/null
+# CLAUDE.md 위치 결정 (루트 우선, 없으면 .claude/)
+CLAUDE_PATH=""
+[ -f "$PWD/CLAUDE.md" ] && CLAUDE_PATH="$PWD/CLAUDE.md"
+[ -z "$CLAUDE_PATH" ] && [ -f "$PWD/.claude/CLAUDE.md" ] && CLAUDE_PATH="$PWD/.claude/CLAUDE.md"
 ```
 
-탐지 결과를 사용자에게 한 줄로 요약하고, 검증을 시작한다.
+`CLAUDE.md`의 "## 문서 매핑" (또는 "## Document Mapping") 섹션 안의 표에서 **첫 컬럼의 백틱 경로**를 모두 추출하여 `TARGETS` 리스트를 만든다.
 
-### Step 2 — SOURCE_MAP.md 검증
+추출 규칙:
+- 표 헤더가 `| 문서 | ... |` 또는 유사한 형태인 표에서, 데이터 행 첫 셀의 백틱(`...`) 안에 든 경로
+- 슬래시 커맨드 행(`| /<skill-name> | ... |`)은 제외 — 그건 스킬이지 문서가 아니다
+- placeholder 행(`<path/to/doc.md>` 같은 꺾쇠 안 영문)은 제외
 
-#### 2a. 등록된 경로 존재 확인
+다음 경우 즉시 종료한다:
+- `CLAUDE.md`가 없음 → "CLAUDE.md를 먼저 설치하세요. `/project-setup` 또는 `/recommend-project-setting` 참고."
+- "문서 매핑" 섹션이 없거나 표가 비어 있음 → "매핑 표가 비어 있습니다. CLAUDE.md에 갱신 대상 문서를 등록한 뒤 다시 실행하세요."
+- 추출된 경로 중 실제 파일이 하나도 없음 → 매핑 표에서 제거를 제안하고 종료
 
-SOURCE_MAP.md에 적힌 모든 파일 경로를 추출하여 실제 존재 여부를 확인한다:
+> CLAUDE.md 자기 자신은 보통 매핑 표에 등록되지 않으므로 기본 대상에서 제외된다. 인수 `claude`로 명시하거나 매핑 표에 직접 등록된 경우에만 대상에 포함한다.
+
+### Step 2 — 인수로 좁히기 (선택)
+
+인수가 주어지면 `TARGETS`를 한 문서로 좁힌다. 매칭 우선순위:
+
+1. 정확한 파일명 일치 (`SOURCE_MAP.md`, `docs/SOURCE_MAP.md`)
+2. 약식 — `source-map`, `db-schema`, `deploy`, `overview`, `design`, `claude`
+3. 대소문자 무시 부분 일치
+
+매칭 결과가 없으면 추출된 후보 목록을 보여주고 `AskUserQuestion`으로 다시 묻는다.
+
+### Step 3 — 각 문서의 기존 포맷 캡처
+
+대상 문서를 읽고 다음을 메모리에 기록한다 — 이 정보가 갱신 시 보존해야 할 **계약**이다.
+
+- 섹션 헤더 목록 (`^## `, `^### `)
+- 각 표의 컬럼 헤더와 정렬
+- 사용된 강조 스타일 (`**...**`, `> ...` 인용, 코드 블록 언어)
+- 한국어/영어 헤더 표기 (예: "## 문서 매핑" vs "## Document Mapping")
+
+이 계약은 **추측하지 않고 그대로 따른다.** 모호하면 사용자에게 묻는다.
+
+### Step 4 — 변경 신호 수집
+
+세 가지 신호를 모은다. 코드를 깊게 분석하지 않는다 — 입력의 출발점만 만든다.
+
+#### 4a. git 변경 목록
 
 ```bash
-# 표 셀에서 백틱으로 감싼 경로 추출 후 ls로 검증
-# (정규식은 프로젝트 형식에 맞게 조정)
-ls <path> 2>/dev/null || echo "MISSING: <path>"
+git diff main...HEAD --name-status 2>/dev/null || git diff HEAD --name-status
 ```
 
-**FAIL:** 존재하지 않는 경로 → 행 제거 또는 새 경로로 업데이트
-**PASS:** 모든 경로 존재
+#### 4b. 문서 종류에 따른 얕은 시그널
 
-#### 2b. 등록되지 않은 주요 파일 탐지
+각 대상 문서의 파일명(또는 매핑 표의 용도 컬럼)에서 추측되는 종류에 따라 가벼운 신호만 모은다.
 
-코드베이스에서 SOURCE_MAP에 없는 주요 파일을 찾는다. **모든 파일을 등록할 필요는 없다** — 주요 진입점만 대상.
+| 문서 종류 | 얕은 시그널 |
+|----------|------------|
+| `SOURCE_MAP.md` 류 | git 변경 중 추가·삭제된 소스 파일 목록 |
+| `DB_SCHEMA.md` 류 | 마이그레이션 디렉토리 신규 파일 (`migrations/`, `prisma/migrations/`, `alembic/versions/`, `db/migrate/` 등) |
+| `DEPLOY.md` 류 | `.github/workflows/`, `Dockerfile`, `vercel.json`, `fly.toml`, `cloud-run-*.yaml`의 git 변경 |
+| `PROJECT_OVERVIEW.md` 류 | `package.json`, `pyproject.toml`, `build.gradle*`, `Cargo.toml`, `go.mod`의 git 변경 |
+| `DESIGN.md` 류 | `tailwind.config.*`, `theme/`, `tokens/`의 git 변경 |
+| 그 외 | git 변경 목록만 |
 
-| 파일 종류 | 탐지 명령 (예) |
-|----------|---------------|
-| 페이지 라우트 (Next.js) | `find <frontend>/app -name "page.tsx" -type f` |
-| 페이지 라우트 (Vite/CRA) | `find <frontend>/src -name "*.tsx" -path "*pages/*"` |
-| 레이아웃 | `find <frontend>/app -name "layout.tsx"` |
-| 공유 컴포넌트 | `ls <frontend>/components/{ui,feature,layout}` |
-| API 클라이언트 | `ls <frontend>/lib/api/` 또는 `ls <frontend>/src/api/` |
-| 백엔드 컨트롤러/라우터 | `grep -rln "@RestController\|@Controller\|@RequestMapping\|@Router" <backend>` |
-| 백엔드 엔티티 | `grep -rln "@Entity\|class.*Schema\|model =" <backend>` |
-| 백엔드 서비스 | `grep -rln "@Service\|class.*Service" <backend>` |
+> 이 시그널은 **참고용**이다. "이 문서가 영향받았을 가능성이 있다"는 힌트일 뿐, 정확한 변경 내용은 사용자 입력에서 얻는다.
 
-**FAIL:** SOURCE_MAP에 없는 주요 파일 → 해당 섹션에 행 추가
-**PASS:** 모든 주요 파일 등록됨
-
-#### 2c. 변경된 파일의 설명 정확성
-
-이번 작업으로 변경된 파일에 한해, SOURCE_MAP의 설명이 여전히 정확한지 확인한다:
-
-```bash
-git diff main...HEAD --name-only 2>/dev/null || git diff HEAD --name-only
-```
-
-변경된 파일이 SOURCE_MAP에 있으면 해당 파일을 읽고 설명을 검증한다. 모호하면 사용자에게 묻는다.
-
-### Step 3 — DB_SCHEMA.md 검증
-
-#### 3a. 마이그레이션 목록 정합성
-
-감지된 마이그레이션 디렉토리를 나열하고 DB_SCHEMA의 "마이그레이션" 섹션과 대조한다:
-
-```bash
-# Flyway / Liquibase
-ls backend/src/main/resources/db/migration/ 2>/dev/null
-
-# Prisma
-ls prisma/migrations/ 2>/dev/null
-
-# Alembic
-ls alembic/versions/ 2>/dev/null
-```
-
-**FAIL:** DB_SCHEMA에 없는 마이그레이션 발견 → 마이그레이션 섹션 갱신
-**PASS:** 모든 마이그레이션이 기록됨
-
-#### 3b. 엔티티/모델과 테이블 대조
-
-엔티티 정의를 찾아 DB_SCHEMA의 테이블과 대조한다:
-
-| ORM | 탐지 패턴 |
-|-----|----------|
-| JPA (Java/Kotlin) | `grep -rln "@Entity" <backend>` |
-| Prisma | `prisma/schema.prisma` 한 파일에 정의 |
-| SQLAlchemy | `grep -rln "Base.metadata\|class.*Base" <backend>` |
-| TypeORM | `grep -rln "@Entity" <backend>` |
-| Django | `grep -rln "class.*models.Model" <backend>` |
-
-각 엔티티에 대해 확인:
-- 테이블명이 DB_SCHEMA에 존재하는가
-- 컬럼이 DB_SCHEMA의 테이블 정의와 일치하는가
-- DB_SCHEMA에는 있지만 엔티티에 없는 컬럼(또는 그 반대)은?
-
-#### 3c. Enum 값 동기화
-
-```bash
-# Java/Kotlin
-grep -rln "enum class\|public enum" <backend>
-
-# Python
-grep -rln "class.*Enum\|StrEnum" <backend>
-
-# Prisma
-grep -A5 "enum " prisma/schema.prisma
-```
-
-DB_SCHEMA의 "Enum 정리" 섹션과 비교한다.
-
-#### 3d. ER 다이어그램·접근 범위
-
-테이블/FK 변경이 감지되면 ER 다이어그램(텍스트)이 현재 관계를 반영하는지 검토한다.
-
-새 엔티티의 **접근 범위**(유저 한정 / 모두 공유 / 시스템)는 코드만으로 판단하기 어려우므로 `AskUserQuestion`으로 묻는다.
-
-### Step 4 — CLAUDE.md 검증
-
-CLAUDE.md는 도메인 규칙·문서 매핑이 핵심이므로 자동 검증 범위가 좁다.
-
-#### 4a. 문서 매핑 표 정합성
-
-CLAUDE.md에 나열된 문서 경로가 실제 존재하는지 확인한다:
-
-```bash
-# 문서 매핑 표의 경로 추출 후 ls
-ls .claude/PROJECT_OVERVIEW.md .claude/SOURCE_MAP.md .claude/DB_SCHEMA.md .claude/DEPLOY.md 2>&1
-ls .claude/rules/*.md 2>/dev/null
-ls .claude/skills/*/SKILL.md 2>/dev/null
-```
-
-**FAIL:** 표에 등록됐지만 존재하지 않는 문서 → 행 제거
-**FAIL:** 존재하지만 등록되지 않은 문서 → 행 추가 (사용자에게 확인)
-
-#### 4b. 정보 소유권 표 정합성
-
-각 정보가 실제로 그 문서에 있는지, 다른 문서로 이주했는지 확인한다. 자동 판단이 어려우므로 변경 가능성이 높은 항목만 추출하여 사용자에게 질의한다.
-
-#### 4c. 도메인 규칙 — 자동 검증 불가
-
-도메인 규칙은 비즈니스 제약이므로 코드만으로 검증할 수 없다. 변경 의심 시 사용자에게 묻는다:
-
-> "현재 CLAUDE.md의 도메인 규칙이 최신 비즈니스 규칙과 일치합니까? 변경된 항목이 있으면 알려주세요."
-
-### Step 5 — PROJECT_OVERVIEW.md 검증
-
-#### 5a. 기술 스택 버전
-
-빌드 파일의 의존성과 PROJECT_OVERVIEW의 기술 스택 표를 대조한다:
-
-```bash
-# Frontend
-grep -E '"(next|react|vue|svelte|tailwindcss|typescript)"' package.json 2>/dev/null
-
-# Java/Kotlin
-grep -E "(kotlin|springBootVersion|javaVersion)" build.gradle.kts build.gradle 2>/dev/null
-
-# Python
-grep -E "^(python|fastapi|django|sqlalchemy)" pyproject.toml requirements.txt 2>/dev/null
-
-# Node backend
-grep -E '"(express|nestjs|fastify)"' package.json 2>/dev/null
-```
-
-**FAIL:** 버전 불일치 → 해당 행 업데이트
-
-#### 5b. 마일스톤 / 링크
-
-마일스톤·링크는 외부 정보이므로 자동 검증 불가. 사용자에게 묻는다:
-
-> "PROJECT_OVERVIEW의 마일스톤과 핵심 링크가 최신 상태입니까? 추가하거나 갱신할 항목이 있으면 알려주세요."
-
-### Step 6 — DEPLOY.md 검증
-
-#### 6a. CI/CD 워크플로
-
-```bash
-ls .github/workflows/ 2>/dev/null
-ls .gitlab-ci.yml .circleci/config.yml 2>/dev/null
-```
-
-DEPLOY.md의 "CI/CD" 섹션에 나열된 파일과 비교한다. 변경된 워크플로 파일이 있으면 내용을 읽고 트리거 조건·배포 순서가 정확한지 확인한다.
-
-#### 6b. 컨테이너 / 빌드 설정
-
-```bash
-ls Dockerfile docker-compose.yml docker-compose.*.yml 2>/dev/null
-ls cloud-run-service*.yaml fly.toml render.yaml vercel.json 2>/dev/null
-```
-
-DEPLOY.md에 기술된 빌드/배포 설정과 비교한다.
-
-#### 6c. 환경변수 목록
-
-```bash
-# Spring Boot
-grep -E '\$\{[A-Z_]+' backend/src/main/resources/application*.yml 2>/dev/null
-
-# Node / Next.js
-grep -rh "process\.env\." <frontend>/src <frontend>/app <backend>/src 2>/dev/null | \
-  grep -oE 'process\.env\.[A-Z_]+' | sort -u
-
-# Python
-grep -rh "os.environ\|os.getenv" <backend> 2>/dev/null | grep -oE '"[A-Z_]+"' | sort -u
-```
-
-DEPLOY.md의 환경변수 표와 비교한다.
-
-**FAIL:** 코드에서 참조하지만 DEPLOY.md에 미기록 → 표에 추가
-**PASS:** 모든 환경변수 기록됨
-
-#### 6d. 인프라 스펙 — 자동 검증 불가
-
-리전·메모리·인스턴스 수 같은 인프라 설정은 코드에서 확인할 수 없으므로 사용자에게 묻는다:
-
-> "DEPLOY.md의 인프라 설정(리전·CPU·메모리·인스턴스 수)이 현재 프로덕션과 일치합니까?"
-
-### Step 7 — 통합 보고서
-
-```markdown
-## Update Project Docs 보고서
-
-### 검증 결과 요약
-
-| 문서 | 상태 | 자동 수정 가능 | 질의 필요 |
-|------|------|---------------|----------|
-| SOURCE_MAP.md | X개 이슈 | N | M |
-| DB_SCHEMA.md | X개 이슈 | N | M |
-| CLAUDE.md | X개 이슈 | N | M |
-| PROJECT_OVERVIEW.md | X개 이슈 | N | M |
-| DEPLOY.md | X개 이슈 | N | M |
-
-### 자동 수정 가능
-
-| # | 문서 | 섹션 | 유형 | 상세 |
-|---|------|------|------|------|
-| 1 | SOURCE_MAP.md | 페이지 라우트 | 누락 | `/new-page` 미등록 |
-| 2 | DB_SCHEMA.md | <table> | 컬럼 누락 | `new_column` 미기록 |
-
-### 질의 필요
-
-| # | 문서 | 질문 |
-|---|------|------|
-| 1 | DB_SCHEMA.md | 새 엔티티 `<entity>`의 접근 범위는? |
-| 2 | DEPLOY.md | 인프라 스펙이 현재 프로덕션과 일치합니까? |
-```
-
-### Step 8 — 사용자 승인 및 수정
-
-#### 8a. 모호한 항목 질의
-
-"질의 필요" 항목을 `AskUserQuestion`으로 하나씩 묻는다. 사용자 답변을 반영하여 자동 수정 목록에 합친다.
-
-#### 8b. 수정 방식 확인
+#### 4c. 사용자 입력 (필수)
 
 `AskUserQuestion`:
 
-| 선택지 | 동작 |
-|--------|------|
-| 전체 수정 | 모든 이슈를 자동 수정 |
-| 개별 수정 | 각 이슈마다 진단·수정안 보여주고 승인/거부 |
-| 건너뛰기 | 변경 없이 종료 |
+```
+이번 사이클에서 어떤 변경이 있었나요? 자유 형식으로 알려주세요. 예시:
+  - "users 테이블에 phone_number 컬럼 추가"
+  - "next.js 14 → 15 업그레이드"
+  - "/orders 페이지 새로 만듦"
+  - "환경변수 STRIPE_KEY 추가"
 
-#### 8c. 수정 적용
-
-승인된 사항을 `Edit`으로 적용한다. **기존 마크다운 형식 보존**:
-- 테이블 열 정렬
-- 섹션 순서
-- 강조 스타일(굵기, 인용)
-
-### Step 9 — 수정 후 검증
-
-수정된 파일을 다시 읽어 다음을 확인한다:
-- 테이블 열 수 일관성
-- 닫히지 않은 코드 블록 / 인라인 코드
-- 깨진 링크/참조
-
-```markdown
-## 수정 완료
-
-| 문서 | 수정 항목 | 검증 |
-|------|----------|------|
-| SOURCE_MAP.md | N개 | PASS |
-| DB_SCHEMA.md | M개 | PASS |
-
-모든 .claude/ 작업 문서가 코드베이스와 동기화되었습니다.
+(선택사항: 비워두면 git 변경과 시그널만 사용합니다.)
 ```
 
----
+### Step 5 — 갱신안 생성 (포맷 보존)
+
+각 대상 문서마다, **Step 3에서 캡처한 포맷을 그대로 따라** 갱신안을 만든다:
+
+- **새 정보 추가** — 기존 표의 컬럼 그대로, 동일 섹션 안에 행을 끼워 넣는다
+- **구식 정보 갱신** — 기존 행 그대로 두고 값만 바꾼다
+- **사라진 항목** — 행을 제거할지 사용자에게 확인 (자동 삭제 X)
+
+자유 텍스트 영역(비즈니스 규칙, 마일스톤, 인프라 스펙)은 코드로 검증 불가 → 변경 의심이 있으면 사용자에게 묻는다.
+
+> **새 섹션을 함부로 만들지 않는다.** 기존에 없는 섹션이 필요하다고 판단되면 사용자에게 먼저 묻는다. 매핑된 문서의 형태를 무단 변경하지 않는다.
+
+### Step 6 — 보고 + 사용자 승인
+
+```markdown
+## Update Project Docs — 갱신안
+
+### 대상
+- `docs/SOURCE_MAP.md` (CLAUDE.md 매핑 표에서 발견)
+- `docs/DB_SCHEMA.md` (CLAUDE.md 매핑 표에서 발견)
+
+### 갱신 항목 (포맷 보존)
+
+| # | 문서 | 섹션 | 변경 종류 | 상세 |
+|---|------|------|----------|------|
+| 1 | docs/SOURCE_MAP.md | 페이지 라우트 | 추가 | `/orders` |
+| 2 | docs/DB_SCHEMA.md | 마이그레이션 | 추가 | `V124__add_phone.sql` |
+| 3 | docs/DB_SCHEMA.md | users 테이블 | 컬럼 추가 | `phone_number VARCHAR(20)` |
+
+### 사용자 확인 필요
+- `docs/DB_SCHEMA.md`: 새 테이블/컬럼의 접근 범위는? (유저 한정 / 공유 / 시스템)
+- `docs/PROJECT_OVERVIEW.md`: 마일스톤이 변경됐나요?
+```
+
+`AskUserQuestion`으로 처리 방식을 묻는다:
+
+| 선택지 | 동작 |
+|--------|------|
+| 전체 적용 | 자동 수정 가능한 모든 항목 적용 |
+| 개별 검토 | 항목마다 진단·수정안 보여주고 승인/거부 |
+| 사용자 확인 항목만 답변 | 자유 텍스트 영역만 묻고 표는 건너뛰기 |
+| 취소 | 변경 없이 종료 |
+
+### Step 7 — 적용 + 포맷 검증
+
+승인된 항목을 `Edit`으로 적용한다. **Step 3에서 캡처한 포맷 계약을 그대로 따른다.**
+
+적용 후 다음을 점검:
+- 표 컬럼 수 일관성
+- 닫히지 않은 코드 블록 / 인라인 코드
+- 매핑 표가 자기 자신을 깨뜨리지 않음 (CLAUDE.md를 손댄 경우)
+
+```markdown
+## 적용 완료
+
+| 문서 | 적용 N | 형식 검증 |
+|------|--------|----------|
+| docs/SOURCE_MAP.md | 1 | PASS |
+| docs/DB_SCHEMA.md | 2 | PASS |
+
+CLAUDE.md 매핑 표에 등록된 문서들이 최신 상태입니다.
+```
 
 ## 예외사항
 
 다음은 **문제가 아니다**:
 
-1. **사소한 문체 차이** — 기술적으로 정확하면 수정 불필요
-2. **인프라 스펙** — 코드에서 확인 불가한 값(리전·메모리·인스턴스 수)은 사용자 승인 없이 변경하지 않음
-3. **유틸리티/헬퍼 파일** — 모든 파일을 SOURCE_MAP에 등록할 필요 없음. 주요 진입점(페이지·컴포넌트·서비스·컨트롤러·엔티티)만 대상
-4. **테스트 픽스처/목 데이터** — SOURCE_MAP 등록 불필요
-5. **접근 범위 같은 비즈니스 규칙** — 코드만으로 판단 어려운 항목은 사용자에게 질의
-6. **빌드 도구의 플러그인 버전** — PROJECT_OVERVIEW에 적는 것은 메이저 프레임워크 버전(언어·프레임워크·DB)만 해당
-7. **마이그레이션 SQL 본문** — DB_SCHEMA의 마이그레이션 섹션에는 버전·파일명·요약만 기록. SQL 본문은 마이그레이션 파일이 진실의 원천
-8. **모노레포가 아닌 프로젝트** — `<frontend>`/`<backend>` 분리가 없으면 단일 디렉토리 기준으로 검사. 표는 그에 맞게 단순화
+1. **매핑 표가 비어 있음** — 정상 종료. 이 스킬은 새 문서를 만들지 않는다. 사용자가 `project-setup`/`recommend-project-setting` 또는 수동 편집으로 매핑을 채운 뒤 다시 실행해야 한다.
+2. **매핑된 경로의 파일이 실제로 없음** — 사용자에게 매핑 행 제거를 제안하고 종료. 파일을 자동 생성하지 않는다.
+3. **CLAUDE.md 자체** — 기본적으로 대상에서 제외. 사용자가 인수 `claude`로 명시하거나 매핑 표에 직접 등록한 경우에만 손댄다. 도메인 규칙·정보 소유권 변경은 자동 판단 불가하므로 전적으로 사용자 질의 모드로 동작한다.
+4. **외부 운영 정보** — 인프라 스펙, 마일스톤, 비즈니스 규칙처럼 코드로 검증 불가한 영역은 사용자 답변이 없으면 변경하지 않는다.
+5. **포맷이 모호한 표** — 컬럼 의미가 불명확하면 추측하지 않고 사용자에게 형식을 묻는다.
+6. **사소한 문체 차이** — 기술적으로 정확하면 수정하지 않는다. 이 스킬은 표·구조적 정보의 갱신에 집중한다.
 
 ## Related Files
 
 | File | Purpose |
 |------|---------|
-| `.claude/CLAUDE.md` | 진입점 — 도메인 규칙, 문서 매핑, 정보 소유권 |
-| `.claude/PROJECT_OVERVIEW.md` | 프로젝트 정체성·기술 스택·마일스톤·링크 |
-| `.claude/SOURCE_MAP.md` | 소스코드 라우팅 맵 |
-| `.claude/DB_SCHEMA.md` | DB 스키마·접근 범위·마이그레이션 |
-| `.claude/DEPLOY.md` | 인프라·CI/CD·환경변수·롤백 |
+| `<루트>/CLAUDE.md` 또는 `<루트>/.claude/CLAUDE.md` | "문서 매핑" 표 — **이 스킬의 진실의 원천** |
+| 매핑 표에 등록된 각 문서 (위치 무관) | 갱신 대상. 기본 위치는 `docs/`이지만 어디든 가능 |
