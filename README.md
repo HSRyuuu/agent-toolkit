@@ -7,13 +7,15 @@
 이 저장소를 **로컬 directory marketplace**로 등록해서 사용한다.
 
 ```bash
-git clone https://github.com/HSRyuuu/agent-toolkit.git ~/dev/personal/agent-toolkit
+git clone https://github.com/HSRyuuu/agent-toolkit.git 
+cd agent-toolkit
+pwd # ~/your-dir/agent-toolkit
 ```
 
 Claude Code 안에서:
 
 ```
-/plugin marketplace add ~/dev/personal/agent-toolkit
+/plugin marketplace add ~/your-dir/agent-toolkit
 /plugin install agent-toolkit@agent-toolkit-local
 ```
 
