@@ -1,6 +1,6 @@
 ---
 name: fastapi-guide
-description: "FastAPI 프로덕션 수준 API 개발을 위한 모범 사례 가이드. FastAPI 코드 작성, 리뷰, 리팩토링 시 사용. 트리거 상황 - (1) FastAPI 엔드포인트/라우터 작성, (2) async vs sync 함수 선택, (3) Pydantic 모델 설계, (4) DB 커넥션 풀링 및 세션 관리, (5) 인증·의존성 주입 구현, (6) 백그라운드 태스크 처리, (7) 프로덕션 배포 설정(Gunicorn/Docker/lifespan), (8) FastAPI 코드 리뷰 요청, (9) FastAPI 보안·미들웨어·예외처리 설정, (10) 프로젝트 구조 설계, (11) APIRouter/버저닝."
+description: FastAPI로 새 API를 작성하거나 기존 FastAPI 코드를 리뷰·리팩토링해야 할 때 사용한다. 트리거 - (1) 엔드포인트/라우터 작성, (2) async vs sync 함수 선택, (3) Pydantic 모델 설계, (4) DB 커넥션 풀링·세션 관리, (5) 인증·의존성 주입, (6) BackgroundTasks·백그라운드 처리, (7) 프로덕션 배포(Gunicorn/Docker/lifespan), (8) FastAPI 코드 리뷰, (9) 보안·미들웨어·예외 처리, (10) 프로젝트 구조 설계, (11) APIRouter/버저닝.
 ---
 
 # FastAPI Best Practices

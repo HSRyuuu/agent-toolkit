@@ -1,6 +1,6 @@
 ---
 name: git-master
-description: Git expert for atomic commits, rebasing, and history management with style detection
+description: 여러 파일에 걸친 변경을 커밋하거나, 브랜치 이력을 정리·rebase 하거나, 과거 변경이 언제 어떻게 들어왔는지 추적해야 할 때 사용한다. 트리거 - "커밋해줘", "atomic commit", "rebase", "git history", "이 변경 누가 언제 추가했어?", "커밋 분리", "브랜치 정리", "git log 분석".
 ---
 
 # Git Master Skill

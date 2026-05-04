@@ -1,6 +1,6 @@
 ---
 name: node-backend-patterns
-description: "Node.js, Express, Next.js API 라우트를 위한 백엔드 아키텍처 패턴, API 설계, 데이터베이스 최적화 및 서버측 모범 사례. NestJS 프로젝트에서는 references/nestjs-patterns.md를 함께 참조."
+description: Node.js·Express·Next.js API 라우트(또는 NestJS) 기반 백엔드를 작성·리뷰·리팩토링할 때 사용한다. Repository/Service/미들웨어 레이어 설계, DB 쿼리 최적화(N+1·인덱싱·커넥션 풀링), 캐싱, 에러 처리, 인증·인가, 속도 제한, 백그라운드 작업, 구조화 로깅 등이 트리거. 트리거 - "Node 백엔드", "Express 라우트", "Next.js API", "NestJS", "Repository 패턴", "N+1 쿼리", "캐싱 전략", "JWT 검증", "미들웨어 작성".
 ---
 
 # 백엔드 개발 패턴 (Backend Development Patterns)

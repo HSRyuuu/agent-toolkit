@@ -1,6 +1,6 @@
 ---
 name: recommend-project-setting
-description: 이미 진행 중인 프로젝트의 현재 `.claude/` 세팅을 스캔하고, agent-toolkit이 제공하는 자산(스킬·작업 문서) 중 빠져 있거나 핵심 섹션이 누락된 항목을 찾아 사용자에게 추천합니다. **기본 동작은 read-only 추천 보고**이며, 사용자가 명시적으로 "설치/적용해줘"라고 의사를 밝히기 전까지는 대상 프로젝트의 어떤 파일도 변경하지 않습니다. 각 추천 항목에 대해 역할·필요한 세팅·이미 있는지 여부·대체 가능 여부·관련 스킬을 제시하고, 사용자가 명시적으로 설치를 요청하면 고른 항목만 설치합니다. project-setup이 빈 프로젝트에 골격을 까는 스킬이라면, 이 스킬은 진행 중인 프로젝트에 누락분을 보강하는 추천형 스킬입니다. 트리거 - "프로젝트 세팅 추천", ".claude 보강", "뭐 더 깔면 좋아?", "recommend setting", "/recommend-project-setting".
+description: 이미 일부 세팅이 된 프로젝트에 agent-toolkit의 자산(스킬·작업 문서·LESSONS.md) 중 빠진 것이나 핵심 섹션이 누락된 것이 있는지 점검·추천받고 싶을 때 사용한다. 기본은 read-only 추천이며, 사용자가 명시적으로 설치를 요청해야 파일을 만진다. 빈 프로젝트의 초기 셋업은 `project-setup`을 사용. 트리거 - "프로젝트 세팅 추천", ".claude 보강", "뭐 더 깔면 좋아?", ".claude 점검", "recommend setting", "/recommend-project-setting".
 ---
 
 # Recommend Project Setting — 진행 중 프로젝트 세팅 추천
