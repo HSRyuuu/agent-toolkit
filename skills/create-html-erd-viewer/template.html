@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>ERD Viewer PoC — Cytoscape.js + HTML overlay</title>
+<script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+<script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+<script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Segoe UI", sans-serif; background: #0a1020; color: #d8e0ec; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── HEADER ───────────────────────────────────────────────── */
+  header {
+    height: 46px;
+    background: #0f1830;
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+    border-bottom: 1px solid #1f2a44;
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 18px;
+    border-right: 1px solid #1f2a44;
+    background: #0a1020;
+  }
+  .brand-mark {
+    width: 22px; height: 22px;
+    border: 1.5px solid #e94560;
+    background: transparent;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .brand-mark::before, .brand-mark::after {
+    content: '';
+    position: absolute;
+    left: 3px; right: 3px;
+    height: 1.5px;
+    background: #e94560;
+  }
+  .brand-mark::before { top: 6px; }
+  .brand-mark::after { top: 12px; opacity: 0.55; }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+  .brand-text .name {
+    font-size: 11px; font-weight: 700; color: #e8eef8;
+    letter-spacing: 1.2px;
+    font-family: Consolas, "Courier New", monospace;
+  }
+  .brand-text .meta {
+    font-size: 9px; color: #5a6e8c;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    margin-top: 1px;
+  }
+
+  .header-stats {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    padding: 0 20px;
+    border-right: 1px solid #1f2a44;
+  }
+  .stat { display: flex; align-items: baseline; gap: 6px; }
+  .stat .num {
+    font-size: 14px; font-weight: 700; color: #e8eef8;
+    font-family: Consolas, "Courier New", monospace;
+  }
+  .stat .lbl {
+    font-size: 9px; color: #5a6e8c;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  .toolbar { margin-left: auto; display: flex; gap: 4px; align-items: center; padding: 0 14px; }
+  .toolbar button {
+    height: 26px;
+    padding: 0 12px;
+    font-size: 11px;
+    background: #1a2236;
+    border: 1px solid #2a3a55;
+    border-radius: 2px;
+    cursor: pointer;
+    color: #b8c0d0;
+    font-family: "Segoe UI", sans-serif;
+    letter-spacing: 0.3px;
+  }
+  .toolbar button:hover { background: #243352; border-color: #3a4a70; color: #fff; }
+  .toolbar button.active { background: #e94560; border-color: #e94560; color: #fff; }
+
+  /* ── MAIN / SIDEBAR ───────────────────────────────────────── */
+  .main { flex: 1; display: flex; overflow: hidden; }
+  #sidebar {
+    width: 280px;
+    background: #0f1830;
+    border-right: 1px solid #1f2a44;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-section {
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid #1f2a44;
+  }
+  .sidebar-section.list-section { padding: 12px 14px 4px; border-bottom: 0; }
+  .section-title {
+    font-size: 9px;
+    font-weight: 700;
+    color: #5a6e8c;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .section-title .count {
+    font-size: 10px;
+    font-weight: 700;
+    color: #e94560;
+    font-family: Consolas, "Courier New", monospace;
+    letter-spacing: 0.3px;
+  }
+  .sidebar-section.list-section .section-title { margin-bottom: 0; }
+
+  .search-wrap { position: relative; }
+  .search-icon {
+    position: absolute;
+    left: 8px; top: 50%;
+    transform: translateY(-50%);
+    width: 12px; height: 12px;
+    color: #4a566e;
+    pointer-events: none;
+    transition: color 0.1s;
+  }
+  .search-wrap:focus-within .search-icon { color: #e94560; }
+  #searchInput {
+    width: 100%;
+    height: 28px;
+    padding: 0 10px 0 28px;
+    font-size: 11px;
+    background: #0a1020;
+    border: 1px solid #2a3a55;
+    border-radius: 2px;
+    color: #d8e0ec;
+    outline: none;
+    font-family: Consolas, "Courier New", monospace;
+  }
+  #searchInput:focus { border-color: #e94560; }
+  #searchInput::placeholder { color: #4a566e; }
+
+  #tableList { flex: 1; overflow-y: auto; padding: 2px 0 8px; }
+  #tableList::-webkit-scrollbar { width: 6px; }
+  #tableList::-webkit-scrollbar-thumb { background: #2a3a55; }
+  #tableList::-webkit-scrollbar-track { background: transparent; }
+
+  .tbl-item {
+    padding: 7px 14px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: background 0.08s;
+  }
+  .tbl-item:hover { background: #15203a; border-left-color: #2a3a55; }
+  .tbl-item.active { background: #2a1a3e; border-left-color: #e94560; }
+  .tbl-name {
+    font-size: 11px;
+    font-family: Consolas, "Courier New", monospace;
+    color: #c8d4ec;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tbl-comment {
+    font-size: 10px;
+    color: #6a7990;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* graph area */
+  #graph-area { flex: 1; position: relative; overflow: hidden; }
+  #cy { position: absolute; inset: 0; background: #0a1020;
+        background-image:
+          linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+        background-size: 24px 24px; }
+  #cards { position: absolute; inset: 0; pointer-events: none; transform-origin: 0 0; }
+
+  /* ERD card — real <table> */
+  .erd-card {
+    position: absolute;
+    background: #1a2236;
+    border: 1px solid #2a3a55;
+    border-radius: 2px;
+    font-size: 11px;
+    font-family: Consolas, "Courier New", monospace;
+    box-shadow: none;
+    cursor: default;
+    user-select: text;
+    pointer-events: auto;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: border-color 0.1s, opacity 0.15s;
+  }
+  .erd-card:hover { border-color: #4a6080; }
+  .erd-card.selected {
+    border-color: #e94560;
+    box-shadow: 0 0 0 1px #e94560;
+  }
+  .erd-card.neighbor { border-color: #c8a64b; }
+  .erd-card.faded { opacity: 0.15; }
+  .erd-card.hidden { display: none; }
+
+  .card-header {
+    position: relative;
+    background: #0f3460;
+    padding: 6px 10px;
+    padding-right: 56px;
+    border-bottom: 1px solid #2a3a55;
+    cursor: grab;
+    user-select: text;
+  }
+  .erd-card.dragging { z-index: 2; }
+  .erd-card.dragging .card-header { cursor: grabbing; }
+  .card-title { color: #f0f4ff; font-weight: 700; font-size: 12px; font-family: Consolas, "Courier New", monospace; letter-spacing: 0; }
+  .card-comment { color: #8898b8; font-size: 10px; margin-top: 1px; font-family: "Segoe UI", sans-serif; font-weight: 400; }
+  .card-copy-btn {
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    font-size: 9px;
+    font-family: "Segoe UI", sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 2px 7px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 2px;
+    color: #c8d4e8;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.1s, border-color 0.1s, color 0.1s;
+  }
+  .card-copy-btn:hover { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.35); color: #fff; }
+  .card-copy-btn.copied { background: #2e6e3e; border-color: #4a8a5a; color: #fff; }
+
+  .card-table { width: 100%; border-collapse: collapse; }
+  .card-table tr { border-top: 1px solid #0d1426; }
+  .card-table tr:first-child { border-top: 0; }
+  .card-table tr:hover { background: rgba(255,255,255,0.03); }
+  .card-table td { padding: 4px 10px; vertical-align: middle; }
+  .col-key {
+    width: 26px; text-align: center; font-size: 9px; font-weight: 700; letter-spacing: 0;
+    color: transparent;
+  }
+  .col-key.pk { color: #e94560; }
+  .col-key.fk { color: #4a9eff; }
+  .col-name { color: #dde6f5; }
+  .col-name.pk-name { font-weight: 700; }
+  .col-name.fk-name { color: #a8c4ee; }
+  .col-type { color: #5a6e8c; font-size: 10px; }
+  .col-comment {
+    color: #6a7e96; font-size: 10px; font-family: "Segoe UI", sans-serif;
+    max-width: 220px; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .hint { position: fixed; bottom: 12px; right: 14px; font-size: 10px; color: #4a566e; background: rgba(15,24,48,0.9); padding: 4px 8px; border-radius: 2px; border: 1px solid #1f2a44; z-index: 10; }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-brand">
+    <div class="brand-mark"></div>
+    <div class="brand-text">
+      <div class="name">ERD VIEWER</div>
+      <div class="meta">Schema Explorer</div>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="stat"><span class="num" id="statTables">0</span><span class="lbl">Tables</span></div>
+    <div class="stat"><span class="num" id="statRelations">0</span><span class="lbl">Relations</span></div>
+  </div>
+  <div class="toolbar">
+    <button id="btnFit">Fit</button>
+    <button id="btnLayout">Re-layout</button>
+    <button id="btnFocus" class="active">Focus: ON</button>
+    <button id="btnExport">Export PNG</button>
+  </div>
+</header>
+<div class="main">
+  <div id="sidebar">
+    <div class="sidebar-section">
+      <div class="section-title">Search</div>
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 16 16" fill="none">
+          <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="9.8" y1="9.8" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <input type="text" id="searchInput" placeholder="테이블, 컬럼, 코멘트...">
+      </div>
+    </div>
+    <div class="sidebar-section list-section">
+      <div class="section-title">
+        <span>Tables</span>
+        <span class="count" id="tablesCount">0</span>
+      </div>
+    </div>
+    <div id="tableList"></div>
+  </div>
+  <div id="graph-area">
+    <div id="cy"></div>
+    <div id="cards"></div>
+  </div>
+</div>
+<div class="hint">Scroll: zoom &middot; Drag empty space: pan &middot; Click card: focus &middot; Click empty: clear</div>
+
+<script>
+// ==========================================================================
+// 1) 데이터 (JSON)
+// ==========================================================================
+const schema = {
+  // === SCHEMA TABLES START ===
+  // 이 영역만 입력 데이터에 맞춰 교체하세요. 나머지 코드는 절대 손대지 마세요.
+  // schema.relations 는 아래 코드가 자동 생성합니다 — 직접 채우지 마세요.
+  //
+  // 형식 예시:
+  //   {
+  //     name: "USERS", comment: "사용자",
+  //     columns: [
+  //       { name: "id",      type: "BIGINT",       pk: true, comment: "사용자 ID" },
+  //       { name: "email",   type: "VARCHAR(255)",           comment: "이메일" },
+  //       { name: "team_id", type: "BIGINT", fk: "TEAMS.id", comment: "팀 ID" },
+  //     ]
+  //   },
+  tables: [
+    /* TABLES_PLACEHOLDER */
+  ],
+  // === SCHEMA TABLES END ===
+};
+schema.relations = schema.tables.flatMap(t =>
+  t.columns.filter(c => c.fk).map(c => {
+    const [toTable, toCol] = c.fk.split('.');
+    return { from: t.name, fromCol: c.name, to: toTable, toCol, type: 'many-to-one' };
+  })
+);
+
+// ==========================================================================
+// 1.5) 헬퍼 — 테이블 명세 markdown 생성 + 클립보드 복사
+// ==========================================================================
+function buildTableSpec(t) {
+  const lines = [];
+  lines.push(`## ${t.name}${t.comment ? ` (${t.comment})` : ''}`);
+  lines.push('');
+  lines.push('| Key | Column | Type | Comment |');
+  lines.push('| --- | --- | --- | --- |');
+  t.columns.forEach(c => {
+    const key = c.pk ? 'PK' : c.fk ? 'FK' : '';
+    const safe = (s) => (s || '').replace(/\|/g, '\\|');
+    lines.push(`| ${key} | ${c.name} | ${c.type} | ${safe(c.comment)} |`);
+  });
+  const out = schema.relations.filter(r => r.from === t.name);
+  const inn = schema.relations.filter(r => r.to === t.name);
+  if (out.length) {
+    lines.push('', '### References');
+    out.forEach(r => lines.push(`- \`${r.fromCol}\` → \`${r.to}.${r.toCol}\``));
+  }
+  if (inn.length) {
+    lines.push('', '### Referenced by');
+    inn.forEach(r => lines.push(`- \`${r.from}.${r.fromCol}\` → \`${r.toCol}\``));
+  }
+  return lines.join('\n');
+}
+
+async function copyToClipboard(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (e) { /* fall through */ }
+  // file:// 등 비-secure 컨텍스트용 fallback
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  ta.style.top = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+  return ok;
+}
+
+// ==========================================================================
+// 2) HTML 카드 렌더링
+// ==========================================================================
+const cardsEl = document.getElementById('cards');
+
+function buildCards() {
+  cardsEl.innerHTML = '';
+  schema.tables.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'erd-card';
+    card.dataset.table = t.name;
+
+    const pk = t.columns.filter(c => c.pk);
+    const fk = t.columns.filter(c => c.fk && !c.pk);
+    const other = t.columns.filter(c => !c.pk && !c.fk);
+    const ordered = [...pk, ...fk, ...other];
+
+    const rows = ordered.map(c => {
+      const keyClass = c.pk ? 'pk' : c.fk ? 'fk' : '';
+      const keyLabel = c.pk ? 'PK' : c.fk ? 'FK' : '';
+      const nameClass = c.pk ? 'pk-name' : c.fk ? 'fk-name' : '';
+      return `<tr>
+        <td class="col-key ${keyClass}">${keyLabel}</td>
+        <td class="col-name ${nameClass}">${c.name}</td>
+        <td class="col-type">${c.type}</td>
+        <td class="col-comment" title="${c.comment || ''}">${c.comment || ''}</td>
+      </tr>`;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-title">${t.name}</div>
+        ${t.comment ? `<div class="card-comment">${t.comment}</div>` : ''}
+        <button class="card-copy-btn" type="button" title="Copy table spec to clipboard">Copy</button>
+      </div>
+      <table class="card-table"><tbody>${rows}</tbody></table>
+    `;
+
+    // 클릭(focus) vs 드래그(텍스트 선택) 구분
+    let downX = 0, downY = 0;
+    card.addEventListener('mousedown', e => { downX = e.clientX; downY = e.clientY; });
+    card.addEventListener('click', e => {
+      if (e.target.closest('.card-copy-btn')) return;
+      const dist = Math.hypot(e.clientX - downX, e.clientY - downY);
+      if (dist > 4) return;
+      if (window.getSelection && window.getSelection().toString().length > 0) return;
+      e.stopPropagation();
+      focusTable(t.name);
+    });
+
+    const copyBtn = card.querySelector('.card-copy-btn');
+    copyBtn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const ok = await copyToClipboard(buildTableSpec(t));
+      copyBtn.textContent = ok ? 'Copied' : 'Failed';
+      copyBtn.classList.add('copied');
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy';
+        copyBtn.classList.remove('copied');
+      }, 1500);
+    });
+
+    cardsEl.appendChild(card);
+  });
+}
+
+// ==========================================================================
+// 3) Cytoscape — 그래프 구조 + 레이아웃 + 엣지 라우팅
+//    노드 자체는 보이지 않게(투명), HTML 카드가 시각 표현
+// ==========================================================================
+function buildElements() {
+  const nodes = schema.tables.map(t => ({ data: { id: t.name } }));
+  const edges = schema.relations.map((r, i) => ({
+    data: { id: `e${i}`, source: r.from, target: r.to, label: `${r.fromCol} → ${r.toCol}`, relation: r },
+  }));
+  return [...nodes, ...edges];
+}
+
+const cy = cytoscape({
+  container: document.getElementById('cy'),
+  elements: buildElements(),
+  wheelSensitivity: 0.2,
+  autoungrabify: true,
+  style: [
+    {
+      selector: 'node',
+      style: {
+        'shape': 'round-rectangle',
+        'background-opacity': 0,
+        'border-width': 0,
+        'label': '',
+      },
+    },
+    {
+      selector: 'edge',
+      style: {
+        'curve-style': 'bezier',
+        'width': 1.6,
+        'line-color': '#3a5a8a',
+        'target-arrow-color': '#5a7ab0',
+        'target-arrow-shape': 'triangle',
+        'source-arrow-shape': 'tee',
+        'source-arrow-color': '#5a7ab0',
+        'arrow-scale': 1.1,
+        'label': 'data(label)',
+        'font-size': 9,
+        'color': '#5a7ab0',
+        'text-background-color': '#0a1020',
+        'text-background-opacity': 0.85,
+        'text-background-padding': 2,
+        'text-rotation': 'autorotate',
+        'transition-property': 'opacity, line-color, target-arrow-color, source-arrow-color, width',
+        'transition-duration': '0.2s',
+      },
+    },
+    { selector: 'edge.faded', style: { 'opacity': 0.1 } },
+    { selector: 'edge.highlight', style: { 'line-color': '#e94560', 'target-arrow-color': '#e94560', 'source-arrow-color': '#e94560', 'width': 2.4 } },
+  ],
+});
+
+// ==========================================================================
+// 4) 카드 ↔ Cytoscape 동기화
+// ==========================================================================
+function syncNodeSizesFromCards() {
+  schema.tables.forEach(t => {
+    const card = cardsEl.querySelector(`[data-table="${CSS.escape(t.name)}"]`);
+    if (!card) return;
+    const w = card.offsetWidth || 280;
+    const h = card.offsetHeight || 120;
+    cy.getElementById(t.name).style({ width: w, height: h });
+  });
+}
+function syncCardPositions() {
+  schema.tables.forEach(t => {
+    const card = cardsEl.querySelector(`[data-table="${CSS.escape(t.name)}"]`);
+    if (!card) return;
+    const pos = cy.getElementById(t.name).position();
+    const w = card.offsetWidth, h = card.offsetHeight;
+    card.style.left = (pos.x - w / 2) + 'px';
+    card.style.top  = (pos.y - h / 2) + 'px';
+  });
+}
+function syncOverlayTransform() {
+  const pan = cy.pan(), zoom = cy.zoom();
+  cardsEl.style.transform = `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`;
+}
+cy.on('pan zoom resize', syncOverlayTransform);
+
+function runLayout() {
+  return new Promise(resolve => {
+    const layout = cy.layout({
+      name: 'dagre',
+      rankDir: 'LR',
+      nodeSep: 60,
+      rankSep: 180,
+      edgeSep: 30,
+    });
+    layout.one('layoutstop', () => {
+      syncCardPositions();
+      syncOverlayTransform();
+      resolve();
+    });
+    layout.run();
+  });
+}
+
+// ==========================================================================
+// 5) 사이드바 + 검색
+// ==========================================================================
+const tableListEl = document.getElementById('tableList');
+const searchInput = document.getElementById('searchInput');
+
+function buildTableList() {
+  const filter = searchInput.value.toLowerCase().trim();
+  tableListEl.innerHTML = '';
+  let visibleSet = null;
+  if (filter) {
+    visibleSet = new Set();
+    schema.tables.forEach(t => {
+      const matchesName = t.name.toLowerCase().includes(filter);
+      const matchesComment = (t.comment || '').toLowerCase().includes(filter);
+      const matchesColumn = t.columns.some(c =>
+        c.name.toLowerCase().includes(filter) ||
+        (c.comment || '').toLowerCase().includes(filter)
+      );
+      if (matchesName || matchesComment || matchesColumn) visibleSet.add(t.name);
+    });
+  }
+  let visible = 0;
+  schema.tables.forEach(t => {
+    if (visibleSet && !visibleSet.has(t.name)) return;
+    visible++;
+    const div = document.createElement('div');
+    div.className = 'tbl-item';
+    div.dataset.table = t.name;
+    div.innerHTML = `
+      <div class="tbl-name">${t.name}</div>
+      ${t.comment ? `<div class="tbl-comment">${t.comment}</div>` : ''}
+    `;
+    div.addEventListener('click', () => focusTable(t.name));
+    tableListEl.appendChild(div);
+  });
+
+  const countEl = document.getElementById('tablesCount');
+  if (countEl) {
+    const total = schema.tables.length;
+    countEl.textContent = visible === total ? `${total}` : `${visible}/${total}`;
+  }
+
+  // 그래프 카드도 필터에 맞춰 표시/숨김
+  schema.tables.forEach(t => {
+    const card = cardsEl.querySelector(`[data-table="${CSS.escape(t.name)}"]`);
+    if (!card) return;
+    if (visibleSet && !visibleSet.has(t.name)) card.classList.add('hidden');
+    else card.classList.remove('hidden');
+  });
+}
+searchInput.addEventListener('input', buildTableList);
+
+function setActiveListItem(tableName) {
+  tableListEl.querySelectorAll('.tbl-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.table === tableName);
+  });
+}
+
+// ==========================================================================
+// 6) Focus mode
+// ==========================================================================
+let focusMode = true;
+
+function focusTable(tableName) {
+  const node = cy.getElementById(tableName);
+  if (!node || node.empty()) return;
+
+  cy.elements().removeClass('faded highlight');
+  cardsEl.querySelectorAll('.erd-card').forEach(c => c.classList.remove('selected', 'neighbor', 'faded'));
+
+  const card = cardsEl.querySelector(`[data-table="${CSS.escape(tableName)}"]`);
+  if (card) card.classList.add('selected');
+
+  if (focusMode) {
+    const neighborhood = node.closedNeighborhood();
+    const neighborIds = new Set(neighborhood.nodes().map(n => n.id()));
+    cy.edges().forEach(e => {
+      if (neighborhood.edges().has(e)) e.addClass('highlight');
+      else e.addClass('faded');
+    });
+    schema.tables.forEach(t => {
+      const c = cardsEl.querySelector(`[data-table="${CSS.escape(t.name)}"]`);
+      if (!c) return;
+      if (t.name === tableName) return;
+      if (neighborIds.has(t.name)) c.classList.add('neighbor');
+      else c.classList.add('faded');
+    });
+  }
+
+  setActiveListItem(tableName);
+  history.replaceState(null, '', `#table=${encodeURIComponent(tableName)}`);
+}
+
+function clearFocus() {
+  cy.elements().removeClass('faded highlight');
+  cardsEl.querySelectorAll('.erd-card').forEach(c => c.classList.remove('selected', 'neighbor', 'faded'));
+  setActiveListItem(null);
+  history.replaceState(null, '', location.pathname);
+}
+
+// 빈 영역 클릭 시 focus 해제
+cy.on('tap', evt => { if (evt.target === cy) clearFocus(); });
+
+// ==========================================================================
+// 6.5) 드래그앤드롭 — 카드 헤더를 잡아 노드 이동
+//   - 헤더 영역에서만 드래그 시작 (본문 텍스트 선택과 충돌 방지)
+//   - cytoscape 노드 position 갱신 → 엣지는 자동으로 따라옴
+// ==========================================================================
+let dragState = null;
+cardsEl.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  if (e.target.closest('.card-copy-btn')) return;
+  const header = e.target.closest('.card-header');
+  if (!header) return;
+  const card = header.closest('.erd-card');
+  if (!card) return;
+  // 텍스트 선택 중이면 드래그 시작하지 않음 (선택 우선)
+  const sel = window.getSelection();
+  if (sel && sel.toString().length > 0) return;
+
+  const tableName = card.dataset.table;
+  const node = cy.getElementById(tableName);
+  if (!node || node.empty()) return;
+  const pos = node.position();
+
+  e.preventDefault(); // 헤더 텍스트 자동 선택 방지
+  dragState = {
+    tableName, card,
+    startClientX: e.clientX, startClientY: e.clientY,
+    startNodeX: pos.x, startNodeY: pos.y,
+  };
+  card.classList.add('dragging');
+});
+document.addEventListener('mousemove', e => {
+  if (!dragState) return;
+  const zoom = cy.zoom();
+  const dx = (e.clientX - dragState.startClientX) / zoom;
+  const dy = (e.clientY - dragState.startClientY) / zoom;
+  const nx = dragState.startNodeX + dx;
+  const ny = dragState.startNodeY + dy;
+  cy.getElementById(dragState.tableName).position({ x: nx, y: ny });
+  const w = dragState.card.offsetWidth, h = dragState.card.offsetHeight;
+  dragState.card.style.left = (nx - w / 2) + 'px';
+  dragState.card.style.top  = (ny - h / 2) + 'px';
+});
+document.addEventListener('mouseup', () => {
+  if (!dragState) return;
+  dragState.card.classList.remove('dragging');
+  dragState = null;
+});
+
+// ==========================================================================
+// 7) 툴바
+// ==========================================================================
+document.getElementById('btnFit').addEventListener('click', () => cy.animate({ fit: { padding: 60 }, duration: 300 }));
+document.getElementById('btnLayout').addEventListener('click', async () => {
+  await runLayout();
+  cy.animate({ fit: { padding: 60 }, duration: 300 });
+});
+const btnFocus = document.getElementById('btnFocus');
+btnFocus.addEventListener('click', () => {
+  focusMode = !focusMode;
+  btnFocus.textContent = `Focus: ${focusMode ? 'ON' : 'OFF'}`;
+  btnFocus.classList.toggle('active', focusMode);
+  if (!focusMode) {
+    cy.elements().removeClass('faded highlight');
+    cardsEl.querySelectorAll('.erd-card').forEach(c => c.classList.remove('neighbor', 'faded'));
+  }
+});
+
+// ==========================================================================
+// 9) PNG Export — 화면 밖 카드까지 포함한 전체 ERD 한 장
+// ==========================================================================
+async function exportPng() {
+  const btn = document.getElementById('btnExport');
+  const originalLabel = btn.textContent;
+  btn.textContent = 'Exporting…';
+  btn.disabled = true;
+
+  const graphArea = document.getElementById('graph-area');
+  const savedStyle = graphArea.style.cssText;
+  // focus mode가 켜져 있으면 일부 카드가 흐려져 캡처에 반영됨 → 잠시 해제
+  const hadFaded = cy.elements('.faded, .highlight').length > 0;
+  if (hadFaded) {
+    cy.elements().removeClass('faded highlight');
+    cardsEl.querySelectorAll('.erd-card').forEach(c => c.classList.remove('faded', 'neighbor'));
+  }
+
+  try {
+    // 1) 그래프 전체 boundingBox + 패딩
+    const bb = cy.elements().boundingBox();
+    const padding = 80;
+    const exportW = Math.max(800, Math.ceil(bb.w + padding * 2));
+    const exportH = Math.max(600, Math.ceil(bb.h + padding * 2));
+
+    // 2) graph-area를 임시 fixed + 그래프 전체 크기로 확장
+    Object.assign(graphArea.style, {
+      position: 'fixed',
+      left: '0',
+      top: '0',
+      width: exportW + 'px',
+      height: exportH + 'px',
+      zIndex: '9999',
+    });
+    cy.resize();
+    cy.fit(undefined, padding);
+    syncCardPositions();
+    syncOverlayTransform();
+
+    // 3) 안정화 후 캡처 (scale 2로 고해상도)
+    await new Promise(r => setTimeout(r, 250));
+    const canvas = await html2canvas(graphArea, {
+      backgroundColor: '#0a1020',
+      scale: 2,
+      logging: false,
+      useCORS: false,
+      width: exportW,
+      height: exportH,
+    });
+
+    // 4) PNG 다운로드
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    const link = document.createElement('a');
+    link.download = `erd-${stamp}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch (err) {
+    console.error('Export failed:', err);
+    alert('PNG export 실패: ' + (err && err.message ? err.message : err));
+  } finally {
+    // 5) 복원
+    graphArea.style.cssText = savedStyle;
+    cy.resize();
+    cy.fit(undefined, 60);
+    syncCardPositions();
+    syncOverlayTransform();
+    btn.textContent = originalLabel;
+    btn.disabled = false;
+  }
+}
+document.getElementById('btnExport').addEventListener('click', exportPng);
+
+function applyHash() {
+  const m = location.hash.match(/table=([^&]+)/);
+  if (m) focusTable(decodeURIComponent(m[1]));
+}
+window.addEventListener('hashchange', applyHash);
+
+// ==========================================================================
+// 8) 부팅
+// ==========================================================================
+async function boot() {
+  document.getElementById('statTables').textContent = schema.tables.length;
+  document.getElementById('statRelations').textContent = schema.relations.length;
+  buildCards();              // 1) HTML 카드 먼저 그리기
+  syncNodeSizesFromCards();  // 2) 카드 실측 크기를 cy 노드에 반영 (dagre가 이걸로 레이아웃 잡음)
+  buildTableList();          // 3) 사이드바
+  await runLayout();         // 4) 레이아웃 + 카드 위치 동기화
+  cy.fit(undefined, 60);
+  syncOverlayTransform();
+  applyHash();
+}
+boot();
+</script>
+</body>
+</html>
