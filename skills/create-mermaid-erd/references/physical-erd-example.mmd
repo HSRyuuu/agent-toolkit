@@ -1,0 +1,216 @@
+---
+config:
+  theme: dark
+  look: handDrawn
+  layout: elk
+  version: 1
+---
+erDiagram
+	direction BT
+
+	employee {
+		BIGINT employee_id PK "AUTO_INCREMENT"
+		BIGINT department_id FK "IDX"
+		BIGINT position_id FK "IDX"
+		VARCHAR(50) name "NN"
+		VARCHAR(100) email "UQ"
+		DATE hire_date "NN"
+		DATE resign_date ""
+		VARCHAR(20) status "NN, DEFAULT ACTIVE"
+		VARCHAR(20) phone ""
+		TIMESTAMP created_at "NN, DEFAULT NOW()"
+		TIMESTAMP updated_at "NN, DEFAULT NOW()"
+	}
+
+	department {
+		BIGINT department_id PK "AUTO_INCREMENT"
+		BIGINT parent_dept_id FK "IDX, NULLABLE"
+		BIGINT manager_id FK "IDX, NULLABLE"
+		VARCHAR(100) dept_name "NN, UQ"
+		VARCHAR(20) dept_code "UQ"
+		INT sort_order "DEFAULT 0"
+		BOOLEAN is_active "NN, DEFAULT TRUE"
+		TIMESTAMP created_at "NN, DEFAULT NOW()"
+		TIMESTAMP updated_at "NN, DEFAULT NOW()"
+	}
+
+	position {
+		BIGINT position_id PK "AUTO_INCREMENT"
+		VARCHAR(50) position_name "NN, UQ"
+		INT position_level "NN"
+		INT sort_order "DEFAULT 0"
+	}
+
+	attendance {
+		BIGINT attendance_id PK "AUTO_INCREMENT"
+		BIGINT employee_id FK "IDX"
+		DATE work_date "NN, IDX"
+		TIMESTAMP clock_in ""
+		TIMESTAMP clock_out ""
+		VARCHAR(20) att_type "NN"
+		TEXT remark ""
+	}
+
+	leave_type {
+		BIGINT leave_type_id PK "AUTO_INCREMENT"
+		VARCHAR(50) type_name "NN, UQ"
+		INT default_days "NN"
+		BOOLEAN is_paid "NN, DEFAULT TRUE"
+	}
+
+	leave_request {
+		BIGINT leave_request_id PK "AUTO_INCREMENT"
+		BIGINT employee_id FK "IDX"
+		BIGINT leave_type_id FK "IDX"
+		DATE start_date "NN"
+		DATE end_date "NN"
+		DECIMAL(4-1) used_days "NN"
+		VARCHAR(20) approval_status "NN, DEFAULT PENDING"
+		TEXT reason ""
+		TIMESTAMP created_at "NN, DEFAULT NOW()"
+	}
+
+	salary_grade {
+		BIGINT salary_grade_id PK "AUTO_INCREMENT"
+		VARCHAR(50) grade_name "NN, UQ"
+		BIGINT base_amount "NN"
+		BIGINT upper_limit ""
+		BIGINT lower_limit ""
+	}
+
+	salary {
+		BIGINT salary_id PK "AUTO_INCREMENT"
+		BIGINT employee_id FK "IDX"
+		BIGINT salary_grade_id FK "IDX"
+		INT pay_year_month "NN, IDX"
+		BIGINT base_pay "NN"
+		BIGINT allowance_total "DEFAULT 0"
+		BIGINT deduction_total "DEFAULT 0"
+		BIGINT net_pay "NN"
+		DATE pay_date "NN"
+	}
+
+	eval_period {
+		BIGINT eval_period_id PK "AUTO_INCREMENT"
+		VARCHAR(100) period_name "NN"
+		DATE start_date "NN"
+		DATE end_date "NN"
+		VARCHAR(20) eval_status "NN, DEFAULT DRAFT"
+	}
+
+	performance_review {
+		BIGINT review_id PK "AUTO_INCREMENT"
+		BIGINT employee_id FK "IDX"
+		BIGINT eval_period_id FK "IDX"
+		BIGINT reviewer_id FK "IDX"
+		VARCHAR(10) grade ""
+		INT score ""
+		TEXT comment ""
+		TIMESTAMP reviewed_at ""
+	}
+
+	job_posting {
+		BIGINT posting_id PK "AUTO_INCREMENT"
+		BIGINT department_id FK "IDX"
+		BIGINT position_id FK "IDX"
+		VARCHAR(200) title "NN"
+		TEXT description ""
+		INT headcount "NN, DEFAULT 1"
+		DATE open_date "NN"
+		DATE close_date "NN"
+		VARCHAR(20) posting_status "NN, DEFAULT OPEN"
+		TIMESTAMP created_at "NN, DEFAULT NOW()"
+	}
+
+	applicant {
+		BIGINT applicant_id PK "AUTO_INCREMENT"
+		BIGINT posting_id FK "IDX"
+		VARCHAR(50) full_name "NN"
+		VARCHAR(100) email "NN"
+		VARCHAR(20) phone ""
+		TEXT cover_letter ""
+		VARCHAR(20) stage "NN, DEFAULT APPLIED"
+		TIMESTAMP applied_at "NN, DEFAULT NOW()"
+	}
+
+	training {
+		BIGINT training_id PK "AUTO_INCREMENT"
+		VARCHAR(200) training_name "NN"
+		VARCHAR(20) training_type "NN"
+		INT total_hours "NN"
+		VARCHAR(50) instructor ""
+		BOOLEAN is_mandatory "NN, DEFAULT FALSE"
+	}
+
+	training_enrollment {
+		BIGINT enrollment_id PK "AUTO_INCREMENT"
+		BIGINT employee_id FK "IDX"
+		BIGINT training_id FK "IDX"
+		DATE start_date "NN"
+		DATE complete_date ""
+		VARCHAR(20) completion_status "NN, DEFAULT IN_PROGRESS"
+		INT score ""
+	}
+
+	personnel_transfer {
+		BIGINT transfer_id PK "AUTO_INCREMENT"
+		BIGINT employee_id FK "IDX"
+		BIGINT from_dept_id FK "IDX"
+		BIGINT to_dept_id FK "IDX"
+		BIGINT from_position_id FK "IDX"
+		BIGINT to_position_id FK "IDX"
+		VARCHAR(20) transfer_type "NN"
+		DATE effective_date "NN"
+		TEXT reason ""
+		TIMESTAMP created_at "NN, DEFAULT NOW()"
+	}
+
+	employee||--o{attendance:"records"
+	employee||--o{leave_request:"requests"
+	employee||--o{salary:"paid"
+	employee||--o{performance_review:"reviewed"
+	employee||--o{training_enrollment:"enrolls"
+	employee||--o{personnel_transfer:"transferred"
+	employee}o--||department:"belongs_to"
+	employee}o--||position:"holds"
+	department||--o|employee:"managed_by"
+	department||--o{department:"has_sub"
+	department||--o{job_posting:"posts"
+	position||--o{job_posting:"recruits"
+	leave_type||--o{leave_request:"categorizes"
+	salary_grade||--o{salary:"applies"
+	eval_period||--o{performance_review:"conducts"
+	job_posting||--o{applicant:"receives"
+	training||--o{training_enrollment:"includes"
+
+	employee:::blue
+	department:::teal
+	position:::gold
+	attendance:::green
+	leave_type:::orange
+	leave_request:::red
+	salary_grade:::purple
+	salary:::lime
+	eval_period:::slate
+	performance_review:::cyan
+	job_posting:::amber
+	applicant:::pink
+	training:::indigo
+	training_enrollment:::violet
+	personnel_transfer:::sky
+
+	classDef blue stroke-width:1px,stroke-dasharray:none,stroke:#5b6ef5,fill:#1a2040,color:#a4b0ff
+	classDef teal stroke-width:1px,stroke-dasharray:none,stroke:#2dd4bf,fill:#0d2926,color:#7eecd8
+	classDef gold stroke-width:1px,stroke-dasharray:none,stroke:#f0c040,fill:#2a2408,color:#f5d87a
+	classDef green stroke-width:1px,stroke-dasharray:none,stroke:#4ade80,fill:#0f2518,color:#8aedb3
+	classDef orange stroke-width:1px,stroke-dasharray:none,stroke:#fb923c,fill:#2a1a0d,color:#fdb97a
+	classDef red stroke-width:1px,stroke-dasharray:none,stroke:#f87171,fill:#2a1414,color:#fba4a4
+	classDef purple stroke-width:1px,stroke-dasharray:none,stroke:#e879f9,fill:#1f0e2a,color:#f0a8fc
+	classDef lime stroke-width:1px,stroke-dasharray:none,stroke:#a3e635,fill:#1a2408,color:#c4ee7a
+	classDef slate stroke-width:1px,stroke-dasharray:none,stroke:#94a3b8,fill:#1a1e24,color:#b8c4d4
+	classDef cyan stroke-width:1px,stroke-dasharray:none,stroke:#67e8f9,fill:#0e2428,color:#9ef0fb
+	classDef amber stroke-width:1px,stroke-dasharray:none,stroke:#fbbf24,fill:#2a2208,color:#fcd76a
+	classDef pink stroke-width:1px,stroke-dasharray:none,stroke:#f472b6,fill:#2a1020,color:#f9a4d0
+	classDef indigo stroke-width:1px,stroke-dasharray:none,stroke:#818cf8,fill:#181a30,color:#b0b8fb
+	classDef violet stroke-width:1px,stroke-dasharray:none,stroke:#a78bfa,fill:#1e1630,color:#c8b4fc
+	classDef sky stroke-width:1px,stroke-dasharray:none,stroke:#38bdf8,fill:#0e1e2a,color:#7ed4fb

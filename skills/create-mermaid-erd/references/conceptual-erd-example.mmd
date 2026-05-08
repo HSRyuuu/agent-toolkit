@@ -1,0 +1,102 @@
+---
+config:
+  theme: dark
+  look: handDrawn
+  layout: elk
+---
+erDiagram
+	direction BT
+
+	직원 :::blue {
+
+	}
+
+	부서 :::teal {
+
+	}
+
+	직위 :::gold {
+
+	}
+
+	근태 :::green {
+
+	}
+
+	휴가유형 :::orange {
+
+	}
+
+	휴가신청 :::red {
+
+	}
+
+	급여등급 :::purple {
+
+	}
+
+	급여 :::lime {
+
+	}
+
+	평가기간 :::slate {
+
+	}
+
+	인사평가 :::cyan {
+
+	}
+
+	채용공고 :::amber {
+
+	}
+
+	지원자 :::pink {
+
+	}
+
+	교육 :::indigo {
+
+	}
+
+	교육수강 :::violet {
+
+	}
+
+	인사이동 :::sky {
+
+	}
+
+	직원||--o{근태:"기록된다"
+	직원||--o{휴가신청:"신청한다"
+	직원||--o{급여:"지급된다"
+	직원||--o{인사평가:"평가받는다"
+	직원||--o{교육수강:"수강한다"
+	직원||--o{인사이동:"이동된다"
+	직원}o--||부서:"소속된다"
+	직원}o--||직위:"부여된다"
+	부서||--o|직원:"관리한다(장)"
+	부서||--o{부서:"하위부서"
+	부서||--o{채용공고:"공고낸다"
+	직위||--o{채용공고:"모집한다"
+	휴가유형||--o{휴가신청:"분류된다"
+	급여등급||--o{급여:"적용된다"
+	평가기간||--o{인사평가:"수행된다"
+	채용공고||--o{지원자:"지원한다"
+	교육||--o{교육수강:"포함한다"
+
+	classDef blue fill:#1a2040,stroke:#5b6ef5,color:#a4b0ff
+	classDef teal fill:#0d2926,stroke:#2dd4bf,color:#7eecd8
+	classDef gold fill:#2a2408,stroke:#f0c040,color:#f5d87a
+	classDef green fill:#0f2518,stroke:#4ade80,color:#8aedb3
+	classDef orange fill:#2a1a0d,stroke:#fb923c,color:#fdb97a
+	classDef red fill:#2a1414,stroke:#f87171,color:#fba4a4
+	classDef purple fill:#1f0e2a,stroke:#e879f9,color:#f0a8fc
+	classDef lime fill:#1a2408,stroke:#a3e635,color:#c4ee7a
+	classDef slate fill:#1a1e24,stroke:#94a3b8,color:#b8c4d4
+	classDef cyan fill:#0e2428,stroke:#67e8f9,color:#9ef0fb
+	classDef amber fill:#2a2208,stroke:#fbbf24,color:#fcd76a
+	classDef pink fill:#2a1020,stroke:#f472b6,color:#f9a4d0
+	classDef indigo fill:#181a30,stroke:#818cf8,color:#b0b8fb
+	classDef violet fill:#1e1630,stroke:#a78bfa,color:#c8b4fc
+	classDef sky fill:#0e1e2a,stroke:#38bdf8,color:#7ed4fb

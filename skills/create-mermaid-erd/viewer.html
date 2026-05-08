@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>ERD Viewer</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3/dist/svg-pan-zoom.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: #1a1a2e;
+    color: #eee;
+    font-family: "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    height: 44px;
+    background: #16213e;
+    border-bottom: 1px solid #0f3460;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 13px; font-weight: 700; letter-spacing: 1px; color: #e8eef8; }
+  header .subtitle { font-size: 11px; color: #6a7990; }
+  .toolbar { margin-left: auto; display: flex; gap: 4px; }
+  .toolbar button {
+    height: 26px;
+    min-width: 30px;
+    padding: 0 12px;
+    font-size: 12px;
+    background: #0f3460;
+    border: 1px solid #1a4a8a;
+    border-radius: 2px;
+    cursor: pointer;
+    color: #b8c0d0;
+    font-family: inherit;
+  }
+  .toolbar button:hover { background: #1a4a8a; color: #fff; }
+  #viewport {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    background: #1a1a2e;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  #render-container { width: 100%; height: 100%; }
+  #render-container svg {
+    width: 100%;
+    height: 100%;
+    max-width: none !important;
+    max-height: none !important;
+  }
+  .mermaid-source { display: none; }
+  .loading, .error {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .loading { color: #889; }
+  .error { color: #f87171; white-space: pre-wrap; font-family: Consolas, monospace; }
+  .hint {
+    position: fixed;
+    bottom: 12px;
+    right: 14px;
+    font-size: 10px;
+    color: #556;
+    background: rgba(22,33,62,0.85);
+    padding: 4px 10px;
+    border: 1px solid #1f2a44;
+    border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>ERD VIEWER</h1>
+  <span class="subtitle">Mermaid renderer · pan & zoom</span>
+  <div class="toolbar">
+    <button id="btnFit">Fit</button>
+    <button id="btnZoomOut">−</button>
+    <button id="btnZoomIn">+</button>
+  </div>
+</header>
+<div id="viewport">
+  <div class="loading" id="loading">Rendering ERD…</div>
+  <pre class="mermaid-source" id="src">
+<!-- MMD_CONTENT_START -->
+%% 이 주석 사이를 erd.mmd 파일 내용으로 교체하세요.
+%% (frontmatter `--- config: ... ---` 포함 전체 본문을 그대로 붙여넣습니다.)
+<!-- MMD_CONTENT_END -->
+  </pre>
+  <div id="render-container"></div>
+</div>
+<div class="hint">Scroll: zoom &middot; Drag: pan &middot; Double-click: zoom in</div>
+
+<script>
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'dark',
+  securityLevel: 'loose',
+  er: { useMaxWidth: false },
+  flowchart: { useMaxWidth: false },
+});
+
+(async () => {
+  const loading = document.getElementById('loading');
+  const renderContainer = document.getElementById('render-container');
+  const viewport = document.getElementById('viewport');
+  const src = document.getElementById('src').textContent.trim();
+
+  if (!src || src.startsWith('%%')) {
+    loading.remove();
+    const errEl = document.createElement('div');
+    errEl.className = 'error';
+    errEl.textContent = 'No Mermaid source embedded.\nReplace the marker section in this file with the .mmd content.';
+    viewport.appendChild(errEl);
+    return;
+  }
+
+  try {
+    const { svg } = await mermaid.render('erd-graph', src);
+    renderContainer.innerHTML = svg;
+    loading.remove();
+
+    const svgEl = renderContainer.querySelector('svg');
+    if (!svgEl) throw new Error('SVG not generated');
+
+    svgEl.removeAttribute('width');
+    svgEl.removeAttribute('height');
+    svgEl.style.width = '100%';
+    svgEl.style.height = '100%';
+
+    const panZoom = svgPanZoom(svgEl, {
+      panEnabled: true,
+      zoomEnabled: true,
+      dblClickZoomEnabled: true,
+      mouseWheelZoomEnabled: true,
+      controlIconsEnabled: false,
+      fit: true,
+      center: true,
+      minZoom: 0.1,
+      maxZoom: 20,
+    });
+
+    document.getElementById('btnFit').addEventListener('click', () => { panZoom.fit(); panZoom.center(); });
+    document.getElementById('btnZoomIn').addEventListener('click', () => panZoom.zoomBy(1.3));
+    document.getElementById('btnZoomOut').addEventListener('click', () => panZoom.zoomBy(1 / 1.3));
+    window.addEventListener('resize', () => panZoom.resize());
+  } catch (err) {
+    loading.remove();
+    const errEl = document.createElement('div');
+    errEl.className = 'error';
+    errEl.textContent = 'Mermaid render failed:\n\n' + (err && err.message ? err.message : err);
+    viewport.appendChild(errEl);
+    console.error(err);
+  }
+})();
+</script>
+</body>
+</html>
