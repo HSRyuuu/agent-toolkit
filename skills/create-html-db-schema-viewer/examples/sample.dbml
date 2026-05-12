@@ -1,0 +1,60 @@
+Project sample {
+  database_type: 'PostgreSQL'
+  Note: 'Example schema bundled with create-html-erd-viewer-v2.'
+}
+
+enum user_role {
+  admin
+  member
+  guest
+}
+
+Table teams {
+  id          bigint    [pk, note: '팀 ID']
+  name        varchar(80) [not null, note: '팀 이름']
+  description text       [note: '팀 설명']
+  created_at  timestamp  [not null, default: `now()`]
+
+  Note: '팀 정보'
+}
+
+Table users {
+  id           bigint    [pk, note: '사용자 ID']
+  email        varchar(255) [not null, unique, note: '이메일 (로그인 식별자)']
+  display_name varchar(80)  [not null, note: '표시 이름']
+  role         user_role    [not null, default: 'member', note: '권한 레벨']
+  team_id      bigint       [ref: > teams.id, note: '소속 팀']
+  created_at   timestamp    [not null, default: `now()`]
+
+  indexes {
+    email [unique, name: 'idx_users_email']
+    (team_id, role) [name: 'idx_users_team_role']
+  }
+
+  Note: '사용자 계정'
+}
+
+Table posts {
+  id         bigint       [pk, note: '게시글 ID']
+  user_id    bigint       [not null, ref: > users.id, note: '작성자']
+  title      varchar(200) [not null, note: '제목']
+  body       text         [note: '본문']
+  created_at timestamp    [not null, default: `now()`]
+
+  indexes {
+    user_id [name: 'idx_posts_user_id']
+    created_at [name: 'idx_posts_created']
+  }
+
+  Note: '게시글'
+}
+
+Table comments {
+  id         bigint    [pk]
+  post_id    bigint    [not null, ref: > posts.id, note: '댓글이 달린 게시글']
+  user_id    bigint    [not null, ref: > users.id, note: '댓글 작성자']
+  body       text      [not null, note: '댓글 본문']
+  created_at timestamp [not null, default: `now()`]
+
+  Note: '게시글 댓글'
+}

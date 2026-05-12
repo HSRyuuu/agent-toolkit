@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>DBML Source — Schema Explorer</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="schema">
+<nav id="topnav"></nav>
+
+<main class="page">
+  <div class="breadcrumb">
+    <a href="index.html">Dashboard</a> / DBML Source
+  </div>
+
+  <h1>schema.dbml <span class="meta" id="metaSummary"></span></h1>
+
+  <div class="btn-row" style="margin: 8px 0 16px;">
+    <a class="btn" href="https://dbdiagram.io/d" target="_blank" rel="noopener">Open dbdiagram.io →</a>
+    <button class="btn" id="btnDownload">Download .dbml</button>
+  </div>
+
+  <p style="font-size:11px;color:#6a7e96;margin-bottom:12px;">
+    Tip: Copy → paste into <a href="https://dbdiagram.io/d" target="_blank" rel="noopener">dbdiagram.io</a> to edit visually,
+    or save as a file and edit locally then rerun <code>python build.py</code>.
+  </p>
+
+  <div class="code-wrap">
+    <button class="btn primary code-copy-overlay" id="btnCopy">Copy DBML</button>
+    <pre class="code" id="dbmlSource"></pre>
+  </div>
+</main>
+
+<script src="assets/schema.js"></script>
+<script src="assets/schema-normalize.js"></script>
+<script src="assets/nav.js"></script>
+<script src="assets/schema-view.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Schema Dashboard</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="dashboard">
+<nav id="topnav"></nav>
+
+<main class="page">
+  <h1>Schema Dashboard <span class="meta" id="metaSummary"></span></h1>
+
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <h2>Quick Access</h2>
+  <div class="shortcut-grid">
+    <a class="shortcut" href="erd.html">
+      <div class="title">Relationship Diagram</div>
+      <div class="desc">Cytoscape ERD — drag, focus, PNG export</div>
+    </a>
+    <a class="shortcut" href="tables/index.html">
+      <div class="title">All Tables</div>
+      <div class="desc">Sortable / searchable index of every table</div>
+    </a>
+    <a class="shortcut" href="schema.html">
+      <div class="title">DBML Source</div>
+      <div class="desc">Raw schema.dbml — copy or open in dbdiagram.io</div>
+    </a>
+  </div>
+
+  <h2>Most Connected Tables</h2>
+  <div class="section">
+    <table class="data" id="topConnected">
+      <thead>
+        <tr>
+          <th>Table</th>
+          <th>Comment</th>
+          <th style="width: 90px;">In</th>
+          <th style="width: 90px;">Out</th>
+          <th style="width: 90px;">Total</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</main>
+
+<script src="assets/schema.js"></script>
+<script src="assets/schema-normalize.js"></script>
+<script src="assets/nav.js"></script>
+<script src="assets/dashboard.js"></script>
+</body>
+</html>

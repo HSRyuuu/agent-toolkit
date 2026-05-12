@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title data-prefix="Table">Table — Schema Explorer</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body data-page="tables" data-table="__TABLE_NAME__">
+<nav id="topnav"></nav>
+
+<main class="page">
+  <div class="breadcrumb">
+    <a href="../index.html">Dashboard</a> /
+    <a href="index.html">Tables</a> /
+    <span id="crumbName">__TABLE_NAME__</span>
+  </div>
+
+  <h1>
+    <span id="tableName">__TABLE_NAME__</span>
+    <span class="meta" id="tableComment"></span>
+  </h1>
+
+  <div class="btn-row" style="margin: 8px 0 16px;">
+    <a class="btn" href="../erd.html#table=__TABLE_NAME__">View on ERD →</a>
+    <button class="btn" id="btnCopySpec">Copy Spec (markdown)</button>
+  </div>
+
+  <h2>Columns <span style="color:#5a6e8c;font-size:11px;" id="columnsCount"></span></h2>
+  <div class="section" style="padding: 0;">
+    <table class="data" id="columnsTable">
+      <thead>
+        <tr>
+          <th style="width: 32px;">Key</th>
+          <th>Column</th>
+          <th>Type</th>
+          <th style="width: 60px;">Null</th>
+          <th style="width: 120px;">Default</th>
+          <th>Comment</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <h2>Indexes <span style="color:#5a6e8c;font-size:11px;" id="indexesCount"></span></h2>
+  <div class="section" style="padding: 0;" id="indexesSection">
+    <table class="data" id="indexesTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Columns</th>
+          <th style="width: 80px;">Unique</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <h2>Relations</h2>
+  <div class="section">
+    <div style="margin-bottom: 12px;">
+      <div style="font-size:10px;color:#5a6e8c;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">References (outgoing)</div>
+      <div id="outgoing"></div>
+    </div>
+    <div>
+      <div style="font-size:10px;color:#5a6e8c;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Referenced by (incoming)</div>
+      <div id="incoming"></div>
+    </div>
+  </div>
+</main>
+
+<script src="../assets/schema.js"></script>
+<script src="../assets/schema-normalize.js"></script>
+<script src="../assets/nav.js"></script>
+<script src="../assets/detail.js"></script>
+</body>
+</html>

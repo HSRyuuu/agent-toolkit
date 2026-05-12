@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>ERD — Schema Explorer</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+<script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+<script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body data-page="erd" class="erd-page">
+<nav id="topnav"></nav>
+
+<div class="erd-toolbar">
+  <button class="btn" id="btnFit">Fit</button>
+  <button class="btn" id="btnLayout">Re-layout</button>
+  <button class="btn active" id="btnFocus">Focus: ON</button>
+  <button class="btn" id="btnResetLayout">Reset Layout</button>
+  <div class="spacer"></div>
+  <button class="btn" id="btnExport">Export PNG</button>
+</div>
+
+<main class="erd-main">
+  <aside id="erd-sidebar">
+    <div class="sidebar-section">
+      <div class="section-title">Search</div>
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 16 16" fill="none">
+          <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="9.8" y1="9.8" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <input type="text" id="searchInput" placeholder="테이블, 컬럼, 코멘트...">
+      </div>
+    </div>
+    <div class="sidebar-section list-section">
+      <div class="section-title">
+        <span>Tables</span>
+        <span class="count" id="tablesCount">0</span>
+      </div>
+    </div>
+    <div id="tableList"></div>
+  </aside>
+
+  <div id="graph-area">
+    <div id="cy"></div>
+    <div id="cards"></div>
+  </div>
+</main>
+
+<div class="hint">Scroll: zoom · Drag empty: pan · Click card: focus · Click empty: clear · Drag header: move</div>
+
+<script src="assets/schema.js"></script>
+<script src="assets/schema-normalize.js"></script>
+<script src="assets/nav.js"></script>
+<script src="assets/erd.js"></script>
+</body>
+</html>
