@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>{{TITLE}}</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #161a22;
+    --panel-2: #1c2230;
+    --line: #262d3d;
+    --text: #e8eaf0;
+    --text-dim: #9aa3b7;
+    --accent: #ffd24a;
+    --ok: #7ee787;
+    /* 폴백 — data-theme 미설정 시 */
+    --theme-color: #6ee7ff;
+    --theme-rgb: 110 231 255;
+  }
+
+  /* ============ 테마 6종 (cascade) ============ */
+  [data-theme="tech"]  { --theme-color: #6ee7ff; --theme-rgb: 110 231 255; }
+  [data-theme="soft"]  { --theme-color: #ffb86b; --theme-rgb: 255 184 107; }
+  [data-theme="mint"]  { --theme-color: #7ee787; --theme-rgb: 126 231 135; }
+  [data-theme="lilac"] { --theme-color: #c39df0; --theme-rgb: 195 157 240; }
+  [data-theme="pink"]  { --theme-color: #ff79c6; --theme-rgb: 255 121 198; }
+  [data-theme="sky"]   { --theme-color: #82b4ff; --theme-rgb: 130 180 255; }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    line-height: 1.6;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============ 상단 고정 탭 ============ */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(15,17,21,0.92);
+    backdrop-filter: saturate(140%) blur(10px);
+    -webkit-backdrop-filter: saturate(140%) blur(10px);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+  .topbar .menu-btn {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--text);
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .topbar .menu-btn:hover { background: var(--panel-2); }
+
+  /* ─── 탭 그리드: data-cols 값으로 레이아웃 결정 ─── */
+  .tabs {
+    display: grid;
+    gap: 4px;
+    flex: 1;
+    margin-left: 4px;
+  }
+  .tabs[data-cols="2"] { grid-template-columns: repeat(2, 1fr); }
+  .tabs[data-cols="3"] { grid-template-columns: repeat(3, 1fr); }
+  .tabs[data-cols="4"] { grid-template-columns: repeat(2, 1fr); } /* 2×2 */
+  .tabs[data-cols="5"] { grid-template-columns: repeat(6, 1fr); } /* 3+2 */
+  .tabs[data-cols="5"] > .tab-btn:nth-child(-n+3) { grid-column: span 2; }
+  .tabs[data-cols="5"] > .tab-btn:nth-child(n+4)  { grid-column: span 3; }
+  .tabs[data-cols="6"] { grid-template-columns: repeat(3, 1fr); } /* 3×2 */
+
+  .tabs .tab-btn {
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.3px;
+    text-align: center;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tabs .tab-btn .count {
+    font-size: 11px;
+    opacity: 0.7;
+    margin-left: 4px;
+    font-weight: 600;
+  }
+  .tabs .tab-btn.active {
+    background: rgb(var(--theme-rgb) / 0.12);
+    border-color: rgb(var(--theme-rgb) / 0.45);
+    color: var(--theme-color);
+  }
+
+  /* ============ 사이드바 ============ */
+  .sidebar-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 60;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .sidebar-backdrop.open { opacity: 1; pointer-events: auto; }
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    width: 86vw;
+    max-width: 340px;
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    z-index: 70;
+    transform: translateX(-105%);
+    transition: transform 0.22s ease;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-head {
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .sidebar-head .title {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: -0.2px;
+  }
+  .sidebar-head .close-btn {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .sidebar-body {
+    overflow-y: auto;
+    flex: 1;
+    padding: 8px 10px 24px;
+  }
+  .sidebar-body::-webkit-scrollbar { width: 6px; }
+  .sidebar-body::-webkit-scrollbar-thumb {
+    background: var(--line);
+    border-radius: 3px;
+  }
+
+  /* side-part: 탭 1개 = part 1개. data-theme로 톤이 cascade 됨 */
+  .side-part { margin-bottom: 4px; }
+  .side-section-title {
+    font-size: 10.5px;
+    color: var(--theme-color);
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 14px 8px 4px;
+    text-transform: uppercase;
+  }
+  .side-cat {
+    margin: 4px 0 2px;
+    padding: 7px 9px;
+    font-size: 11.5px;
+    color: var(--text);
+    font-weight: 700;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.03);
+  }
+  .side-link {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 7px 9px 7px 14px;
+    color: var(--text-dim);
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 12.5px;
+    line-height: 1.4;
+    transition: background 0.12s;
+  }
+  .side-link:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+  .side-link.active {
+    background: rgb(var(--theme-rgb) / 0.07);
+    color: var(--text);
+  }
+  .side-link .num {
+    color: var(--theme-color);
+    font-weight: 800;
+    font-size: 11px;
+    flex-shrink: 0;
+    min-width: 28px;
+  }
+  .side-link .stars {
+    color: var(--accent);
+    font-size: 10px;
+    flex-shrink: 0;
+    margin-left: 2px;
+    letter-spacing: -1px;
+  }
+
+  /* ============ 메인 콘텐츠 ============ */
+  .wrap { max-width: 760px; margin: 0 auto; padding: 14px 14px 80px; }
+
+  header.hero {
+    padding: 22px 18px 20px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #1a2440 0%, #221a2e 100%);
+    border: 1px solid var(--line);
+    margin-bottom: 18px;
+  }
+  header.hero h1 {
+    margin: 0 0 6px;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+    font-weight: 800;
+  }
+  header.hero .sub {
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  header.hero .badges {
+    margin-top: 12px;
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: rgb(var(--theme-rgb) / 0.08);
+    color: var(--theme-color);
+    border: 1px solid rgb(var(--theme-rgb) / 0.25);
+  }
+  .badge.tip {
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.04);
+    border-color: var(--line);
+  }
+
+  /* ============ 섹션 (cascade로 모든 톤 처리) ============ */
+  section.section {
+    margin-bottom: 36px;
+    scroll-margin-top: 110px;
+  }
+  section.section > h2 {
+    font-size: 18px;
+    margin: 0 0 12px;
+    padding: 16px 14px 14px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  section.section > h2 .tag {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    background: rgb(var(--theme-rgb) / 0.15);
+    color: var(--theme-color);
+  }
+  section.section > .section-desc {
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 0 4px;
+    margin-bottom: 18px;
+  }
+
+  .cat-head {
+    margin: 22px 0 6px;
+    padding: 12px 14px;
+    background: linear-gradient(180deg, rgb(var(--theme-rgb) / 0.06) 0%, rgb(var(--theme-rgb) / 0.02) 100%);
+    border: 1px solid rgb(var(--theme-rgb) / 0.18);
+    border-radius: 10px;
+    scroll-margin-top: 110px;
+  }
+  .cat-head .cat-id {
+    display: inline-block;
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    font-weight: 800;
+    color: var(--theme-color);
+    margin-bottom: 4px;
+  }
+  .cat-head h3 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+  .cat-head .cat-desc {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    line-height: 1.55;
+  }
+
+  /* ============ 카드 ============ */
+  .q {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 14px;
+    margin: 10px 0;
+    scroll-margin-top: 110px;
+  }
+  .q h4.q-title {
+    margin: 0 0 8px;
+    font-size: 15.5px;
+    line-height: 1.45;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .q .qnum {
+    display: inline-block;
+    background: var(--theme-color);
+    color: #14171f;
+    padding: 1px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    vertical-align: 1px;
+    flex-shrink: 0;
+  }
+  .q .stars {
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: -1px;
+    flex-shrink: 0;
+  }
+  .q .qtitle-txt { flex: 1; min-width: 0; }
+  .q .qbody {
+    background: rgba(255,255,255,0.02);
+    border-left: 3px solid var(--theme-color);
+    padding: 10px 12px;
+    margin: 8px 0 14px;
+    font-size: 14px;
+    color: #cfd5e3;
+    border-radius: 0 6px 6px 0;
+  }
+  .followup {
+    margin: 10px 0 6px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 8px;
+  }
+  .followup .label {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    font-weight: 700;
+  }
+  .followup ul { margin: 0; padding-left: 18px; }
+  .followup li { margin: 4px 0; font-size: 13.5px; color: #cfd5e3; }
+
+  details.answer {
+    margin-top: 12px;
+    background:
+      linear-gradient(180deg, rgb(var(--theme-rgb) / 0.07) 0%, rgb(var(--theme-rgb) / 0.03) 100%),
+      #1a2230;
+    border: 1px solid rgb(var(--theme-rgb) / 0.2);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  details.answer > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 12px 14px;
+    font-weight: 700;
+    font-size: 13.5px;
+    color: var(--theme-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+  }
+  details.answer > summary::-webkit-details-marker { display: none; }
+  details.answer > summary::after {
+    content: "펼치기 ▾";
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+  details.answer[open] > summary::after { content: "접기 ▴"; }
+  details.answer .ans-body {
+    padding: 4px 14px 14px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: #d8dde8;
+    border-top: 1px dashed rgba(255,255,255,0.08);
+  }
+  details.answer .ans-body h5 {
+    font-size: 12.5px;
+    color: var(--theme-color);
+    margin: 14px 0 6px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  details.answer .ans-body ul { margin: 4px 0; padding-left: 18px; }
+  details.answer .ans-body li { margin: 3px 0; }
+  details.answer .ans-body p { margin: 6px 0; }
+  details.answer .ans-body strong { color: #fff; }
+  details.answer .ans-body code {
+    background: rgba(255,255,255,0.07);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: #ffd97a;
+  }
+  details.answer .ans-body .quote {
+    border-left: 2px solid rgba(255,255,255,0.15);
+    padding: 6px 10px;
+    margin: 8px 0;
+    color: #b8bfd0;
+    font-style: italic;
+    font-size: 13px;
+  }
+  details.answer .ans-body .tech-req {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 6px;
+    border-left: 3px solid var(--ok);
+    font-size: 12.5px;
+    color: #c8e6c9;
+  }
+  details.answer .ans-body .tech-req .lab {
+    font-weight: 800;
+    color: var(--ok);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .footer {
+    margin-top: 30px;
+    padding: 14px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* 데스크톱 — 사이드바 영구 표시 */
+  @media (min-width: 1080px) {
+    .wrap { max-width: 800px; margin-left: 380px; }
+    .sidebar {
+      transform: translateX(0);
+      width: 320px;
+    }
+    .sidebar-backdrop { display: none; }
+    .topbar .menu-btn { display: none; }
+    .topbar { margin-left: 320px; }
+  }
+
+  @media (max-width: 380px) {
+    body { font-size: 14px; }
+    .q h4.q-title { font-size: 14.5px; }
+    .q .qbody { font-size: 13.5px; }
+    .tabs .tab-btn { font-size: 12px; padding: 8px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ 사이드바 백드롭 ============ -->
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<!-- ============ 사이드바 ============ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <div class="title">📑 {{SIDEBAR_TITLE}}</div>
+    <button class="close-btn" id="sidebarClose" aria-label="사이드바 닫기">✕</button>
+  </div>
+  <div class="sidebar-body">
+
+    <!-- ▼▼▼ 사이드바 — TAB 1 ▼▼▼ -->
+    <div class="side-part" data-theme="tech">
+      <div class="side-section-title">A. {{SIDEBAR_A_HEADING}}</div>
+
+      <div class="side-cat">A. {{CATEGORY_A1_LABEL}}</div>
+      <a class="side-link" href="#q-a1"><span class="num">A1</span><span>{{ITEM_A1_LABEL}}</span><span class="stars">★★★</span></a>
+      <!-- ADD MORE A-ITEMS HERE (q-a2, q-a3 …) -->
+
+      <!-- ADD MORE A-CATEGORIES HERE -->
+    </div>
+
+    <!-- ▼▼▼ 사이드바 — TAB 2 ▼▼▼ -->
+    <div class="side-part" data-theme="soft">
+      <div class="side-section-title">B. {{SIDEBAR_B_HEADING}}</div>
+
+      <div class="side-cat">B. {{CATEGORY_B1_LABEL}}</div>
+      <a class="side-link" href="#q-b1"><span class="num">B1</span><span>{{ITEM_B1_LABEL}}</span><span class="stars">★★★</span></a>
+    </div>
+
+    <!-- ADD MORE SIDE-PARTS HERE for 3-6 tabs.
+         사용 가능 data-theme: tech / soft / mint / lilac / pink / sky.
+         예시:
+         <div class="side-part" data-theme="mint">
+           <div class="side-section-title">C. ...</div>
+           <div class="side-cat">C. ...</div>
+           <a class="side-link" href="#q-c1">...</a>
+         </div>
+    -->
+
+  </div>
+</aside>
+
+<!-- ============ 상단 고정 탭 ============ -->
+<div class="topbar">
+  <button class="menu-btn" id="sidebarOpen" aria-label="목차 열기">☰</button>
+  <!-- data-cols 값을 탭 개수와 일치시킨다 (2~6). 레이아웃이 자동 조정됨. -->
+  <div class="tabs" data-cols="2">
+    <button class="tab-btn active" data-target="tab-1" data-theme="tech">{{TAB_A_LABEL}}<span class="count">{{TAB_A_COUNT}}</span></button>
+    <button class="tab-btn"        data-target="tab-2" data-theme="soft">{{TAB_B_LABEL}}<span class="count">{{TAB_B_COUNT}}</span></button>
+    <!-- ADD MORE TABS HERE for 3-6:
+         <button class="tab-btn" data-target="tab-3" data-theme="mint">...<span class="count">N</span></button>
+         <button class="tab-btn" data-target="tab-4" data-theme="lilac">...<span class="count">N</span></button>
+         <button class="tab-btn" data-target="tab-5" data-theme="pink">...<span class="count">N</span></button>
+         <button class="tab-btn" data-target="tab-6" data-theme="sky">...<span class="count">N</span></button>
+    -->
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <h1>{{HERO_TITLE}}</h1>
+    <div class="sub">{{HERO_SUB}}</div>
+    <div class="badges">
+      <span class="badge">{{HERO_BADGE_1}}</span>
+      <span class="badge tip">{{HERO_BADGE_2}}</span>
+    </div>
+  </header>
+
+  <!-- ====================================== -->
+  <!-- ============== TAB 1 ================= -->
+  <!-- ====================================== -->
+  <section id="tab-1" class="section" data-theme="tech">
+    <h2><span class="tag">PART A</span>{{SECTION_A_TITLE}}</h2>
+    <div class="section-desc">{{SECTION_A_DESC}}</div>
+
+    <div id="cat-a" class="cat-head">
+      <div class="cat-id">CATEGORY A</div>
+      <h3>{{CATEGORY_A1_TITLE}}</h3>
+      <div class="cat-desc">{{CATEGORY_A1_DESC}}</div>
+    </div>
+
+    <!-- ▼ 완전형 카드 (제목 + 본문 + followup + details) -->
+    <article id="q-a1" class="q">
+      <h4 class="q-title"><span class="qnum">A1</span><span class="qtitle-txt">{{ITEM_A1_TITLE}}</span><span class="stars">★★★</span></h4>
+      <div class="qbody">
+        {{ITEM_A1_BODY}}
+      </div>
+      <div class="followup">
+        <div class="label">{{ITEM_A1_NOTE_LABEL}}</div>
+        <ul>
+          <li>{{ITEM_A1_NOTE_1}}</li>
+          <li>{{ITEM_A1_NOTE_2}}</li>
+        </ul>
+      </div>
+      <details class="answer">
+        <summary>💡 {{ITEM_A1_DETAIL_SUMMARY}}</summary>
+        <div class="ans-body">
+          <h5>섹션 헤더</h5>
+          <p>{{ITEM_A1_DETAIL_BODY}}</p>
+          <ul>
+            <li>요점 1 — <strong>강조</strong>는 흰색.</li>
+            <li>인라인 <code>code</code>는 노랑.</li>
+          </ul>
+          <div class="quote">{{ITEM_A1_QUOTE}}</div>
+          <div class="tech-req">
+            <span class="lab">✅ KEY POINTS</span>
+            {{ITEM_A1_KEYWORDS}}
+          </div>
+        </div>
+      </details>
+    </article>
+
+    <!-- ADD MORE A-CARDS HERE — id를 q-a2, q-a3 … 로. 사이드바 링크와 1:1 매칭. -->
+
+  </section>
+
+  <!-- ====================================== -->
+  <!-- ============== TAB 2 ================= -->
+  <!-- ====================================== -->
+  <section id="tab-2" class="section" data-theme="soft">
+    <h2><span class="tag">PART B</span>{{SECTION_B_TITLE}}</h2>
+    <div class="section-desc">{{SECTION_B_DESC}}</div>
+
+    <div id="cat-b" class="cat-head">
+      <div class="cat-id">CATEGORY B</div>
+      <h3>{{CATEGORY_B1_TITLE}}</h3>
+      <div class="cat-desc">{{CATEGORY_B1_DESC}}</div>
+    </div>
+
+    <!-- ▼ 간단형 카드 (제목 + 본문) -->
+    <article id="q-b1" class="q">
+      <h4 class="q-title"><span class="qnum">B1</span><span class="qtitle-txt">{{ITEM_B1_TITLE}}</span><span class="stars">★★</span></h4>
+      <div class="qbody">
+        {{ITEM_B1_BODY}}
+      </div>
+    </article>
+
+  </section>
+
+  <!-- ADD MORE SECTIONS HERE for 3-6 tabs. 형식:
+       <section id="tab-3" class="section" data-theme="mint">
+         <h2><span class="tag">PART C</span>...</h2>
+         <div class="section-desc">...</div>
+         <div id="cat-c" class="cat-head">...</div>
+         <article id="q-c1" class="q">...</article>
+       </section>
+       탭 4 = lilac, 탭 5 = pink, 탭 6 = sky (관습. 실제로는 자유).
+  -->
+
+  <div class="footer">{{FOOTER}}</div>
+
+</div>
+
+<script>
+(function() {
+  const sidebar    = document.getElementById('sidebar');
+  const backdrop   = document.getElementById('sidebarBackdrop');
+  const openBtn    = document.getElementById('sidebarOpen');
+  const closeBtn   = document.getElementById('sidebarClose');
+  const tabBtns    = Array.from(document.querySelectorAll('.tabs .tab-btn'));
+  const sideLinks  = Array.from(document.querySelectorAll('.side-link'));
+  const topbar     = document.querySelector('.topbar');
+  const sections   = tabBtns
+    .map(btn => document.getElementById(btn.dataset.target))
+    .filter(Boolean);
+  const isDesktop  = () => window.matchMedia('(min-width: 1080px)').matches;
+  const offset     = () => topbar.offsetHeight + 20;
+
+  function openSidebar() {
+    if (isDesktop()) return;
+    sidebar.classList.add('open');
+    backdrop.classList.add('open');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    backdrop.classList.remove('open');
+  }
+
+  openBtn.addEventListener('click', openSidebar);
+  closeBtn.addEventListener('click', closeSidebar);
+  backdrop.addEventListener('click', closeSidebar);
+
+  sideLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      if (!isDesktop()) setTimeout(closeSidebar, 150);
+    });
+  });
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const el = document.getElementById(btn.dataset.target);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  function updateActiveTab() {
+    const scrollPos = window.scrollY + offset();
+    let activeIdx = 0;
+    for (let i = 0; i < sections.length; i++) {
+      if (sections[i].offsetTop <= scrollPos) activeIdx = i;
+      else break;
+    }
+    tabBtns.forEach((btn, i) => btn.classList.toggle('active', i === activeIdx));
+  }
+
+  const questionEls = Array.from(document.querySelectorAll('article.q'));
+  function updateActiveSideLink() {
+    const scrollPos = window.scrollY + offset() + 20;
+    let currentId = null;
+    for (const el of questionEls) {
+      if (el.offsetTop <= scrollPos) currentId = el.id;
+      else break;
+    }
+    sideLinks.forEach(link => {
+      const href = link.getAttribute('href').replace('#', '');
+      link.classList.toggle('active', href === currentId);
+    });
+  }
+
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        updateActiveTab();
+        updateActiveSideLink();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+
+  updateActiveTab();
+  updateActiveSideLink();
+})();
+</script>
+
+</body>
+</html>
