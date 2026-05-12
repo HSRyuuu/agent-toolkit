@@ -106,35 +106,24 @@
         const keyClass = c.pk ? 'pk' : c.fk ? 'fk' : '';
         const keyLabel = c.pk ? 'PK' : c.fk ? 'FK' : '';
         const nameClass = c.pk ? 'pk-name' : c.fk ? 'fk-name' : '';
-        return `<tr>
+        const fkAttrs = c.fk
+          ? ` class="fk-row" data-fk-from-col="${c.name}" data-fk-target-table="${c.fk.table}" data-fk-target-col="${c.fk.column}"`
+          : '';
+        return `<tr${fkAttrs}>
           <td class="col-key ${keyClass}">${keyLabel}</td>
           <td class="col-name ${nameClass}">${c.name}</td>
           <td class="col-type">${c.type}</td>
-          <td class="col-comment" title="${(c.comment || '').replace(/"/g, '&quot;')}">${c.comment || ''}</td>
+          <td class="col-comment"><div title="${(c.comment || '').replace(/"/g, '&quot;')}">${c.comment || ''}</div></td>
         </tr>`;
       }).join('');
 
       card.innerHTML = `
         <div class="card-header">
           <div class="card-title">${t.name}</div>
-          ${t.comment ? `<div class="card-comment">${t.comment}</div>` : ''}
+          ${t.comment ? `<div class="card-comment" title="${t.comment.replace(/"/g, '&quot;')}">${t.comment}</div>` : ''}
           <div class="card-actions">
             <a class="card-btn" href="${detailHref(t.name)}" title="Open detail page">info</a>
-            <button class="card-btn card-copy-btn" type="button" title="Copy table spec">Copy</button>
-            <button class="card-btn card-drag-handle" type="button" title="Drag to move" aria-label="Drag to move">
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <line x1="7" y1="5" x2="7" y2="9"/>
-                <line x1="5" y1="7" x2="9" y2="7"/>
-                <line x1="7" y1="3" x2="7" y2="1"/>
-                <polyline points="5 3, 7 1, 9 3"/>
-                <line x1="7" y1="11" x2="7" y2="13"/>
-                <polyline points="5 11, 7 13, 9 11"/>
-                <line x1="3" y1="7" x2="1" y2="7"/>
-                <polyline points="3 5, 1 7, 3 9"/>
-                <line x1="11" y1="7" x2="13" y2="7"/>
-                <polyline points="11 5, 13 7, 11 9"/>
-              </svg>
-            </button>
+            <button class="card-btn card-copy-btn" type="button" title="Copy table spec">copy</button>
           </div>
         </div>
         <table class="card-table"><tbody>${rows}</tbody></table>
@@ -144,6 +133,7 @@
       card.addEventListener('mousedown', e => { downX = e.clientX; downY = e.clientY; });
       card.addEventListener('click', e => {
         if (e.target.closest('.card-actions')) return;
+        if (e.target.closest('.fk-row')) return;
         const dist = Math.hypot(e.clientX - downX, e.clientY - downY);
         if (dist > 4) return;
         if (window.getSelection && window.getSelection().toString().length > 0) return;
@@ -155,10 +145,10 @@
       copyBtn.addEventListener('click', async e => {
         e.stopPropagation();
         const ok = await copyToClipboard(buildTableSpec(t));
-        copyBtn.textContent = ok ? 'Copied' : 'Failed';
+        copyBtn.textContent = ok ? 'copied' : 'failed';
         copyBtn.classList.add('copied');
         setTimeout(() => {
-          copyBtn.textContent = 'Copy';
+          copyBtn.textContent = 'copy';
           copyBtn.classList.remove('copied');
         }, 1500);
       });
@@ -182,26 +172,31 @@
     return [...nodes, ...edges];
   }
 
-  const cy = cytoscape({
-    container: document.getElementById('cy'),
-    elements: buildElements(),
-    wheelSensitivity: 0.2,
-    autoungrabify: true,
-    style: [
+  function readVar(name, fallback) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
+  function buildCyStyle() {
+    const edgeLine    = readVar('--edge-line',     '#3a5a8a');
+    const edgeArrow   = readVar('--edge-arrow',    '#5a7ab0');
+    const edgeLabel   = readVar('--edge-label',    '#8b949e');
+    const edgeLabelBg = readVar('--edge-label-bg', '#0d1117');
+    const accent      = readVar('--accent',        '#e94560');
+    return [
       { selector: 'node', style: { 'shape': 'round-rectangle', 'background-opacity': 0, 'border-width': 0, 'label': '' } },
       { selector: 'edge', style: {
           'curve-style': 'bezier',
           'width': 1.6,
-          'line-color': '#3a5a8a',
-          'target-arrow-color': '#5a7ab0',
+          'line-color': edgeLine,
+          'target-arrow-color': edgeArrow,
           'target-arrow-shape': 'triangle',
           'source-arrow-shape': 'tee',
-          'source-arrow-color': '#5a7ab0',
+          'source-arrow-color': edgeArrow,
           'arrow-scale': 1.1,
           'label': 'data(label)',
           'font-size': 9,
-          'color': '#5a7ab0',
-          'text-background-color': '#0a1020',
+          'color': edgeLabel,
+          'text-background-color': edgeLabelBg,
           'text-background-opacity': 0.85,
           'text-background-padding': 2,
           'text-rotation': 'autorotate',
@@ -209,8 +204,21 @@
           'transition-duration': '0.2s',
       } },
       { selector: 'edge.faded',     style: { 'opacity': 0.1 } },
-      { selector: 'edge.highlight', style: { 'line-color': '#e94560', 'target-arrow-color': '#e94560', 'source-arrow-color': '#e94560', 'width': 2.4 } },
-    ],
+      { selector: 'edge.highlight', style: { 'line-color': accent, 'target-arrow-color': accent, 'source-arrow-color': accent, 'width': 2.4 } },
+    ];
+  }
+
+  const cy = cytoscape({
+    container: document.getElementById('cy'),
+    elements: buildElements(),
+    wheelSensitivity: 0.2,
+    autoungrabify: true,
+    style: buildCyStyle(),
+  });
+
+  // Re-apply cytoscape stylesheet when theme changes (nav.js dispatches it).
+  window.addEventListener('theme-changed', () => {
+    cy.style().fromJson(buildCyStyle()).update();
   });
 
   // ── sync cards <-> cytoscape ─────────────────────────────────────────────
@@ -259,9 +267,9 @@
       const layout = cy.layout({
         name: 'dagre',
         rankDir: 'LR',
-        nodeSep: 60,
-        rankSep: 180,
-        edgeSep: 30,
+        nodeSep: 40,
+        rankSep: 120,
+        edgeSep: 20,
       });
       layout.one('layoutstop', () => {
         syncCardPositions();
@@ -370,6 +378,50 @@
 
   cy.on('tap', evt => { if (evt.target === cy) clearFocus(); });
 
+  // Highlight a single FK edge (clicked from an FK row inside a card).
+  function highlightSingleRelation(fromTable, fromCol, toTable, toCol) {
+    cy.elements().removeClass('faded highlight');
+    cardsEl.querySelectorAll('.erd-card').forEach(c =>
+      c.classList.remove('selected', 'neighbor', 'faded'));
+
+    const idx = schema.relations.findIndex(r =>
+      r.from === fromTable && r.from_col === fromCol &&
+      r.to === toTable && r.to_col === toCol);
+    if (idx < 0) return;
+
+    const edgeId = `e${idx}`;
+    cy.edges().forEach(e => {
+      if (e.id() === edgeId) e.addClass('highlight');
+      else e.addClass('faded');
+    });
+
+    schema.tables.forEach(t => {
+      const c = cardsEl.querySelector(`[data-table="${CSS.escape(t.name)}"]`);
+      if (!c) return;
+      if (t.name === fromTable) c.classList.add('selected');
+      else if (t.name === toTable) c.classList.add('neighbor');
+      else c.classList.add('faded');
+    });
+
+    setActiveListItem(fromTable);
+  }
+
+  // Delegated click on FK rows inside cards.
+  cardsEl.addEventListener('click', e => {
+    const fkRow = e.target.closest('.fk-row');
+    if (!fkRow) return;
+    if (window.getSelection && window.getSelection().toString().length > 0) return;
+    const card = fkRow.closest('.erd-card');
+    if (!card) return;
+    e.stopPropagation();
+    highlightSingleRelation(
+      card.dataset.table,
+      fkRow.dataset.fkFromCol,
+      fkRow.dataset.fkTargetTable,
+      fkRow.dataset.fkTargetCol
+    );
+  });
+
   // ── wheel zoom over cards (forward to cytoscape) ─────────────────────────
   // #cards has pointer-events:none, but .erd-card children have pointer-events:auto,
   // so wheel events fire on the card and stop before reaching #cy. We listen on
@@ -389,13 +441,16 @@
     });
   }, { passive: false });
 
-  // ── drag (handle button only) ────────────────────────────────────────────
+  // ── drag (card header, except the title area which is select-to-copy) ────
   let dragState = null;
   cardsEl.addEventListener('mousedown', e => {
     if (e.button !== 0) return;
-    const handle = e.target.closest('.card-drag-handle');
-    if (!handle) return;
-    const card = handle.closest('.erd-card');
+    if (e.target.closest('.card-actions')) return;
+    // Table-name area is reserved for text selection (drag-to-copy the name)
+    if (e.target.closest('.card-title')) return;
+    const header = e.target.closest('.card-header');
+    if (!header) return;
+    const card = header.closest('.erd-card');
     if (!card) return;
 
     const tableName = card.dataset.table;
@@ -441,7 +496,8 @@
   document.getElementById('btnFit').addEventListener('click',
     () => cy.animate({ fit: { padding: 60 }, duration: 300 }));
 
-  document.getElementById('btnLayout').addEventListener('click', async () => {
+  document.getElementById('btnAutoLayout').addEventListener('click', async () => {
+    clearPositions();
     await runLayout();
     cy.animate({ fit: { padding: 60 }, duration: 300 });
   });
@@ -455,12 +511,6 @@
       cy.elements().removeClass('faded highlight');
       cardsEl.querySelectorAll('.erd-card').forEach(c => c.classList.remove('neighbor', 'faded'));
     }
-  });
-
-  document.getElementById('btnResetLayout').addEventListener('click', async () => {
-    clearPositions();
-    await runLayout();
-    cy.animate({ fit: { padding: 60 }, duration: 300 });
   });
 
   // ── PNG export ───────────────────────────────────────────────────────────
@@ -477,6 +527,8 @@
       cy.elements().removeClass('faded highlight');
       cardsEl.querySelectorAll('.erd-card').forEach(c => c.classList.remove('faded', 'neighbor'));
     }
+    // Hide card action buttons (info / copy / drag handle) in the exported image.
+    document.body.classList.add('exporting');
 
     try {
       const bb = cy.elements().boundingBox();
@@ -494,8 +546,10 @@
       syncOverlayTransform();
 
       await new Promise(r => setTimeout(r, 250));
+      const bgColor = getComputedStyle(document.documentElement)
+        .getPropertyValue('--bg').trim() || '#0d1117';
       const canvas = await html2canvas(graphArea, {
-        backgroundColor: '#0a1020',
+        backgroundColor: bgColor,
         scale: 2,
         logging: false,
         useCORS: false,
@@ -512,6 +566,7 @@
       console.error('Export failed:', err);
       alert('PNG export 실패: ' + (err && err.message ? err.message : err));
     } finally {
+      document.body.classList.remove('exporting');
       graphArea.style.cssText = savedStyle;
       cy.resize();
       cy.fit(undefined, 60);
