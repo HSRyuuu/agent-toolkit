@@ -76,8 +76,8 @@
         <a class="nav-brand" href="${p}index.html">
           <span class="brand-mark"></span>
           <span class="brand-text">
-            <span class="name">ERD VIEWER</span>
-            <span class="meta">schema</span>
+            <span class="name">SCHEMA VIEWER</span>
+            <span class="meta">db</span>
           </span>
         </a>
         <ul class="nav-links">
