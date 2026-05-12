@@ -262,17 +262,33 @@
     return appliedCount > 0;
   }
 
-  // Dagre LR layout. Fast even for large schemas because dagre is O(V+E).
+  // dagre LR when there are relations (typical ERD).
+  // grid when there are 0 relations (legacy DBs without FK constraints) —
+  // dagre would stack every node into a single rank, producing one tall
+  // vertical column. grid spreads the cards across the viewport instead.
   function runLayout() {
     return new Promise(resolve => {
       syncNodeSizesFromCards();
-      const layout = cy.layout({
-        name: 'dagre',
-        rankDir: 'LR',
-        nodeSep: 40,
-        rankSep: 120,
-        edgeSep: 20,
-      });
+      const hasEdges = Array.isArray(schema.relations) && schema.relations.length > 0;
+      const options = hasEdges
+        ? {
+            name: 'dagre',
+            rankDir: 'LR',
+            nodeSep: 40,
+            rankSep: 120,
+            edgeSep: 20,
+          }
+        : {
+            name: 'grid',
+            // wider-than-tall grid (~1.6 aspect) so a 350-table schema spreads
+            // horizontally across the typical screen.
+            cols: Math.max(1, Math.ceil(Math.sqrt(schema.tables.length * 1.6))),
+            avoidOverlap: true,
+            avoidOverlapPadding: 30,
+            fit: true,
+            padding: 40,
+          };
+      const layout = cy.layout(options);
       layout.one('layoutstop', () => {
         syncCardPositions();
         syncOverlayTransform();
