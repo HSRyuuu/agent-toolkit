@@ -262,66 +262,18 @@
     return appliedCount > 0;
   }
 
-  // Layout mode toggled by the Auto Layout button.
-  //   'dagre' → directional (LR), tends to grow vertically with many siblings.
-  //   'fcose' → force-directed, spreads across the available area.
-  let layoutMode = 'dagre';
-  function runLayout(mode) {
-    const m = mode || layoutMode;
+  // Dagre LR layout. Fast even for large schemas because dagre is O(V+E).
+  function runLayout() {
     return new Promise(resolve => {
-      let options;
-      if (m === 'fcose') {
-        // Inflate node sizes so fcose leaves real visual gap between cards.
-        // (cy node bbox = card visual + this padding. syncCardPositions uses
-        // card offsetWidth/Height anyway so the visible card is unchanged.)
-        const FCOSE_NODE_PAD = 80;
-        schema.tables.forEach(t => {
-          const card = cardsEl.querySelector(`[data-table="${CSS.escape(t.name)}"]`);
-          if (!card) return;
-          cy.getElementById(t.name).style({
-            width:  (card.offsetWidth  || 280) + FCOSE_NODE_PAD,
-            height: (card.offsetHeight || 120) + FCOSE_NODE_PAD
-          });
-        });
-        options = {
-          name: 'fcose',
-          quality: 'proof',
-          randomize: true,
-          animate: false,
-          fit: true,
-          padding: 80,
-          nodeSeparation: 200,
-          idealEdgeLength: 320,
-          nodeRepulsion: 16000,
-          gravity: 0.02,
-          gravityRange: 4.0,
-          tilingPaddingVertical: 50,
-          tilingPaddingHorizontal: 50,
-          packComponents: true,
-          // Preserve LR flow: every FK forces (from → left of → to).
-          relativePlacementConstraint: (schema.relations || []).map(r => ({
-            left: r.from,
-            right: r.to,
-            gap: 240
-          })),
-        };
-      } else {
-        // dagre uses actual card sizes for tight, accurate stacking.
-        syncNodeSizesFromCards();
-        options = {
-          name: 'dagre',
-          rankDir: 'LR',
-          nodeSep: 40,
-          rankSep: 120,
-          edgeSep: 20,
-        };
-      }
-      const layout = cy.layout(options);
+      syncNodeSizesFromCards();
+      const layout = cy.layout({
+        name: 'dagre',
+        rankDir: 'LR',
+        nodeSep: 40,
+        rankSep: 120,
+        edgeSep: 20,
+      });
       layout.one('layoutstop', () => {
-        // fcose inflated node sizes to force separation — restore real card
-        // sizes now so edges anchor to the visible card boundary, not the
-        // padded bbox.
-        if (m === 'fcose') syncNodeSizesFromCards();
         syncCardPositions();
         syncOverlayTransform();
         resolve();
@@ -548,9 +500,7 @@
 
   document.getElementById('btnAutoLayout').addEventListener('click', async () => {
     clearPositions();
-    // Toggle: dagre (vertical-ish) ↔ fcose (spread across area)
-    layoutMode = layoutMode === 'dagre' ? 'fcose' : 'dagre';
-    await runLayout(layoutMode);
+    await runLayout();
     cy.animate({ fit: { padding: 60 }, duration: 300 });
   });
 
