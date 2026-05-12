@@ -166,6 +166,44 @@ def render_table_page(template_html, table_name):
     return template_html.replace("__TABLE_NAME__", table_name)
 
 
+# ── error reporting ─────────────────────────────────────────────────────────
+
+def _print_parse_error(dbml_text, exc, src_path):
+    """pydbml ParseException → line:col + ±3 context + likely causes."""
+    lines = dbml_text.splitlines()
+    lineno = getattr(exc, "lineno", None) or getattr(exc, "line", None)
+    col = getattr(exc, "col", None) or getattr(exc, "column", None)
+
+    sys.stderr.write(f"\nDBML 파싱 실패: {src_path}\n")
+    if lineno:
+        loc = f"line {lineno}"
+        if col:
+            loc += f" col {col}"
+        sys.stderr.write(f"  위치: {loc}\n")
+    sys.stderr.write(f"  메시지: {exc}\n")
+
+    if isinstance(lineno, int) and 1 <= lineno <= len(lines):
+        sys.stderr.write("\n--- 주변 컨텍스트 ---\n")
+        start = max(1, lineno - 3)
+        end = min(len(lines), lineno + 3)
+        for i in range(start, end + 1):
+            marker = ">>" if i == lineno else "  "
+            sys.stderr.write(f"{marker} {i:5d} | {lines[i - 1]}\n")
+
+    sys.stderr.write(
+        "\n흔한 원인 (pydbml 실측):\n"
+        "  1. 식별자/타입을 backtick(`)으로 감쌌나요? pydbml은 backtick을 받지 않습니다.\n"
+        "     → 식별자·타입은 plain 또는 \"...\" (double-quote) 만.\n"
+        "  2. 한글 등 비-ASCII가 들어간 타입(예: enum('A','일치'))이 plain인가요?\n"
+        "     → 타입 전체를 \"...\"로 감싸세요. 예: \"enum('A','일치')\"\n"
+        "  3. DBML 예약어와 같은 컬럼명(default, type, table, ref, indexes, DECISION 등)?\n"
+        "     → 컬럼명을 \"...\"로 감싸세요.\n"
+        "  4. 숫자로 시작하는 식별자(2023_export, 3UCL)?\n"
+        "     → \"...\"로 감싸세요.\n"
+        "  자세한 규칙은 SKILL.md의 'pydbml Quoting Rules' 참고.\n"
+    )
+
+
 # ── main ────────────────────────────────────────────────────────────────────
 
 def main():
@@ -184,7 +222,11 @@ def main():
         sys.exit(1)
 
     dbml_text = in_path.read_text(encoding="utf-8")
-    parsed = PyDBML(dbml_text)
+    try:
+        parsed = PyDBML(dbml_text)
+    except Exception as e:
+        _print_parse_error(dbml_text, e, in_path)
+        sys.exit(2)
     schema_obj = build_schema_object(parsed, dbml_text)
 
     # Write assets/schema.js

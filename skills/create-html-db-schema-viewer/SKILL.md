@@ -124,7 +124,14 @@ window.SCHEMA = {
 ### 권장 경로: `build.py`
 
 1. LLM은 `schema.dbml`만 만들면 끝.
-2. 스킬 디렉토리의 `build.py`, `requirements.txt`, `templates/` 전체를 출력 디렉토리로 복사.
+2. 스킬 디렉토리의 `build.py`와 `requirements.txt`를 출력 디렉토리로 복사하고,
+   **`templates/` 안의 모든 파일을 출력 디렉토리 루트로 flatten 복사한다** (디렉토리째가 아님):
+   ```bash
+   cp <skill>/build.py <skill>/requirements.txt <out>/
+   cp -R <skill>/templates/. <out>/      # ← 점(.) 주의: 안의 내용만 풀어서 복사
+   ```
+   → `<out>/index.html`, `<out>/erd.html`, `<out>/tables/_table.html`, `<out>/assets/...`처럼
+   `<out>/templates/...`가 아니라 루트로 펼쳐져야 한다.
 3. `pip install -r requirements.txt && python build.py` 실행.
 4. `build.py`가 `schema.dbml` 파싱 → `assets/schema.js` + `tables/<name>.html` 자동 생성.
 
@@ -217,6 +224,32 @@ LLM이 자연어로 직접 DBML 작성. 모호한 경우:
 5. **schema.html** — schema.dbml 원본이 표시되고, "Copy" 버튼이 클립보드에 복사. "Open in dbdiagram.io" 링크 동작.
 6. file:// 더블클릭으로 열어도 모든 페이지가 정상 동작 (fetch 미사용, `window.SCHEMA` 전역).
 
+## pydbml Quoting Rules (실증)
+
+`pydbml`은 dbdiagram.io 본가 DBML과 일부 다르다. **이 차이를 모르고 짜면 파서가 깨진다**. 실측으로 검증한 규칙:
+
+| 요소 | OK | NG |
+|---|---|---|
+| Table 이름 | `Table users` / `Table "user-table"` / `Table "2023_export"` | `` Table `users` `` (backtick 금지) |
+| Column 이름 | `id int` / `"DECISION" enum_type` | `` `id` int `` (backtick 금지) |
+| Type (ASCII) | `varchar(100)` / `enum('A','B')` / `"mediumint(8) unsigned"` | `` `varchar(100)` `` (backtick 금지) |
+| Type (non-ASCII 포함) | `"enum('A','일치')"` ← **반드시 double-quote** | `enum('A','일치')` (한글 enum 값이 plain이면 깨짐) |
+| Default expression | `` default: `CURRENT_TIMESTAMP` `` / `default: '0000-00-00'` | — (default는 raw expression이라 backtick OK) |
+| Note 안 한글 | `note: '일치'` | — (single-quote 안에 한글은 OK) |
+
+**한 줄 요약**:
+- **식별자(table·column)와 타입은 backtick 절대 금지**. plain 또는 `"..."` (double-quote)만.
+- **한글 등 비-ASCII가 타입 안에 들어가면(예: `enum('A','일치')`) 타입 전체를 `"..."`로 감싼다**.
+- Default는 backtick OK (식별자가 아니라 expression이라서).
+- Note 안의 한글은 single-quote 안이면 OK.
+
+quote가 필요한 식별자:
+- **DBML 예약어와 동일한 이름** (`default`, `type`, `note`, `ref`, `indexes`, `pk`, `enum`, `table`, `unique`, `increment`, `not`, `null`, `as` 등, 대소문자 무관 — `DECISION` 같은 대문자도 포함)
+- **숫자로 시작** (`2023_export`, `3UCL`) — DDL에선 합법이지만 DBML은 quote 필수
+- **하이픈/공백/특수문자/비-ASCII 포함**
+
+> 의심스러우면 quote. 최소 quote 시도로 "깨짐 → 회귀" 사이클을 사용자에게 강제로 겪게 하지 말 것.
+
 ## Common Mistakes
 
 | 실수 | 결과 |
@@ -228,13 +261,21 @@ LLM이 자연어로 직접 DBML 작성. 모호한 경우:
 | `layout.json` 등 별도 레이아웃 파일 만들기 | 파일 깨질 위험. localStorage만 사용 |
 | 컬럼 타입을 추상화 (`bigint`→`int`) | 정보 손실. 원본 문자열 그대로 보존 |
 | FK 형식 다르게 (`"users#id"`) | DBML 표준 `users.id` 점 구분만 |
+| 식별자/타입을 **backtick으로 감쌈** (`` `id` int ``, `` `varchar(255)` ``) | **pydbml은 backtick을 받지 않는다**. 식별자·타입은 plain 또는 `"..."`만 |
+| DBML 예약어와 같은 컬럼명 quote 누락 (`DECISION enum_type`, `default int`) | 파서 깨짐. `"..."`로 감쌀 것 |
+| 숫자로 시작하는 식별자 quote 누락 (`Table 2023_export`) | DBML 문법 오류. `"..."` 필수 |
+| 한글이 들어간 타입을 plain으로 출력 (`enum('A','일치')`) | non-ASCII가 타입에 있으면 반드시 `"..."`로 감싼다 |
 
 ## Quick Reference
 
 ```
 입력 (MCP/DDL/평문/.mmd/.dbml)
-  → schema.dbml 작성
-  → 스킬의 templates/ + build.py + requirements.txt 를 출력 디렉토리로 복사
-  → python build.py  (또는 fallback: LLM이 schema.js + tables/<name>.html 직접 작성)
+  → schema.dbml 작성  (위 "pydbml Quoting Rules" 표 준수)
+  → cp <skill>/build.py <skill>/requirements.txt <out>/
+  → cp -R <skill>/templates/. <out>/         (← templates 내용만 flatten 복사)
+  → pip install -r requirements.txt && python build.py
   → open <out>/index.html
 ```
+
+JSON 메타데이터(MCP / INFORMATION_SCHEMA dump)에서 시작하는 경우, `tools/mysql_to_dbml.py`
+같은 변환기를 거치면 quoting 규칙을 자동으로 지켜준다. `tools/README.md`의 입력 JSON 표준 형식 참조.
