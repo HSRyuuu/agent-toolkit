@@ -1,13 +1,13 @@
 ---
-name: create-html-db-schema-viewer
-description: Use when the user provides DB schema information in any form (DB MCP results, DDL/CREATE TABLE, plain-text spec, Mermaid erDiagram .mmd, or DBML) and wants a multi-page static HTML DB viewer with ERD relationship diagram, per-table detail pages, table listing, and DBML source viewer. 트리거 — "ERD 사이트 만들어줘", "DB 뷰어 정적 사이트", "테이블별 상세 페이지 포함 ERD", "DBML 기반 ERD", "멀티페이지 DB 문서", "schema.dbml viewer", "DDL to multi-page HTML", "DB 스키마 확장형 뷰어", "/create-html-db-schema-viewer".
+name: html-db-schema-viewer-creator
+description: Use when the user provides DB schema information in any form (DB MCP results, DDL/CREATE TABLE, plain-text spec, Mermaid erDiagram .mmd, or DBML) and wants a multi-page static HTML DB viewer with ERD relationship diagram, per-table detail pages, table listing, and DBML source viewer. 트리거 — "ERD 사이트 만들어줘", "DB 뷰어 정적 사이트", "테이블별 상세 페이지 포함 ERD", "DBML 기반 ERD", "멀티페이지 DB 문서", "schema.dbml viewer", "DDL to multi-page HTML", "DB 스키마 확장형 뷰어", "/html-db-schema-viewer-creator".
 ---
 
 # Create HTML DB Schema Viewer (Multi-page, DBML-driven)
 
 ## Overview
 
-DB 스키마를 **여러 HTML/CSS/JS 파일로 구성된 정적 사이트**로 변환한다. 진실의 원천은 `schema.dbml` 하나이며, `build.py`가 그것을 파싱해 `assets/schema.js`와 테이블별 상세 페이지를 자동 생성한다. (단일 HTML 한 파일 결과가 필요하면 별도 스킬 `create-html-erd-viewer`를 사용.)
+DB 스키마를 **여러 HTML/CSS/JS 파일로 구성된 정적 사이트**로 변환한다. 진실의 원천은 `schema.dbml` 하나이며, `build.py`가 그것을 파싱해 `assets/schema.js`와 테이블별 상세 페이지를 자동 생성한다. (단일 HTML 한 파일 결과가 필요하면 별도 스킬 `html-erd-viewer-creator`를 사용.)
 
 핵심 원칙:
 - **DBML이 단일 IR(intermediate representation)**. 입력 형태(MCP/DDL/평문/.mmd/.dbml)와 무관하게 LLM이 먼저 `schema.dbml`로 정규화한다.

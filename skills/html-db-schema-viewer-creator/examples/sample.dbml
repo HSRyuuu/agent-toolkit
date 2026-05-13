@@ -1,6 +1,6 @@
 Project sample {
   database_type: 'PostgreSQL'
-  Note: 'Example schema bundled with create-html-erd-viewer-v2.'
+  Note: 'Example schema bundled with html-erd-viewer-creator-v2.'
 }
 
 enum user_role {

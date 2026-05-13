@@ -1,5 +1,5 @@
 ---
-name: create-html-cheat-sheet
+name: html-cheat-sheet-creator
 description: >
   단일 자기완결형 HTML 치트 시트(cheat sheet)·학습 카드·레퍼런스 시트를
   모바일 우선(데스크톱도 자동 대응)으로 만들 때 사용한다. 상단 고정 2~6 탭
@@ -8,12 +8,12 @@ description: >
   외부 CDN 의존 0, 더블클릭만 하면 어디서든 열린다.
   트리거 - "cheat sheet 만들어줘", "치트시트 HTML", "학습 카드 HTML",
   "단일 html 레퍼런스 시트", "모바일 HTML cheat sheet", "사이드바 + 탭 HTML",
-  "스터디 시트", "/create-html-cheat-sheet".
-  사용하지 않을 때 - 일반 보고서/계획서/설계서 → create-html-docs,
+  "스터디 시트", "/html-cheat-sheet-creator".
+  사용하지 않을 때 - 일반 보고서/계획서/설계서 → html-docs-creator,
   ERD 시각화 → create-mermaid-erd, PDF/docx 결과물.
 ---
 
-# create-html-cheat-sheet — 모바일 우선 단일 HTML 치트 시트 생성기
+# html-cheat-sheet-creator — 모바일 우선 단일 HTML 치트 시트 생성기
 
 ## 이 스킬이 하는 일
 
@@ -47,7 +47,7 @@ HTML 파일
 - **Category** : 한 탭 내부 그룹. 사이드바에서도 그룹 헤더로 보임.
 - **Item (카드)** : 실제 단위 콘텐츠. 제목 + 본문 + 선택적 보조 메모 + 선택적 펼치기.
 
-탭이 1개라면 `create-html-docs`를 쓴다. 7개 이상이라면 콘텐츠를 더 큰 단위로 묶어 6 이하로 줄인다.
+탭이 1개라면 `html-docs-creator`를 쓴다. 7개 이상이라면 콘텐츠를 더 큰 단위로 묶어 6 이하로 줄인다.
 
 ---
 

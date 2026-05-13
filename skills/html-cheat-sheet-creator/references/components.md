@@ -1,4 +1,4 @@
-# Components Reference — create-html-cheat-sheet
+# Components Reference — html-cheat-sheet-creator
 
 CSS class·id·`data-*` 속성 이름은 임의로 바꾸지 않는다. 이 파일에 적힌 그대로 복사해서 쓴다.
 

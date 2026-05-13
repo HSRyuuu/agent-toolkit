@@ -1,5 +1,5 @@
 ---
-name: create-html-erd-viewer
+name: html-erd-viewer-creator
 description: Use when the user provides any kind of database schema info (DB MCP query results, DDL/CREATE TABLE statements, plain-text schema notes, Mermaid erDiagram .mmd, schema 명세서, table lists) and wants it visualized as a single self-contained interactive ERD HTML viewer (no external JSON, one file). 트리거 - "ERD HTML 만들어줘", "DB 시각화 HTML", "인터랙티브 ERD", "테이블 관계도 단일 HTML", "mmd to HTML", "DDL to ERD viewer", "DB 스키마 인터랙티브 뷰".
 ---
 
