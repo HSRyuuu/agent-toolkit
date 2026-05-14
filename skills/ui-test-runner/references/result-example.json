@@ -1,0 +1,106 @@
+{
+  "summary": {
+    "total": 3,
+    "pass": 2,
+    "fail": 1,
+    "startedAt": "2026-05-14T09:12:33.000+09:00",
+    "endedAt": "2026-05-14T09:13:01.000+09:00",
+    "baseUrl": "http://localhost:5173",
+    "browser": "chromium",
+    "headed": false
+  },
+  "cases": [
+    {
+      "id": "TC-001",
+      "name": "사용자 목록 조회",
+      "url": "/users",
+      "data": null,
+      "steps": [
+        "goto /users",
+        "assert text '사용자 목록' visible",
+        "assert tbody tr count >= 1"
+      ],
+      "expected": "사용자 목록 테이블이 비어있지 않다",
+      "actual": "테이블에 12개 row 렌더링 확인",
+      "status": "pass",
+      "durationMs": 1842,
+      "screenshot": "results/2026-05-14_09-12/TC-001.png",
+      "consoleErrors": [],
+      "mockedRequests": []
+    },
+    {
+      "id": "TC-002",
+      "name": "사용자 생성 (mutation 차단)",
+      "url": "/users",
+      "data": { "name": "홍길동", "email": "hong@example.com" },
+      "steps": [
+        "goto /users",
+        "click '신규 등록'",
+        "fill '이름' '홍길동'",
+        "fill '이메일' 'hong@example.com'",
+        "click '저장'"
+      ],
+      "expected": [
+        "모달이 닫힌다",
+        "토스트 '저장되었습니다'",
+        "mockedRequests 에 POST /api/users 가 있다"
+      ],
+      "actual": [
+        "모달 close 확인",
+        "토스트 '저장되었습니다' 노출 확인",
+        "mockedRequests 에 POST /api/users 1건 확인"
+      ],
+      "status": "pass",
+      "durationMs": 2105,
+      "screenshot": "results/2026-05-14_09-12/TC-002.png",
+      "consoleErrors": [],
+      "mockedRequests": [
+        {
+          "via": "fetch",
+          "method": "POST",
+          "url": "http://localhost:5173/api/users",
+          "mockedAt": "2026-05-14T09:12:48.123+09:00",
+          "requestBody": "{\"name\":\"홍길동\",\"email\":\"hong@example.com\"}",
+          "response": { "status": 200, "body": { "ok": true, "mocked": true } }
+        }
+      ]
+    },
+    {
+      "id": "TC-003",
+      "name": "에러 응답 시 토스트 노출",
+      "url": "/users",
+      "data": null,
+      "steps": [
+        "goto /users",
+        "click '신규 등록'",
+        "fill '이름' 'x'",
+        "click '저장'"
+      ],
+      "expected": [
+        "에러 토스트가 보인다",
+        "모달은 여전히 열려있다"
+      ],
+      "actual": [
+        "에러 토스트 미노출",
+        "모달은 열려있음"
+      ],
+      "status": "fail",
+      "failureReason": "에러 토스트 요소를 5초 안에 찾지 못했다 (selector: .toast--error)",
+      "durationMs": 6233,
+      "screenshot": "results/2026-05-14_09-12/TC-003.png",
+      "consoleErrors": [
+        "TypeError: cannot read property 'message' of undefined at toastError.js:42"
+      ],
+      "mockedRequests": [
+        {
+          "via": "fetch",
+          "method": "POST",
+          "url": "http://localhost:5173/api/users",
+          "mockedAt": "2026-05-14T09:13:00.001+09:00",
+          "requestBody": "{\"name\":\"x\"}",
+          "response": { "status": 500, "body": { "error": "internal_error" } }
+        }
+      ]
+    }
+  ]
+}

@@ -44,16 +44,29 @@ Claude Code 안에서:
 
 | 이름 | 설명 |
 |---|---|
-| [agent-harness-construction](skills/agent-harness-construction/SKILL.md) | AI 에이전트의 action space·tool 정의·observation 포맷을 완료율 기준으로 설계·최적화 |
-| [agent-introspection-debugging](skills/agent-introspection-debugging/SKILL.md) | 반복 실패하는 에이전트 런을 캡처·진단·격리 복구하고 자기진단 보고서 작성 |
+| [agent-harness-construction](skills/agent-harness-construction/SKILL.md) | AI 에이전트의 action space·tool 정의·observation 포맷·context 예산 설계·최적화 |
+| [agent-introspection-debugging](skills/agent-introspection-debugging/SKILL.md) | 반복 실패·루프·토큰 소진 중인 에이전트 런을 캡처·진단·격리하고 자기진단 보고서 작성 |
+| [create-mermaid-erd](skills/create-mermaid-erd/SKILL.md) | PRD·도메인 설명을 받아 Mermaid `.mmd` ERD + 단일 `viewer.html` (개념·논리·물리 3종) |
+| [excel-doc-updater](skills/excel-doc-updater/SKILL.md) | form 기반 xlsx(인터페이스 정의서·요구사항 양식)를 별도 데이터 소스로 갱신·재생성 |
+| [excel-ui-test-doc-creator](skills/excel-ui-test-doc-creator/SKILL.md) | 테스트 시나리오·결과(JSON·markdown)를 단위테스트 산출물 xlsx로 생성 |
 | [fastapi-guide](skills/fastapi-guide/SKILL.md) | FastAPI 프로덕션 API 모범 사례 — async/sync, Pydantic, DI, 배포 |
 | [git-master](skills/git-master/SKILL.md) | 원자적 커밋·rebase·히스토리 관리 (저장소 커밋 스타일 자동 감지) |
-| [node-backend-patterns](skills/node-backend-patterns/SKILL.md) | Node·Express·Next.js API 라우트 백엔드 아키텍처·DB·캐싱 패턴 |
-| [prompt-master](skills/prompt-master/SKILL.md) | LLM 프롬프트 엔지니어링 — 전략 선택 + 작성 기법, 서브에이전트 오케스트레이션 |
+| [hsryuuu-writing](skills/hsryuuu-writing/SKILL.md) | hsryuuu(innovation123.tistory.com) 톤·어조·언어 습관 가이드 |
+| [html-cheat-sheet-creator](skills/html-cheat-sheet-creator/SKILL.md) | 모바일 우선 단일 HTML 치트 시트·학습 카드·레퍼런스 시트 (2~6 탭 + 사이드바) |
+| [html-db-schema-viewer-creator](skills/html-db-schema-viewer-creator/SKILL.md) | DBML·DDL·MCP 결과를 다중 페이지 정적 HTML DB 사이트로 (ERD + 테이블 상세 + DBML 뷰어) |
+| [html-docs-creator](skills/html-docs-creator/SKILL.md) | 임의의 input을 외부 CDN 의존 없는 단일 자기완결 HTML 문서로 (노션 톤) |
+| [html-erd-viewer-creator](skills/html-erd-viewer-creator/SKILL.md) | DDL·mmd·schema 명세서를 단일 self-contained 인터랙티브 ERD HTML 파일로 |
+| [node-backend-patterns](skills/node-backend-patterns/SKILL.md) | Node·Express·Next.js API 라우트(또는 NestJS) 백엔드 아키텍처·DB·캐싱 패턴 |
+| [pr](skills/pr/SKILL.md) | GitHub은 `gh pr create`로 자동 생성, 그 외에는 PR/MR draft markdown 파일 생성 |
+| [prompt-master](skills/prompt-master/SKILL.md) | LLM 프롬프트 엔지니어링 — 작성·리뷰·평가, 멀티에이전트 오케스트레이션 |
 | [rest-api-design](skills/rest-api-design/SKILL.md) | REST API 설계 — 리소스 네이밍, 상태 코드, 페이지네이션, 에러 응답, 버전 관리 |
+| [si-project-docs](skills/si-project-docs/SKILL.md) | 한국 SI 업계 IT 프로젝트 산출물(설계서·명세서·계획서 등) 작성·업데이트 |
 | [springboot-java-standards](skills/springboot-java-standards/SKILL.md) | Java 17+ 코딩 표준 + Spring Boot 가이드 (JPA/QueryDSL reference 별도) |
 | [springboot-kotlin-standards](skills/springboot-kotlin-standards/SKILL.md) | Kotlin + Spring Boot 코딩 표준 — null safety, data class, 확장 함수 |
 | [test-sync-verifier](skills/test-sync-verifier/SKILL.md) | 코드 변경 후 테스트 검증 — 테스트 코드만 수정, 프로덕션은 리포트만 |
+| [ui-feature-spec-docs](skills/ui-feature-spec-docs/SKILL.md) | 프론트엔드 소스(±화면정의서)에서 화면별 기능 정의서를 단일 markdown으로 (옵션: Playwright 검증) |
+| [ui-test-runner](skills/ui-test-runner/SKILL.md) | Playwright MCP로 dev 서버 UI 테스트, mutation 요청은 인터셉트해 실제 백엔드 보호 |
+| [writing-skills](skills/writing-skills/SKILL.md) | 새 스킬 작성·기존 스킬 편집·배포 전 검증 |
 
 ### skills-system/
 
@@ -62,6 +75,7 @@ Claude Code 안에서:
 | 이름 | 설명 |
 |---|---|
 | [create-claude-plugin](skills-system/create-claude-plugin/SKILL.md) | 새 로컬 Claude Code 플러그인 스캐폴딩 + marketplace 등록·로드 검증 |
+| [help-agent-toolkit](skills-system/help-agent-toolkit/SKILL.md) | agent-toolkit 스킬 카탈로그 안내 — 전체 목록 또는 의도 기반 추천 |
 | [project-setup](skills-system/project-setup/SKILL.md) | 대상 프로젝트에 검증 스킬·작업 문서 골격을 메뉴 선택형으로 설치 |
 | [recommend-project-setting](skills-system/recommend-project-setting/SKILL.md) | 진행 중 프로젝트의 누락 자산을 read-only로 추천, 명시 요청 시에만 설치 |
 
@@ -77,5 +91,5 @@ _(현재 등록된 스킬 없음)_
 
 | 이름 | 설명 |
 |---|---|
-| [project-setup/](templates/project-setup/) | `project-setup` 스킬이 설치하는 작업 문서 7종(CLAUDE·PROJECT_OVERVIEW·SOURCE_MAP·DB_SCHEMA·DEPLOY·DESIGN·LESSONS) + 스킬 3종(manage-skills·verify-implementation·update-project-docs) |
+| [project-setup/](templates/project-setup/) | `project-setup` 스킬이 설치하는 작업 문서 8종(CLAUDE·PROJECT_OVERVIEW·SOURCE_MAP·DB_SCHEMA·DEPLOY·DESIGN·ADR·LESSONS) + 스킬 3종(manage-skills·verify-implementation·update-project-docs) |
 | [rules/](templates/rules/) | 외부 가이드라인 사본 (Boris Cherny CLAUDE.md 패턴, Karpathy guidelines) |
