@@ -554,6 +554,29 @@
       const exportW = Math.max(800, Math.ceil(bb.w + padding * 2));
       const exportH = Math.max(600, Math.ceil(bb.h + padding * 2));
 
+      // Browser canvas limits: most engines cap a single canvas at 16,384px in
+      // either dimension and ~268M total pixels (Safari stricter). With many
+      // tables, scale=2 easily blows past this and html2canvas silently returns
+      // a blank/black image. Pick the largest scale that fits both caps.
+      const MAX_CANVAS_DIM = 16384;
+      const MAX_CANVAS_AREA = 16384 * 16384;
+      const maxDim = Math.max(exportW, exportH);
+      const area = exportW * exportH;
+      let scale = Math.min(
+        2,
+        MAX_CANVAS_DIM / maxDim,
+        Math.sqrt(MAX_CANVAS_AREA / area)
+      );
+      if (scale < 0.5) {
+        throw new Error(
+          `ERD 영역이 너무 큽니다 (${exportW}×${exportH}px). ` +
+          `Auto Layout으로 카드 위치를 압축하거나, 검색으로 테이블을 부분 집합으로 좁힌 뒤 다시 시도하세요.`
+        );
+      }
+      if (scale < 2) {
+        console.info(`[erd export] downscaled to ${scale.toFixed(2)}x to fit canvas limits`);
+      }
+
       Object.assign(graphArea.style, {
         position: 'fixed', left: '0', top: '0',
         width: exportW + 'px', height: exportH + 'px', zIndex: '9999',
@@ -568,17 +591,24 @@
         .getPropertyValue('--bg').trim() || '#0d1117';
       const canvas = await html2canvas(graphArea, {
         backgroundColor: bgColor,
-        scale: 2,
+        scale,
         logging: false,
         useCORS: false,
         width: exportW,
         height: exportH,
       });
 
+      if (!canvas || canvas.width === 0 || canvas.height === 0) {
+        throw new Error('빈 캔버스가 생성되었습니다. 스키마가 너무 크거나 브라우저 캔버스 한계를 초과했습니다.');
+      }
+
       const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
       const link = document.createElement('a');
       link.download = `erd-${stamp}.png`;
       link.href = canvas.toDataURL('image/png');
+      if (link.href === 'data:,' || link.href.length < 100) {
+        throw new Error('PNG 인코딩 결과가 비어 있습니다. 브라우저 캔버스 한계를 초과했을 가능성이 큽니다.');
+      }
       link.click();
     } catch (err) {
       console.error('Export failed:', err);
