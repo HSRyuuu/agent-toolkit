@@ -121,8 +121,37 @@ window.SCHEMA = {
 └──────────────────────────────┘
 ```
 
+### 환경 가드 (필수, 모든 빌드 시도 전)
+
+빌드 경로(`build.py`)는 다음 의존성이 필요하다. **사용자 환경에 없으면 임의로 설치하지 말고
+사용자에게 무엇이 필요한지 알린 뒤 동의를 받거나 fallback 경로로 전환한다.**
+
+| 항목 | 점검 명령 | 없을 때 |
+|---|---|---|
+| Python 3.9+ | `python3 --version` | **설치 시도 금지.** 사용자에게 "Python 3.9+ 필요"라고 알리고 → LLM fallback |
+| pip | `python3 -m pip --version` | 사용자에게 알린 뒤 동의 시 `python3 -m ensurepip` 또는 fallback |
+| pydbml >= 1.0.10 | `python3 -c "import pydbml"` | `pip install -r requirements.txt` 실행 전 **사용자에게 의존성 목록을 명시하고 동의 요청** |
+
+**알릴 때 사용할 문구 템플릿**:
+
+```
+이 스킬의 빌드 경로(build.py)를 사용하려면 아래 의존성이 필요합니다:
+  - Python 3.9 이상
+  - pip
+  - pydbml >= 1.0.10  (pip install pydbml)
+
+다음 중 어떻게 진행할까요?
+  1) 위 의존성을 설치하고 build.py로 빌드  ← 동의 시 pip install 실행
+  2) 설치 없이 LLM이 직접 정적 사이트를 생성 (fallback 경로)
+```
+
+전역 환경 오염을 피하려면 **가상환경(`python3 -m venv .venv && source .venv/bin/activate`) 안에서**
+설치하는 것을 우선 제안한다. 시스템 파이썬(`brew install python`, `apt install python3` 등) 설치는
+**사용자가 명시적으로 요청하지 않는 한 절대로 시도하지 않는다**.
+
 ### 권장 경로: `build.py`
 
+0. **환경 가드** 통과 확인 (위 표). 의존성 누락 시 사용자에게 목록을 보여주고 동의를 받는다.
 1. LLM은 `schema.dbml`만 만들면 끝.
 2. 스킬 디렉토리의 `build.py`와 `requirements.txt`를 출력 디렉토리로 복사하고,
    **`templates/` 안의 모든 파일을 출력 디렉토리 루트로 flatten 복사한다** (디렉토리째가 아님):
@@ -132,7 +161,7 @@ window.SCHEMA = {
    ```
    → `<out>/index.html`, `<out>/erd.html`, `<out>/tables/_table.html`, `<out>/assets/...`처럼
    `<out>/templates/...`가 아니라 루트로 펼쳐져야 한다.
-3. `pip install -r requirements.txt && python build.py` 실행.
+3. 사용자 동의 후 `pip install -r requirements.txt && python build.py` 실행.
 4. `build.py`가 `schema.dbml` 파싱 → `assets/schema.js` + `tables/<name>.html` 자동 생성.
 
 사용자가 schema를 수정한 뒤 다시 빌드하려면:
@@ -271,9 +300,12 @@ quote가 필요한 식별자:
 ```
 입력 (MCP/DDL/평문/.mmd/.dbml)
   → schema.dbml 작성  (위 "pydbml Quoting Rules" 표 준수)
+  → 환경 가드 점검: python3 --version (>=3.9), python3 -c "import pydbml"
+      • 누락 시: 사용자에게 의존성 목록(Python 3.9+, pip, pydbml>=1.0.10)을 알리고
+        설치 동의 받거나 LLM fallback 경로로 전환
   → cp <skill>/build.py <skill>/requirements.txt <out>/
   → cp -R <skill>/templates/. <out>/         (← templates 내용만 flatten 복사)
-  → pip install -r requirements.txt && python build.py
+  → (동의 후) pip install -r requirements.txt && python build.py
   → open <out>/index.html
 ```
 
