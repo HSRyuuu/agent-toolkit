@@ -6,26 +6,26 @@
 <title>{{TITLE}}</title>
 <style>
   :root {
-    --bg: #0f1115;
-    --panel: #161a22;
-    --panel-2: #1c2230;
-    --line: #262d3d;
-    --text: #e8eaf0;
-    --text-dim: #9aa3b7;
-    --accent: #ffd24a;
-    --ok: #7ee787;
+    --bg: #ffffff;
+    --panel: #f7f8fb;
+    --panel-2: #eef0f5;
+    --line: #e2e5ec;
+    --text: #1a1d24;
+    --text-dim: #5b6477;
+    --accent: #b45309;
+    --ok: #15803d;
     /* 폴백 — data-theme 미설정 시 */
-    --theme-color: #6ee7ff;
-    --theme-rgb: 110 231 255;
+    --theme-color: #0284c7;
+    --theme-rgb: 2 132 199;
   }
 
-  /* ============ 테마 6종 (cascade) ============ */
-  [data-theme="tech"]  { --theme-color: #6ee7ff; --theme-rgb: 110 231 255; }
-  [data-theme="soft"]  { --theme-color: #ffb86b; --theme-rgb: 255 184 107; }
-  [data-theme="mint"]  { --theme-color: #7ee787; --theme-rgb: 126 231 135; }
-  [data-theme="lilac"] { --theme-color: #c39df0; --theme-rgb: 195 157 240; }
-  [data-theme="pink"]  { --theme-color: #ff79c6; --theme-rgb: 255 121 198; }
-  [data-theme="sky"]   { --theme-color: #82b4ff; --theme-rgb: 130 180 255; }
+  /* ============ 테마 6종 (cascade) — 라이트 모드 ============ */
+  [data-theme="tech"]  { --theme-color: #0284c7; --theme-rgb: 2 132 199; }
+  [data-theme="soft"]  { --theme-color: #c2410c; --theme-rgb: 194 65 12; }
+  [data-theme="mint"]  { --theme-color: #15803d; --theme-rgb: 21 128 61; }
+  [data-theme="lilac"] { --theme-color: #7c3aed; --theme-rgb: 124 58 237; }
+  [data-theme="pink"]  { --theme-color: #be185d; --theme-rgb: 190 24 93; }
+  [data-theme="sky"]   { --theme-color: #1d4ed8; --theme-rgb: 29 78 216; }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
@@ -43,10 +43,11 @@
     position: sticky;
     top: 0;
     z-index: 50;
-    background: rgba(15,17,21,0.92);
+    background: rgba(255,255,255,0.92);
     backdrop-filter: saturate(140%) blur(10px);
     -webkit-backdrop-filter: saturate(140%) blur(10px);
     border-bottom: 1px solid var(--line);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.02);
     display: flex;
     align-items: center;
     padding: 8px 10px;
@@ -106,15 +107,15 @@
     font-weight: 600;
   }
   .tabs .tab-btn.active {
-    background: rgb(var(--theme-rgb) / 0.12);
-    border-color: rgb(var(--theme-rgb) / 0.45);
+    background: rgb(var(--theme-rgb) / 0.10);
+    border-color: rgb(var(--theme-rgb) / 0.55);
     color: var(--theme-color);
   }
 
   /* ============ 사이드바 ============ */
   .sidebar-backdrop {
     position: fixed; inset: 0;
-    background: rgba(0,0,0,0.55);
+    background: rgba(20,24,32,0.35);
     z-index: 60;
     opacity: 0;
     pointer-events: none;
@@ -188,7 +189,7 @@
     color: var(--text);
     font-weight: 700;
     border-radius: 6px;
-    background: rgba(255,255,255,0.03);
+    background: rgba(20,24,32,0.04);
   }
   .side-link {
     display: flex;
@@ -202,9 +203,9 @@
     line-height: 1.4;
     transition: background 0.12s;
   }
-  .side-link:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+  .side-link:hover { background: rgba(20,24,32,0.05); color: var(--text); }
   .side-link.active {
-    background: rgb(var(--theme-rgb) / 0.07);
+    background: rgb(var(--theme-rgb) / 0.10);
     color: var(--text);
   }
   .side-link .num {
@@ -228,7 +229,7 @@
   header.hero {
     padding: 22px 18px 20px;
     border-radius: 14px;
-    background: linear-gradient(135deg, #1a2440 0%, #221a2e 100%);
+    background: linear-gradient(135deg, #eff6ff 0%, #fdf2f8 100%);
     border: 1px solid var(--line);
     margin-bottom: 18px;
   }
@@ -251,13 +252,13 @@
     font-size: 11px;
     padding: 4px 9px;
     border-radius: 999px;
-    background: rgb(var(--theme-rgb) / 0.08);
+    background: rgb(var(--theme-rgb) / 0.10);
     color: var(--theme-color);
-    border: 1px solid rgb(var(--theme-rgb) / 0.25);
+    border: 1px solid rgb(var(--theme-rgb) / 0.30);
   }
   .badge.tip {
     color: var(--text-dim);
-    background: rgba(255,255,255,0.04);
+    background: rgba(20,24,32,0.04);
     border-color: var(--line);
   }
 
@@ -283,7 +284,7 @@
     border-radius: 4px;
     font-weight: 800;
     letter-spacing: 0.8px;
-    background: rgb(var(--theme-rgb) / 0.15);
+    background: rgb(var(--theme-rgb) / 0.12);
     color: var(--theme-color);
   }
   section.section > .section-desc {
@@ -297,8 +298,8 @@
   .cat-head {
     margin: 22px 0 6px;
     padding: 12px 14px;
-    background: linear-gradient(180deg, rgb(var(--theme-rgb) / 0.06) 0%, rgb(var(--theme-rgb) / 0.02) 100%);
-    border: 1px solid rgb(var(--theme-rgb) / 0.18);
+    background: linear-gradient(180deg, rgb(var(--theme-rgb) / 0.08) 0%, rgb(var(--theme-rgb) / 0.03) 100%);
+    border: 1px solid rgb(var(--theme-rgb) / 0.25);
     border-radius: 10px;
     scroll-margin-top: 110px;
   }
@@ -324,12 +325,13 @@
 
   /* ============ 카드 ============ */
   .q {
-    background: var(--panel);
+    background: #ffffff;
     border: 1px solid var(--line);
     border-radius: 12px;
     padding: 16px 14px;
     margin: 10px 0;
     scroll-margin-top: 110px;
+    box-shadow: 0 1px 2px rgba(20,24,32,0.04);
   }
   .q h4.q-title {
     margin: 0 0 8px;
@@ -345,7 +347,7 @@
   .q .qnum {
     display: inline-block;
     background: var(--theme-color);
-    color: #14171f;
+    color: #ffffff;
     padding: 1px 7px;
     border-radius: 4px;
     font-size: 11px;
@@ -361,18 +363,19 @@
   }
   .q .qtitle-txt { flex: 1; min-width: 0; }
   .q .qbody {
-    background: rgba(255,255,255,0.02);
+    background: rgb(var(--theme-rgb) / 0.04);
     border-left: 3px solid var(--theme-color);
     padding: 10px 12px;
     margin: 8px 0 14px;
     font-size: 14px;
-    color: #cfd5e3;
+    color: #2d323e;
     border-radius: 0 6px 6px 0;
   }
   .followup {
     margin: 10px 0 6px;
     padding: 10px 12px;
-    background: rgba(255,255,255,0.03);
+    background: #f4f5f8;
+    border: 1px solid #eaecf2;
     border-radius: 8px;
   }
   .followup .label {
@@ -384,14 +387,14 @@
     font-weight: 700;
   }
   .followup ul { margin: 0; padding-left: 18px; }
-  .followup li { margin: 4px 0; font-size: 13.5px; color: #cfd5e3; }
+  .followup li { margin: 4px 0; font-size: 13.5px; color: #2d323e; }
 
   details.answer {
     margin-top: 12px;
     background:
-      linear-gradient(180deg, rgb(var(--theme-rgb) / 0.07) 0%, rgb(var(--theme-rgb) / 0.03) 100%),
-      #1a2230;
-    border: 1px solid rgb(var(--theme-rgb) / 0.2);
+      linear-gradient(180deg, rgb(var(--theme-rgb) / 0.06) 0%, rgb(var(--theme-rgb) / 0.02) 100%),
+      #ffffff;
+    border: 1px solid rgb(var(--theme-rgb) / 0.28);
     border-radius: 10px;
     overflow: hidden;
   }
@@ -419,8 +422,8 @@
     padding: 4px 14px 14px;
     font-size: 13.5px;
     line-height: 1.7;
-    color: #d8dde8;
-    border-top: 1px dashed rgba(255,255,255,0.08);
+    color: #2d323e;
+    border-top: 1px dashed rgba(20,24,32,0.10);
   }
   details.answer .ans-body h5 {
     font-size: 12.5px;
@@ -432,31 +435,33 @@
   details.answer .ans-body ul { margin: 4px 0; padding-left: 18px; }
   details.answer .ans-body li { margin: 3px 0; }
   details.answer .ans-body p { margin: 6px 0; }
-  details.answer .ans-body strong { color: #fff; }
+  details.answer .ans-body strong { color: #14171f; }
   details.answer .ans-body code {
-    background: rgba(255,255,255,0.07);
+    background: rgba(20,24,32,0.07);
     padding: 1px 5px;
     border-radius: 4px;
     font-size: 12.5px;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    color: #ffd97a;
+    color: #b45309;
   }
   details.answer .ans-body .quote {
-    border-left: 2px solid rgba(255,255,255,0.15);
+    border-left: 2px solid rgba(20,24,32,0.18);
     padding: 6px 10px;
     margin: 8px 0;
-    color: #b8bfd0;
+    color: #4b5364;
     font-style: italic;
     font-size: 13px;
+    background: rgba(20,24,32,0.025);
+    border-radius: 0 6px 6px 0;
   }
   details.answer .ans-body .tech-req {
     margin-top: 12px;
     padding: 10px 12px;
-    background: rgba(0,0,0,0.25);
+    background: rgba(21,128,61,0.07);
     border-radius: 6px;
     border-left: 3px solid var(--ok);
     font-size: 12.5px;
-    color: #c8e6c9;
+    color: #14532d;
   }
   details.answer .ans-body .tech-req .lab {
     font-weight: 800;
@@ -478,10 +483,13 @@
 
   /* 데스크톱 — 사이드바 영구 표시 */
   @media (min-width: 1080px) {
+    body { background: #f3f4f7; }
     .wrap { max-width: 800px; margin-left: 380px; }
     .sidebar {
       transform: translateX(0);
       width: 320px;
+      background: #ffffff;
+      box-shadow: 1px 0 0 var(--line);
     }
     .sidebar-backdrop { display: none; }
     .topbar .menu-btn { display: none; }
@@ -600,8 +608,8 @@
           <h5>섹션 헤더</h5>
           <p>{{ITEM_A1_DETAIL_BODY}}</p>
           <ul>
-            <li>요점 1 — <strong>강조</strong>는 흰색.</li>
-            <li>인라인 <code>code</code>는 노랑.</li>
+            <li>요점 1 — <strong>강조</strong>는 진한 글자색.</li>
+            <li>인라인 <code>code</code>는 앰버.</li>
           </ul>
           <div class="quote">{{ITEM_A1_QUOTE}}</div>
           <div class="tech-req">

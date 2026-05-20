@@ -20,7 +20,7 @@ description: >
 어떤 주제(언어 문법, API 요약, 명령어 모음, 면접 질문, 챕터별 핵심 개념 등)든 받아서 **하나의 `.html` 파일**로 출력한다. 그 파일은:
 
 - **외부 의존 0** — CDN, 폰트 링크, JS 라이브러리 모두 없음. 더블클릭만 하면 모바일 사파리·크롬·데스크톱 어디서나 열린다.
-- **다크 테마** + **6종 강조 컬러**(tech=cyan / soft=orange / mint=green / lilac=purple / pink=pink / sky=blue). 탭마다 다른 톤을 줄 수 있고, 모두 CSS 변수(`--theme-color`, `--theme-rgb`)로 cascade 처리됨.
+- **라이트 테마(흰색 배경)** + **6종 강조 컬러**(tech=sky-blue / soft=orange / mint=green / lilac=purple / pink=magenta / sky=indigo). 탭마다 다른 톤을 줄 수 있고, 모두 CSS 변수(`--theme-color`, `--theme-rgb`)로 cascade 처리됨.
 - **상단 고정 2~6 탭** + **좌측 슬라이드 사이드바** + **스크롤 스파이**(현재 보이는 카드를 사이드바에서 자동 하이라이트) + **`<details>` 펼치기** 기본 내장.
 - 모바일 1차 타깃이지만 **`min-width: 1080px`에서 사이드바가 자동으로 영구 표시**되어 PC에서도 자연스럽게 동작.
 
@@ -73,12 +73,12 @@ HTML 파일
 
 | 테마 | 색 | 용도 예시 |
 |---|---|---|
-| `tech` | cyan `#6ee7ff` | 기본 / 기술 / 시스템 |
-| `soft` | orange `#ffb86b` | 응용 / 비기술 |
-| `mint` | green `#7ee787` | 데이터 / 통계 / 환경 |
-| `lilac` | purple `#c39df0` | 디자인 / UX / 추상 개념 |
-| `pink` | pink `#ff79c6` | 마케팅 / 사용자 / 캠페인 |
-| `sky` | blue `#82b4ff` | 인프라 / 네트워크 / 설계 |
+| `tech` | sky-blue `#0284c7` | 기본 / 기술 / 시스템 |
+| `soft` | orange `#c2410c` | 응용 / 비기술 |
+| `mint` | green `#15803d` | 데이터 / 통계 / 환경 |
+| `lilac` | purple `#7c3aed` | 디자인 / UX / 추상 개념 |
+| `pink` | magenta `#be185d` | 마케팅 / 사용자 / 캠페인 |
+| `sky` | indigo `#1d4ed8` | 인프라 / 네트워크 / 설계 |
 
 순서·조합은 자유. 굳이 `tech → soft → mint` 순일 필요는 없다.
 
