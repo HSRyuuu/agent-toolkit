@@ -93,13 +93,13 @@ echo "{검증 통과한 절대 경로}" > ~/.config/kb/path
 
 1. `defuddle` 또는 WebFetch로 본문 추출.
 2. 사이즈 sanity check — 추출 결과가 200KB를 초과하면 사용자에게 "원문이 큽니다. 진행할까요?" 1회 확인.
-3. 원본을 `{kb_root}/raw/{slug}.md`에 저장. slug는 영숫자·하이픈만 허용 (path traversal 방지).
+3. 원본을 `{kb_root}/_raw/{slug}.md`에 저장. slug는 영숫자·하이픈만 허용 (path traversal 방지).
 4. 추출 본문을 1~3문단으로 정리.
 
 ### 2B. 외부 파일
 
 1. 파일명을 slug화 (영숫자·하이픈·언더스코어·점). `..` 거부.
-2. `{kb_root}/raw/{slug}.{ext}`로 복사.
+2. `{kb_root}/_raw/{slug}.{ext}`로 복사.
 3. 텍스트 추출:
    - PDF/PPTX/DOCX → 텍스트 추출
    - 이미지 → LLM이 보고 설명 생성
@@ -121,7 +121,7 @@ echo "{검증 통과한 절대 경로}" > ~/.config/kb/path
    > "_inbox/가 비어있습니다. 정리할 항목이 없습니다."
 3. 파일 1개씩 다음을 수행:
    a. 파일 내용을 읽고 1~3문단으로 요약 추출.
-   b. 파일 타입 따라 Step 2A/2B/2C와 동일하게 처리하되, **raw/ 복사는 건너뜀** (이미 볼트 안에 있음).
+   b. 파일 타입 따라 Step 2A/2B/2C와 동일하게 처리하되, **_raw/ 복사는 건너뜀** (이미 볼트 안에 있음).
    c. Step 3·4·5·6·7을 그대로 진행.
    d. 컨펌 시 추가 옵션 `s/skip` 제공 — 이 파일은 _inbox에 그대로 남김.
    e. 승인 후 쓰기 완료되면 **원본 _inbox 파일은 삭제** (다른 곳에 이미 정리되었으므로).
@@ -233,7 +233,7 @@ grep -rl "tags:.*{키워드}" {kb_root} --include="*.md" 2>/dev/null | head -3
 
 신규 파일 모드인 경우:
 
-1. `{kb_root}` 하위 폴더 트리를 `ls -R`로 스캔 (raw/, .obsidian/, .claude/ 제외).
+1. `{kb_root}` 하위 폴더 트리를 `ls -R`로 스캔 (_raw/, .obsidian/, .claude/ 제외).
 2. 입력 내용 키워드와 폴더명 매칭 → 후보 1~2개 선정.
 3. 매칭되는 폴더가 없으면 다음 3가지를 제안:
    - `03_Resources/{새 카테고리}/` 신규 생성
@@ -289,7 +289,7 @@ grep -rl "tags:.*{키워드}" {kb_root} --include="*.md" 2>/dev/null | head -3
 ---
 tags: [{키워드 3~5개}]
 created: 2026-05-22
-source: "[[raw/{원본 slug}]]"   # url/file 타입일 때만
+source: "[[_raw/{원본 slug}]]"   # url/file 타입일 때만
 ---
 
 # {제목}
@@ -303,7 +303,7 @@ source: "[[raw/{원본 slug}]]"   # url/file 타입일 때만
 - [[관련 문서 3]]
 
 ---
-원본: [[raw/{원본 slug}]]   <!-- url/file 타입일 때만, frontmatter source와 중복이지만 본문에서도 클릭 가능하게 -->
+원본: [[_raw/{원본 slug}]]   <!-- url/file 타입일 때만, frontmatter source와 중복이지만 본문에서도 클릭 가능하게 -->
 ```
 
 ### 7-2. append
@@ -418,7 +418,7 @@ Inbox 정리 완료.
 ```
 # 웹 링크
 /kb-add https://example.com/rag-tutorial
-  → raw/rag-tutorial.md 저장
+  → _raw/rag-tutorial.md 저장
   → "→ 03_Resources/RAG/rag-tutorial-정리.md 신규 생성. OK?"
   → 신규 파일 작성 (위키링크 3개 포함)
 

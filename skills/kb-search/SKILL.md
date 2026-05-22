@@ -80,21 +80,21 @@ test -f ~/.config/kb/path && cat ~/.config/kb/path
 
 ```bash
 grep -rl "tags:.*{키워드}" {kb_root} --include="*.md" \
-  --exclude-dir=raw --exclude-dir=.obsidian --exclude-dir=.claude
+  --exclude-dir=_raw --exclude-dir=.obsidian --exclude-dir=.claude
 ```
 
 ### 계층 2 — 제목 grep
 
 ```bash
 grep -rli "^# .*{키워드}" {kb_root} --include="*.md" \
-  --exclude-dir=raw --exclude-dir=.obsidian --exclude-dir=.claude
+  --exclude-dir=_raw --exclude-dir=.obsidian --exclude-dir=.claude
 ```
 
 ### 계층 3 — 본문 grep
 
 ```bash
 grep -rli "{키워드}" {kb_root} --include="*.md" \
-  --exclude-dir=raw --exclude-dir=.obsidian --exclude-dir=.claude
+  --exclude-dir=_raw --exclude-dir=.obsidian --exclude-dir=.claude
 ```
 
 계층 1·2 결과를 우선하고, 계층 3은 보충용.
@@ -111,7 +111,7 @@ grep -rli "{키워드}" {kb_root} --include="*.md" \
 - 본문 내 키워드 등장 빈도 보조 점수.
 - 최종 본문을 읽을 문서는 **최대 7개**로 제한.
 
-`raw/`, `_inbox/` 폴더의 문서는 답변 출처로 쓰지 않는다 (정리 전 자료).
+`_raw/`, `_inbox/` 폴더의 문서는 답변 출처로 쓰지 않는다 (정리 전 자료).
 
 ---
 
