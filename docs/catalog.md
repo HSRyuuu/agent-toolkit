@@ -2,16 +2,16 @@
 
 > `agent-toolkit` plugin에 등록된 스킬 목록. 분류 기준은 [.claude/CLAUDE.md](../.claude/CLAUDE.md) 참고.
 >
-> Last updated: 2026-05-14
+> Last updated: 2026-05-22
 
 ## 요약
 
 | 디렉토리 | 개수 |
 |---|---|
-| `skills/` (독립 스킬) | 23 |
+| `skills/` (독립 스킬) | 26 |
 | `skills-workflow/` (워크플로우) | 0 |
 | `skills-system/` (메타·스캐폴딩) | 4 |
-| **합계** | **27** |
+| **합계** | **30** |
 
 ---
 
@@ -33,6 +33,9 @@
 | [html-db-schema-viewer-creator](../skills/html-db-schema-viewer-creator/SKILL.md) | DBML·DDL·MCP 결과를 다중 페이지 정적 HTML DB 사이트로 변환 (ERD + 테이블 상세 + DBML 뷰어) | "ERD 사이트 만들어줘", "DB 뷰어 정적 사이트", "schema.dbml viewer" |
 | [html-docs-creator](../skills/html-docs-creator/SKILL.md) | 임의의 input을 외부 CDN 의존 없는 단일 자기완결 HTML 문서로 (노션 톤, 스크롤 스파이, copy 버튼) | "이 내용 HTML로", "보고서·계획서 HTML로", "단일 파일 HTML 문서" |
 | [html-erd-viewer-creator](../skills/html-erd-viewer-creator/SKILL.md) | DDL·mmd·schema 명세서를 단일 self-contained 인터랙티브 ERD HTML 파일로 | "ERD HTML 만들어줘", "인터랙티브 ERD", "mmd to HTML" |
+| [kb-add](../skills/kb-add/SKILL.md) | KB 단일 input 통로 — URL/파일/텍스트/Inbox, 신규·append·modify·remove 모드, 수정·제거 시 ~/.kb-snapshots/ 스냅샷 | "/kb-add", "KB에 추가", "지식 저장소에 추가", "이거 정리해서 넣어줘" |
+| [kb-link](../skills/kb-link/SKILL.md) | KB 위키링크 양방향 보강 — 4종 변형(`[[x]]`·alias·anchor·embed) 인식, Obsidian 그래프 뷰 엣지 추가 | "/kb-link", "그래프 보강해줘", "위키링크 추가해줘" |
+| [kb-search](../skills/kb-search/SKILL.md) | KB 읽기 전용 질의응답 — 4계층 검색(tags/title/body/wikilink) + 출처 [[wikilink]] 인용 | "/kb-search", "KB에서 찾아줘", "위키에서 검색" |
 | [node-backend-patterns](../skills/node-backend-patterns/SKILL.md) | Node·Express·Next.js API 라우트(또는 NestJS) 백엔드 아키텍처·DB·캐싱 패턴 | "Node 백엔드", "Express 라우트", "NestJS", "N+1 쿼리" |
 | [pr](../skills/pr/SKILL.md) | GitHub일 때는 `gh pr create`로 자동 생성, 그 외에는 PR/MR draft markdown 파일 생성 | "PR 만들어줘", "MR 생성", "/pr", "리뷰 요청" |
 | [prompt-master](../skills/prompt-master/SKILL.md) | LLM 프롬프트(시스템·에이전트·1회성·파이프라인) 작성·리뷰·평가, 멀티에이전트 오케스트레이션 | "프롬프트 만들어줘", "prompt 개선", "시스템 프롬프트" |

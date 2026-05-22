@@ -57,6 +57,9 @@ Claude Code 안에서:
 | [html-db-schema-viewer-creator](skills/html-db-schema-viewer-creator/SKILL.md) | DBML·DDL·MCP 결과를 다중 페이지 정적 HTML DB 사이트로 (ERD + 테이블 상세 + DBML 뷰어)           |
 | [html-docs-creator](skills/html-docs-creator/SKILL.md)                         | 임의의 input을 외부 CDN 의존 없는 단일 자기완결 HTML 문서로 (노션 톤)                           |
 | [html-erd-viewer-creator](skills/html-erd-viewer-creator/SKILL.md)             | DDL·mmd·schema 명세서를 단일 self-contained 인터랙티브 ERD HTML 파일로                          |
+| [kb-add](skills/kb-add/SKILL.md)                                               | KB 단일 input 통로 — URL/파일/텍스트/Inbox, 신규/append/modify/remove 모드, 수정·제거 시 스냅샷 |
+| [kb-link](skills/kb-link/SKILL.md)                                             | KB 위키링크 양방향 보강 — 4종 변형 인식, Obsidian 그래프 뷰 엣지 추가                           |
+| [kb-search](skills/kb-search/SKILL.md)                                         | KB 읽기 전용 질의응답 — 4계층 검색(tags/title/body/wikilink) + 출처 인용                        |
 | [node-backend-patterns](skills/node-backend-patterns/SKILL.md)                 | Node·Express·Next.js API 라우트(또는 NestJS) 백엔드 아키텍처·DB·캐싱 패턴                       |
 | [pr](skills/pr/SKILL.md)                                                       | GitHub은 `gh pr create`로 자동 생성, 그 외에는 PR/MR draft markdown 파일 생성                   |
 | [prompt-master](skills/prompt-master/SKILL.md)                                 | LLM 프롬프트 엔지니어링 — 작성·리뷰·평가, 멀티에이전트 오케스트레이션                           |
