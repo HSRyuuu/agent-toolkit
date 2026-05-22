@@ -110,7 +110,7 @@ test -f ~/.config/kb/path && cat ~/.config/kb/path
 
 4. **상위 5개**까지만 후보로 채택.
 
-`raw/`, `00_Inbox/` 폴더는 후보에서 제외.
+`raw/`, `_inbox/` 폴더는 후보에서 제외.
 
 ---
 
