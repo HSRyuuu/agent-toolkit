@@ -34,7 +34,7 @@
 | [html-docs-creator](../skills/html-docs-creator/SKILL.md) | 임의의 input을 외부 CDN 의존 없는 단일 자기완결 HTML 문서로 (노션 톤, 스크롤 스파이, copy 버튼) | "이 내용 HTML로", "보고서·계획서 HTML로", "단일 파일 HTML 문서" |
 | [html-erd-viewer-creator](../skills/html-erd-viewer-creator/SKILL.md) | DDL·mmd·schema 명세서를 단일 self-contained 인터랙티브 ERD HTML 파일로 | "ERD HTML 만들어줘", "인터랙티브 ERD", "mmd to HTML" |
 | [kb-add](../skills/kb-add/SKILL.md) | KB 단일 input 통로 — URL/파일/텍스트/Inbox, 신규·append·modify·remove 모드, 수정·제거 시 ~/.kb-snapshots/ 스냅샷 | "/kb-add", "KB에 추가", "지식 저장소에 추가", "이거 정리해서 넣어줘" |
-| [kb-link](../skills/kb-link/SKILL.md) | KB 위키링크 양방향 보강 — 4종 변형(`[[x]]`·alias·anchor·embed) 인식, Obsidian 그래프 뷰 엣지 추가 | "/kb-link", "그래프 보강해줘", "위키링크 추가해줘" |
+| [kb-lint](../skills/kb-lint/SKILL.md) | KB 건강 점검 + 위키링크 보강 — 깨진 링크·고아·tags 누락·_inbox 방치·_raw 고아·진부·폴더 컨벤션 검사, `--boost-links`로 4종 변형 인식 양방향 엣지 추가 | "/kb-lint", "KB 점검", "위키 건강 체크", "그래프 보강해줘" |
 | [kb-search](../skills/kb-search/SKILL.md) | KB 읽기 전용 질의응답 — 4계층 검색(tags/title/body/wikilink) + 출처 [[wikilink]] 인용 | "/kb-search", "KB에서 찾아줘", "위키에서 검색" |
 | [node-backend-patterns](../skills/node-backend-patterns/SKILL.md) | Node·Express·Next.js API 라우트(또는 NestJS) 백엔드 아키텍처·DB·캐싱 패턴 | "Node 백엔드", "Express 라우트", "NestJS", "N+1 쿼리" |
 | [pr](../skills/pr/SKILL.md) | GitHub일 때는 `gh pr create`로 자동 생성, 그 외에는 PR/MR draft markdown 파일 생성 | "PR 만들어줘", "MR 생성", "/pr", "리뷰 요청" |
