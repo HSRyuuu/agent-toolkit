@@ -1,76 +1,67 @@
 # Skill Catalog
 
-> `agent-toolkit` 저장소의 기본 스킬 목록. 분류 기준은 [AGENTS.md](../AGENTS.md)와 [.claude/CLAUDE.md](../.claude/CLAUDE.md) 참고.
-> Codex는 단일 `skills/` 루트만 등록하므로 `skills-system/`과 `forks/taste-skill/`은 `skills/` 아래 symlink로도 노출한다.
+> `agent-toolkit` 저장소의 현재 플러그인 스킬 목록.
+> 이 문서는 `skills/*/SKILL.md` frontmatter에서 생성한다.
 >
 > Last updated: 2026-06-21
 
 ## 요약
 
-| 디렉토리 | 개수 |
-|---|---|
-| `skills/` (독립 스킬) | 25 |
-| `skills-workflow/` (워크플로우) | 0 |
-| `skills-system/` (메타·스캐폴딩) | 4 |
-| **합계** | **29** |
+| 항목 | 개수 |
+|---|---:|
+| Physical plugin skills under `skills/` | 44 |
 
----
+스킬 카테고리는 이름과 설명에서 읽는 메타데이터다. 플러그인 로더 기준의 활성 스킬 루트는 `skills/` 하나다.
 
-## skills/ — 독립 스킬
+## 스킬 목록
 
-단일 목적, 다른 스킬에 의존하지 않고 단독으로 동작.
-
-| 이름 | 한 줄 설명 | 주요 트리거 |
+| 디렉토리 | Frontmatter name | Frontmatter description |
 |---|---|---|
-| [agent-harness-construction](../skills/agent-harness-construction/SKILL.md) | AI 에이전트의 action space·tool 정의·observation 포맷·context 예산 설계·최적화 | "agent design review", "harness construction", "tool 정의 정리" |
-| [agent-introspection-debugging](../skills/agent-introspection-debugging/SKILL.md) | 반복 실패·루프·토큰 소진 중인 에이전트 런을 진단하고 자기진단 보고서 작성 | "agent stuck", "agent looping", "self-debug", "introspection report" |
-| [create-mermaid-erd](../skills/create-mermaid-erd/SKILL.md) | PRD·도메인 설명을 받아 Mermaid `.mmd` ERD + 단일 `viewer.html`을 함께 출력 (개념·논리·물리 3종) | "ERD 만들어줘", "테이블 관계도", "데이터 모델링", "mmd 뷰어" |
-| [excel-doc-updater](../skills/excel-doc-updater/SKILL.md) | form 기반 xlsx(인터페이스 정의서·요구사항 양식 등)를 별도 데이터 소스(markdown/JSON/DB) 기준으로 갱신 | xlsx 양식 갱신·재생성 요청 (코드 편집·일반 문서 갱신 제외) |
-| [excel-ui-test-doc-creator](../skills/excel-ui-test-doc-creator/SKILL.md) | 테스트 시나리오/결과(JSON·markdown)를 단위테스트 산출물 xlsx로 생성 (사용자 템플릿 우선, 없으면 기본 양식) | "테스트 결과 엑셀로", "단위테스트 산출물", "QA 테스트 결과서" |
-| [fastapi-guide](../skills/fastapi-guide/SKILL.md) | FastAPI 프로덕션 API 작성·리뷰·리팩토링 — async/sync, Pydantic, DI, 배포 | FastAPI 코드 작성·리뷰·리팩토링, async/sync 선택 |
-| [git-master](../skills/git-master/SKILL.md) | 원자적 커밋·rebase·히스토리 관리·blame 추적 (스타일 자동 감지) | "커밋해줘", "atomic commit", "rebase", "git history" |
-| [hsryuuu-writing](../skills/hsryuuu-writing/SKILL.md) | hsryuuu(innovation123.tistory.com) 톤·어조·언어 습관 가이드 — 글의 어휘·문장에만 관여 | "hsryuuu처럼 써줘", "내 블로그 말투로", "tistory 톤" |
-| [html-cheat-sheet-creator](../skills/html-cheat-sheet-creator/SKILL.md) | 모바일 우선 단일 HTML 치트 시트·학습 카드·레퍼런스 시트 (2~6 탭, 사이드바, 스크롤 스파이) | "cheat sheet 만들어줘", "치트시트 HTML", "학습 카드 HTML" |
-| [html-db-schema-viewer-creator](../skills/html-db-schema-viewer-creator/SKILL.md) | DBML·DDL·MCP 결과를 다중 페이지 정적 HTML DB 사이트로 변환 (ERD + 테이블 상세 + DBML 뷰어) | "ERD 사이트 만들어줘", "DB 뷰어 정적 사이트", "schema.dbml viewer" |
-| [html-docs-creator](../skills/html-docs-creator/SKILL.md) | 임의의 input을 외부 CDN 의존 없는 단일 자기완결 HTML 문서로 (노션 톤, 스크롤 스파이, copy 버튼) | "이 내용 HTML로", "보고서·계획서 HTML로", "단일 파일 HTML 문서" |
-| [kb-add](../skills/kb-add/SKILL.md) | KB 단일 input 통로 — URL/파일/텍스트/Inbox, 신규·append·modify·remove 모드, 수정·제거 시 ~/.kb-snapshots/ 스냅샷 | "/kb-add", "KB에 추가", "지식 저장소에 추가", "이거 정리해서 넣어줘" |
-| [kb-lint](../skills/kb-lint/SKILL.md) | KB 건강 점검 + 위키링크 보강 — 깨진 링크·고아·tags 누락·_inbox 방치·_raw 고아·진부·폴더 컨벤션 검사, `--boost-links`로 4종 변형 인식 양방향 엣지 추가 | "/kb-lint", "KB 점검", "위키 건강 체크", "그래프 보강해줘" |
-| [kb-search](../skills/kb-search/SKILL.md) | KB 읽기 전용 질의응답 — 4계층 검색(tags/title/body/wikilink) + 출처 [[wikilink]] 인용 | "/kb-search", "KB에서 찾아줘", "위키에서 검색" |
-| [node-backend-patterns](../skills/node-backend-patterns/SKILL.md) | Node·Express·Next.js API 라우트(또는 NestJS) 백엔드 아키텍처·DB·캐싱 패턴 | "Node 백엔드", "Express 라우트", "NestJS", "N+1 쿼리" |
-| [pr](../skills/pr/SKILL.md) | GitHub일 때는 `gh pr create`로 자동 생성, 그 외에는 PR/MR draft markdown 파일 생성 | "PR 만들어줘", "MR 생성", "/pr", "리뷰 요청" |
-| [prompt-master](../skills/prompt-master/SKILL.md) | LLM 프롬프트(시스템·에이전트·1회성·파이프라인) 작성·리뷰·평가, 멀티에이전트 오케스트레이션 | "프롬프트 만들어줘", "prompt 개선", "시스템 프롬프트" |
-| [rest-api-design](../skills/rest-api-design/SKILL.md) | REST API 설계·검토 — 리소스 네이밍, 상태 코드, 페이지네이션, 필터링, 버전 관리 | "API 설계", "엔드포인트 설계", "페이지네이션 패턴" |
-| [si-project-docs](../skills/si-project-docs/SKILL.md) | 한국 SI 업계 IT 프로젝트 산출물(설계서·명세서·계획서 등) 작성·업데이트 | "설계서 만들어줘", "API명세서 업데이트", "DB설계서 작성" |
-| [springboot-java-standards](../skills/springboot-java-standards/SKILL.md) | Java 17+ 코딩 표준 + Spring Boot 가이드 (JPA/QueryDSL reference 별도) | Java 코드 작성·리뷰, Spring Boot 표준 |
-| [springboot-kotlin-standards](../skills/springboot-kotlin-standards/SKILL.md) | Kotlin + Spring Boot 코딩 표준 — null safety, data class, 확장 함수, JPA/QueryDSL | Kotlin 코드 작성·리뷰, Spring Boot 표준 |
-| [test-sync-verifier](../skills/test-sync-verifier/SKILL.md) | 코드 변경 후 테스트만 안전하게 동기화, 프로덕션 코드는 리포트만 | "테스트 확인해줘", "변경 검증해줘", "verify changes" |
-| [ui-feature-spec-docs](../skills/ui-feature-spec-docs/SKILL.md) | 프론트엔드 소스(±화면정의서)에서 화면별 기능 정의서를 단일 markdown으로 (옵션: Playwright 라이브 검증) | "화면별 기능 정의서", "라우터 기반 기능 명세서", "/ui-feature-spec-docs" |
-| [ui-test-runner](../skills/ui-test-runner/SKILL.md) | Playwright MCP로 dev 서버 UI 테스트, mutation 요청은 인터셉트해 실제 백엔드 보호 | "UI 테스트 돌려줘", "Playwright로 검증", "smoke test" |
-| [writing-skills](../skills/writing-skills/SKILL.md) | 새 스킬 작성·기존 스킬 편집·배포 전 검증 | 새 스킬 생성, SKILL.md 수정, 스킬 검증 |
-
----
-
-## skills-workflow/ — 워크플로우 스킬
-
-`skills/`의 여러 스킬을 묶어 순차/병렬로 돌리는 오케스트레이션 스킬.
-
-_(현재 등록된 스킬 없음)_
-
----
-
-## skills-system/ — 메타·스캐폴딩 스킬
-
-빈 곳에 프로젝트·플러그인·디렉토리 구조 자체를 세우는 더 큰 작업.
-
-| 이름 | 한 줄 설명 | 주요 트리거 |
-|---|---|---|
-| [create-claude-plugin](../skills-system/create-claude-plugin/SKILL.md) | 로컬 Claude Code plugin 스캐폴딩 — 디렉토리·plugin.json·marketplace.json·settings.json 등록·로드 검증 | "플러그인 만들기", "plugin scaffold", "로컬 marketplace 등록" |
-| [help-agent-toolkit](../skills-system/help-agent-toolkit/SKILL.md) | agent-toolkit 스킬 카탈로그 안내 — 전체 목록 출력 또는 의도 기반 매칭 추천 | "어떤 스킬 있어?", "툴킷에 뭐 있어?", "/help-agent-toolkit" |
-| [project-setup](../skills-system/project-setup/SKILL.md) | 대상 프로젝트에 검증 스킬·작업 문서 골격 설치 (스킬은 `.claude/skills/`, 문서는 `docs/`, LESSONS.md는 `.claude/`) | "프로젝트 셋업", "프로젝트 초기화", "/project-setup" |
-| [recommend-project-setting](../skills-system/recommend-project-setting/SKILL.md) | 진행 중 프로젝트의 누락 자산·갭을 read-only로 추천, 명시 요청 시에만 설치 | "프로젝트 세팅 추천", ".claude 보강", "/recommend-project-setting" |
-
----
+| [agent-harness-construction](../skills/agent-harness-construction/SKILL.md) | `agent-harness-construction` | Use when designing or improving an AI agent's harness — action space, tool definitions, observation format, error recovery contract, or context budgeting strategy. Triggers - "agent design review", "tool definition cleanup", "improve completion rate", "harness construction", "observation schema", "agent benchmarking", "action space granularity". |
+| [agent-introspection-debugging](../skills/agent-introspection-debugging/SKILL.md) | `agent-introspection-debugging` | Use when an AI agent run is failing repeatedly, looping on the same tools, consuming tokens without progress, hitting tool-call limits, or drifting from the intended task. Triggers - "agent stuck", "agent looping", "max tool calls", "context overflow", "self-debug", "introspection report", "why is the agent failing". |
+| [brandkit](../skills/brandkit/SKILL.md) | `brandkit` | Premium brand-kit image generation skill for creating high-end brand-guidelines boards, logo systems, identity decks, and visual-world presentations. Trained for minimalist, cinematic, editorial, dark-tech, luxury, cultural, security, gaming, developer-tool, and consumer-app brand systems. Optimized for intentional logo concepting, refined composition, sparse typography, strong symbolic meaning, premium mockups, art-directed imagery, and flexible grid layouts. |
+| [brutalist-skill](../skills/brutalist-skill/SKILL.md) | `industrial-brutalist-ui` | Raw mechanical interfaces fusing Swiss typographic print with military terminal aesthetics. Rigid grids, extreme type scale contrast, utilitarian color, analog degradation effects. For data-heavy dashboards, portfolios, or editorial sites that need to feel like declassified blueprints. |
+| [create-claude-plugin](../skills/create-claude-plugin/SKILL.md) | `create-claude-plugin` | Scaffold a new local Claude Code plugin from scratch — directory structure, plugin.json, marketplace.json, settings.json registration, and load verification. Use whenever the user wants to create a new plugin, register a local directory as a Claude Code marketplace, set up a personal toolkit/skill-collection plugin, or troubleshoot why a newly created plugin is not loading. Trigger phrases include "플러그인 만들기", "plugin 세팅", "plugin scaffold", "local marketplace 등록", "plugin이 로드 안 됨". |
+| [create-mermaid-erd](../skills/create-mermaid-erd/SKILL.md) | `create-mermaid-erd` | PRD·도메인 설명·테이블 목록 등을 입력받아 ERD(Entity-Relationship Diagram)를 Mermaid `.mmd` 파일로 생성하고, 그 mmd를 즉시 시각화하는 단일 `viewer.html` 도 함께 출력한다. 개념(Conceptual)·논리(Logical)·물리(Physical) 3종 ERD 지원, 다크 테마 + handDrawn 스타일. "ERD 만들어줘", "테이블 관계도", "DB 설계 시각화", "엔티티 관계 다이어그램", "데이터 모델링", "개념 ERD", "논리 ERD", "물리 ERD", "mermaid ERD", "DB 스키마 그려줘", "테이블 설계", "mmd 뷰어", "ERD HTML 미리보기" 등의 요청에 트리거한다. |
+| [excel-doc-updater](../skills/excel-doc-updater/SKILL.md) | `excel-doc-updater` | Use when the user explicitly asks to update or regenerate a form-based xlsx (interface spec sheet, program list, requirements form, etc.) against a separate data source (markdown, JSON/YAML, DB/API result, another xlsx). Do not trigger on regular code edits or other doc updates. If a project-specific updater skill already exists for the same form, that one takes priority. |
+| [excel-ui-test-doc-creator](../skills/excel-ui-test-doc-creator/SKILL.md) | `excel-ui-test-doc-creator` | 테스트 시나리오 또는 테스트 수행 결과(JSON/markdown)를 입력받아 단위테스트 산출물 Excel(.xlsx) 파일을 작성할 때 사용한다. 사용자가 제공한 템플릿 xlsx가 있으면 그 양식의 컬럼 구조·스타일을 우선 따르고(한↔영 컬럼명 자동 매칭), 없으면 기본 양식(단위테스트 ID/명/데이터/절차/기대 결과/화면 URL/실제 결과)으로 신규 생성한다. openpyxl로 처리하며 긴 텍스트는 자동 wrap_text, pass/fail 행 색상 차등을 적용한다. 트리거 - "테스트 결과 엑셀로 정리해줘", "단위테스트 산출물 만들어줘", "테스트 시나리오 xlsx로", "QA 테스트 결과서 엑셀", "/excel-ui-test-doc-creator". 사용하지 않을 때 - 기존 양식 xlsx 갱신(`excel-doc-updater`가 우선), PDF/docx 테스트 보고서, 코드 테스트 실행 자체. |
+| [fastapi-guide](../skills/fastapi-guide/SKILL.md) | `fastapi-guide` | FastAPI로 새 API를 작성하거나 기존 FastAPI 코드를 리뷰·리팩토링해야 할 때 사용한다. 트리거 - (1) 엔드포인트/라우터 작성, (2) async vs sync 함수 선택, (3) Pydantic 모델 설계, (4) DB 커넥션 풀링·세션 관리, (5) 인증·의존성 주입, (6) BackgroundTasks·백그라운드 처리, (7) 프로덕션 배포(Gunicorn/Docker/lifespan), (8) FastAPI 코드 리뷰, (9) 보안·미들웨어·예외 처리, (10) 프로젝트 구조 설계, (11) APIRouter/버저닝. |
+| [git-master](../skills/git-master/SKILL.md) | `git-master` | 여러 파일에 걸친 변경을 커밋하거나, 브랜치 이력을 정리·rebase 하거나, 과거 변경이 언제 어떻게 들어왔는지 추적해야 할 때 사용한다. 트리거 - "커밋해줘", "atomic commit", "rebase", "git history", "이 변경 누가 언제 추가했어?", "커밋 분리", "브랜치 정리", "git log 분석". |
+| [git-pull-resolve-conflict](../skills/git-pull-resolve-conflict/SKILL.md) | `git-pull-resolve-conflict` | 현재 작업 브랜치에 대상 브랜치(main/master/develop 등)를 병합(pull)해 최신화하고, merge conflict가 생기면 안전하게 자동 해결할 수 있는지 엄격하게 판단한 뒤, 자명한 충돌만 직접 해결하고 모호한 충돌은 사용자에게 해결 방법을 물어본 다음, 끝나면 무엇을 어떻게 처리했는지 간단히 보고한다. 브랜치를 지정하지 않으면 후보 목록을 제시하고 컨펌받는다. 충돌 해결이 조금이라도 관련되면 적극 사용한다. 트리거 - "main pull 해줘", "최신 main 가져와서 충돌 해결해줘", "develop 머지해줘", "대상 브랜치 당겨와", "브랜치 동기화", "merge conflict 해결", "리베이스 말고 머지로 최신화", "/git-pull-resolve-conflict", "/git-pull-resolve-conflict main". |
+| [gpt-tasteskill](../skills/gpt-tasteskill/SKILL.md) | `gpt-taste` | Elite UX/UI & Advanced GSAP Motion Engineer. Enforces Python-driven true randomization for layout variance, strict AIDA page structure, wide editorial typography (bans 6-line wraps), gapless bento grids, strict GSAP ScrollTriggers (pinning, stacking, scrubbing), inline micro-images, and massive section spacing. |
+| [help-agent-toolkit](../skills/help-agent-toolkit/SKILL.md) | `help-agent-toolkit` | agent-toolkit 플러그인이 제공하는 스킬을 사용자가 발견하도록 돕는다. (1) 전체 스킬 목록을 카테고리별 마크다운 테이블로 보여주거나, (2) "xxx 하고 싶어 / xxx 하려면 어떤 스킬 써?" 같은 의도 질문을 받으면 모든 SKILL.md의 frontmatter를 스캔해 매칭되는 스킬을 추천 테이블로 제시한다. 트리거 - "agent-toolkit 스킬 목록", "어떤 스킬 있어?", "툴킷에 뭐 있어?", "/help-agent-toolkit", "이거 할 때 쓸 스킬 추천", "xxx 하려면 어떤 스킬?". |
+| [hsryuuu-writing](../skills/hsryuuu-writing/SKILL.md) | `hsryuuu-writing` | hsryuuu(innovation123.tistory.com)처럼 쓰는 말투·어조·언어 습관·안티패턴 가이드. 글의 레이아웃이나 섹션 구조는 지정하지 않고, "어떤 문장으로 어떤 단어를 골라 쓸지"만 다룬다. 다른 스킬·템플릿이 만들어 둔 글의 톤을 hsryuuu 톤으로 바꾸거나, 새 글을 hsryuuu 목소리로 쓸 때 사용한다. 트리거 - "hsryuuu처럼 써줘", "내 블로그 말투로", "innovation123 톤으로", "tistory 톤", "/hsryuuu-writing". |
+| [html-cheat-sheet-creator](../skills/html-cheat-sheet-creator/SKILL.md) | `html-cheat-sheet-creator` | 단일 자기완결형 HTML 치트 시트(cheat sheet)·학습 카드·레퍼런스 시트를 모바일 우선(데스크톱도 자동 대응)으로 만들 때 사용한다. 상단 고정 2~6 탭 (2x1·3x1·2x2·3+2·3x2 자동 레이아웃), 좌측 슬라이드 사이드바 (목차 + 스크롤 스파이), 카테고리·카드·펼치기(details)로 구성된다. 외부 CDN 의존 0, 더블클릭만 하면 어디서든 열린다. 트리거 - "cheat sheet 만들어줘", "치트시트 HTML", "학습 카드 HTML", "단일 html 레퍼런스 시트", "모바일 HTML cheat sheet", "사이드바 + 탭 HTML", "스터디 시트", "/html-cheat-sheet-creator". 사용하지 않을 때 - 일반 보고서/계획서/설계서 → html-docs-creator, ERD 시각화 → create-mermaid-erd, PDF/docx 결과물. |
+| [html-db-schema-viewer-creator](../skills/html-db-schema-viewer-creator/SKILL.md) | `html-db-schema-viewer-creator` | Use when the user provides DB schema information in any form (DB MCP results, DDL/CREATE TABLE, plain-text spec, Mermaid erDiagram .mmd, or DBML) and wants a multi-page static HTML DB viewer with ERD relationship diagram, per-table detail pages, table listing, and DBML source viewer. 트리거 — "ERD 사이트 만들어줘", "DB 뷰어 정적 사이트", "테이블별 상세 페이지 포함 ERD", "DBML 기반 ERD", "멀티페이지 DB 문서", "schema.dbml viewer", "DDL to multi-page HTML", "DB 스키마 확장형 뷰어", "/html-db-schema-viewer-creator". |
+| [html-docs-creator](../skills/html-docs-creator/SKILL.md) | `html-docs-creator` | 사용자가 던진 임의의 input(긴 텍스트 문서, 회의록, 구두 설명, bullet list, 메모 등)을 단일 자기완결형 HTML 문서로 변환할 때 사용한다. 외부 CDN 의존 없이 시스템 폰트만 사용하는 노션 스타일 + HP Electric Blue 테마, 상단 고정 nav + 스크롤 스파이 + 자동 코드 블록 lang 감지·copy 버튼이 기본 내장된다. 트리거 - "이 내용 HTML로 정리해줘", "보고서/계획서/설계서 HTML로", "문서 HTML 변환", "회의 내용 HTML 페이지로", "단일 파일 HTML 문서", "오픈클로 계획서 같은 형식으로", "노션 톤 HTML", "self-contained HTML report", "/html-docs-creator". 사용하지 않을 때 - PDF/docx 결과물, React/Vue 등 프레임워크 페이지, Chart.js·Mermaid 같은 CDN 라이브러리가 꼭 필요한 경우. |
+| [image-to-code-skill](../skills/image-to-code-skill/SKILL.md) | `image-to-code` | Elite website image-to-code skill for Codex. For visually important web tasks, it must first generate the design image(s) itself, deeply analyze them, then implement the website to match them as closely as possible. In Codex, it must prefer large, readable, section-specific images instead of tiny compressed boards, generate fresh standalone images for sections or detail views instead of cropping old ones, avoid lazy under-generation, avoid cards-inside-cards-inside-cards UI, and keep the hero clean, spacious, readable, and visible on a small laptop. |
+| [imagegen-frontend-mobile](../skills/imagegen-frontend-mobile/SKILL.md) | `imagegen-frontend-mobile` | Elite mobile app image-generation skill for creating premium, app-native screen concepts and flows. Designed for iOS, Android, and cross-platform mobile products. Prioritizes clean hierarchy, comfortably readable text, strong multi-screen consistency, controlled color palettes, non-generic creative direction, textured surfaces, image-led composition, tasteful custom iconography, and clean phone mockup framing. By default, screens should be shown inside a subtle premium iPhone or similar phone mockup with a visible frame, while the main focus stays on the app content itself. This skill generates images only. It does not write code. |
+| [imagegen-frontend-web](../skills/imagegen-frontend-web/SKILL.md) | `imagegen-frontend-web` | Elite frontend image-direction skill for generating premium, conversion-aware website design references. CRITICAL OUTPUT RULE — generate ONE separate horizontal image FOR EVERY section. A landing page with 8 sections produces 8 images. Never compress multiple sections into one image. Enforces composition variety (not always left-text / right-image), background-image freedom, varied CTAs, varied hero scales (giant / mid / mini minimalist), narrative concept spine, second-read moments, and a single consistent palette across all images. Optimized for landing pages, marketing sites, and product comps that developers or coding models can accurately recreate. |
+| [kb-add](../skills/kb-add/SKILL.md) | `kb-add` | Knowledge Base에 새 지식을 추가하는 **단일 input 통로**. URL·파일·텍스트 덤프를 받아 적절한 폴더에 마크다운 문서로 저장한다. 기본은 신규 파일, 명시 신호가 있으면 기존 문서에 섹션 append. 기존 본문 수정·삭제·git 커밋은 하지 않는다. Obsidian 볼트와 호환되며 위키링크·tags·created frontmatter를 자동 부여한다. 트리거: "/kb-add {내용}", "KB에 추가해줘", "이거 정리해서 넣어줘", "지식 저장소에 추가" |
+| [kb-lint](../skills/kb-lint/SKILL.md) | `kb-lint` | Knowledge Base 전체 건강 점검 + 위키링크 보강. 깨진 링크, 고아 페이지, tags 누락, _inbox 방치, _raw 고아 원본, 진부한 정보, 폴더 컨벤션 위반 등을 검사하고 보고한다. `--boost-links` 옵션으로 관련 문서 간 양방향 위키링크 보강도 수행 (구 kb-link 기능 통합). 기본은 **읽기 전용 보고**, 쓰기는 명시 옵션 + 사용자 컨펌이 있을 때만. 트리거: "/kb-lint", "KB 점검", "위키 건강 체크", "그래프 보강해줘", "위키링크 추가" |
+| [kb-search](../skills/kb-search/SKILL.md) | `kb-search` | Knowledge Base에 축적된 지식을 자연어 질문으로 검색·답변한다. tags frontmatter grep + 본문 grep + 위키링크 탐색으로 관련 문서를 모아 답변을 합성하고 출처를 [[위키링크]]로 인용한다. **읽기 전용** — 어떤 파일도 수정·생성하지 않는다. 트리거: "/kb-search {질문}", "KB에서 찾아줘", "위키에서 검색", "지식저장소에서 알려줘" |
+| [minimalist-skill](../skills/minimalist-skill/SKILL.md) | `minimalist-ui` | Clean editorial-style interfaces. Warm monochrome palette, typographic contrast, flat bento grids, muted pastels. No gradients, no heavy shadows. |
+| [node-backend-patterns](../skills/node-backend-patterns/SKILL.md) | `node-backend-patterns` | Node.js·Express·Next.js API 라우트(또는 NestJS) 기반 백엔드를 작성·리뷰·리팩토링할 때 사용한다. Repository/Service/미들웨어 레이어 설계, DB 쿼리 최적화(N+1·인덱싱·커넥션 풀링), 캐싱, 에러 처리, 인증·인가, 속도 제한, 백그라운드 작업, 구조화 로깅 등이 트리거. 트리거 - "Node 백엔드", "Express 라우트", "Next.js API", "NestJS", "Repository 패턴", "N+1 쿼리", "캐싱 전략", "JWT 검증", "미들웨어 작성". |
+| [output-skill](../skills/output-skill/SKILL.md) | `full-output-enforcement` | Overrides default LLM truncation behavior. Enforces complete code generation, bans placeholder patterns, and handles token-limit splits cleanly. Apply to any task requiring exhaustive, unabridged output. |
+| [pr](../skills/pr/SKILL.md) | `pr` | 현재 작업 브랜치의 변경사항을 main(또는 master)에 머지하기 위해 GitHub Pull Request를 만들거나, GitHub이 아닌 환경(GitLab·Bitbucket·자체 호스트 등)에서 PR/MR 본문 markdown을 만들어야 할 때 사용한다. GitHub일 때는 `gh pr create`로 자동 생성, 그 외에는 `PR-DRAFT-yyyy-MM-dd-hh-mm-ss.md` 파일을 만들어 사용자가 직접 붙여넣게 한다. `--file` 인자를 주면 GitHub이라도 자동 생성을 건너뛰고 파일만 만든다. 트리거 - "PR 만들어줘", "MR 생성", "/pr", "/pr --file", "merge request 올려", "이 브랜치 PR로", "푸시하고 PR", "리뷰 요청". |
+| [project-setup](../skills/project-setup/SKILL.md) | `project-setup` | 빈 또는 신규 프로젝트에 검증·관리 스킬과 작업 문서 골격을 한 번에 설치해야 할 때 사용한다. agent-toolkit이 제공하는 카탈로그(스킬 3종 + 작업 문서 6종 + 자기개선 LESSONS.md)에서 사용자가 고른 항목만 대상 프로젝트의 `.claude/`와 `docs/`에 깐다. 이미 일부 세팅된 프로젝트의 누락분 보강은 `recommend-project-setting`을 사용. 트리거 - "프로젝트 셋업", "프로젝트 초기화", "검증 스킬 설치", "manage-skills 설치", "verify-implementation 설치", "update-project-docs 설치", "/project-setup". |
+| [prompt-master](../skills/prompt-master/SKILL.md) | `prompt-master` | LLM에 줄 프롬프트(시스템 프롬프트, 에이전트 프롬프트, 1회성 챗 프롬프트, API 파이프라인 프롬프트 등)를 새로 작성하거나, 기존 프롬프트를 리뷰·평가·비교해야 할 때 사용한다. 멀티에이전트 위임 구조나 서브에이전트 오케스트레이션이 필요한 프롬프트 설계에도 사용. 트리거 - "프롬프트 만들어줘", "프롬프트 작성", "prompt 개선", "시스템 프롬프트", "에이전트 프롬프트", "프롬프트 리뷰", "프롬프트 평가", "멀티에이전트 설계". |
+| [recommend-project-setting](../skills/recommend-project-setting/SKILL.md) | `recommend-project-setting` | 이미 일부 세팅이 된 프로젝트에 agent-toolkit의 자산(스킬·작업 문서·LESSONS.md) 중 빠진 것이나 핵심 섹션이 누락된 것이 있는지 점검·추천받고 싶을 때 사용한다. 기본은 read-only 추천이며, 사용자가 명시적으로 설치를 요청해야 파일을 만진다. 빈 프로젝트의 초기 셋업은 `project-setup`을 사용. 트리거 - "프로젝트 세팅 추천", ".claude 보강", "뭐 더 깔면 좋아?", ".claude 점검", "recommend setting", "/recommend-project-setting". |
+| [redesign-skill](../skills/redesign-skill/SKILL.md) | `redesign-existing-projects` | Upgrades existing websites and apps to premium quality. Audits current design, identifies generic AI patterns, and applies high-end design standards without breaking functionality. Works with any CSS framework or vanilla CSS. |
+| [rest-api-design](../skills/rest-api-design/SKILL.md) | `rest-api-design` | 새 REST API 엔드포인트를 설계하거나 기존 API 규약(URL 구조·상태 코드·응답 형식·페이지네이션·필터링·버전 관리)을 검토할 때 사용한다. 공개/파트너용 API를 설계할 때도 사용. 트리거 - "API 설계", "REST API 만들어줘", "엔드포인트 설계", "페이지네이션 패턴", "버전 관리 전략", "에러 응답 표준", "API 컨트랙트 리뷰". |
+| [si-project-docs](../skills/si-project-docs/SKILL.md) | `si-project-docs` | 한국 SI(System Integration) 프로젝트에서 클라이언트/감리/PM에게 제출되는 정식 산출물(요구사항정의서, 설계서, 명세서, 계획서, 보고서 등)의 **변환 원천 문서(source of truth)** 를 markdown으로 작성·업데이트하는 스킬. 이 스킬이 만든 .md는 추후 docx/xlsx/HTML/PDF 등 다양한 정식 산출물 포맷으로 변환되는 단일 원천이 된다. "산출물 작성", "설계서 만들어줘", "API명세서 업데이트", "화면설계서 추가", "요구사항정의서 수정", "DB설계서 작성", "배포계획서", "테스트계획서", "프로젝트헌장", "감리 산출물", "SI 산출물 원천" 등 SI 프로젝트 산출물 관련 요청 시 반드시 이 스킬을 사용한다. 코드가 아닌 SI 프로젝트 산출물(.md) 작성/수정이 필요한 모든 상황에서 트리거된다. |
+| [soft-skill](../skills/soft-skill/SKILL.md) | `high-end-visual-design` | Teaches the AI to design like a high-end agency. Defines the exact fonts, spacing, shadows, card structures, and animations that make a website feel expensive. Blocks all the common defaults that make AI designs look cheap or generic. |
+| [springboot-java-standards](../skills/springboot-java-standards/SKILL.md) | `springboot-java-standards` | Java 17+ 코딩 표준 및 Spring Boot 서비스 개발 가이드. Java 코드 작성/리뷰, 명명 규칙, 불변성, Optional, 스트림, 예외 처리, 제네릭, Lombok 활용, 테스트 작성 시 사용. Spring Boot 프로젝트에서는 references/spring-boot-patterns.md, JPA/QueryDSL 작업 시에는 references/jpa-patterns.md를 함께 참조. |
+| [springboot-kotlin-standards](../skills/springboot-kotlin-standards/SKILL.md) | `springboot-kotlin-standards` | Kotlin + Spring Boot 코딩 표준 및 서비스 개발 가이드. Kotlin 코드 작성/리뷰, data class, null safety, 확장 함수, companion object, 생성자 주입, 예외 처리, 테스트 작성 시 사용. Spring Boot 프로젝트에서는 references/spring-boot-patterns.md, JPA/QueryDSL 작업 시에는 references/jpa-patterns.md를 함께 참조. |
+| [stitch-skill](../skills/stitch-skill/SKILL.md) | `stitch-design-taste` | Semantic Design System Skill for Google Stitch. Generates agent-friendly DESIGN.md files that enforce premium, anti-generic UI standards — strict typography, calibrated color, asymmetric layouts, perpetual micro-motion, and hardware-accelerated performance. |
+| [taste-skill-v1](../skills/taste-skill-v1/SKILL.md) | `design-taste-frontend-v1` | The original v1 taste-skill, preserved for projects depending on its exact behavior. The current default is `design-taste-frontend` (v2 experimental), which is a substantial rewrite. Use this v1 install name only if you need exact backward compatibility. |
+| [taste-skill](../skills/taste-skill/SKILL.md) | `design-taste-frontend` | Anti-slop frontend skill for landing pages, portfolios, and redesigns. The agent reads the brief, infers the right design direction, and ships interfaces that do not look templated. Real design systems when applicable, audit-first on redesigns, strict pre-flight check. |
+| [test-sync-verifier](../skills/test-sync-verifier/SKILL.md) | `test-sync-verifier` | 코드 변경 후 테스트가 통과하는지 확인하거나, 변경된 코드에 맞춰 테스트 코드만 안전하게 수정해야 할 때 사용한다. 프로덕션 코드는 자동 수정 대상이 아니라 문제점 리포트만 하므로, 변경 검증을 비파괴적으로 돌리고 싶을 때 적합. 트리거 - "테스트 확인해줘", "변경 검증해줘", "verify changes", "테스트 맞춰줘", "테스트 실패 분석", "regression 점검". |
+| [ui-feature-spec-docs](../skills/ui-feature-spec-docs/SKILL.md) | `ui-feature-spec-docs` | 프론트엔드 소스코드(Vue/React/Svelte/Angular/Next.js/Nuxt/SvelteKit 등)와 선택적 화면정의서(docx/pdf)를 입력받아 화면별 기능 정의서를 단일 통합 markdown 파일로 작성하는 스킬. 보조 모드로 라이브 브라우저(Playwright MCP) 검증을 켤 수 있음 — 소스가 없거나 권한/feature flag/조건부 렌더링 검증이 필요한 좁은 케이스용. 시작 시점에 입력을 한 번 받고, 이후 작업 중간에는 묻지 않으며 애매한 부분은 ⚠️/🔒/(TBD) 마커로 결과물에 보존. 트리거 — "화면별 기능 정의서 만들어줘", "UI 기능 명세 정리", "프론트엔드 화면 목록 기능 정의서", "라우터 기반 기능 명세서", "화면설계서랑 소스 교차 검증", "ui feature spec", "/ui-feature-spec-docs". |
+| [ui-test-runner](../skills/ui-test-runner/SKILL.md) | `ui-test-runner` | 화면 기능 명세, 직접 작성한 테스트 시나리오(markdown/JSON), 또는 단순 URL 목록을 입력받아 Playwright MCP로 실제 dev 서버(예: http://localhost:5173)에 접속해 UI 테스트를 수행하고 구조화된 결과 JSON + 사람이 읽을 수 있는 markdown 요약을 출력한다. Chromium에서 실제 JS가 돌아가는 채로 검증하며, **mutation 요청(POST/PUT/DELETE/PATCH)은 fetch/XHR 인터셉터 주입으로 모두 가로채서 실제 백엔드에 절대 도달하지 않게** 한다. GET 등 read-only 요청은 그대로 통과해 실제 데이터를 사용한다. 트리거 - "UI 테스트 돌려줘", "화면 테스트 시나리오 실행", "Playwright로 검증", "smoke test", "이 명세 기준으로 UI 검증", "/ui-test-runner", "E2E 돌려봐줘", "버튼 눌러보고 결과 확인", "프론트 회귀 테스트", "리그레션 체크". 사용하지 않을 때 - 백엔드 실제 mutation까지 흘려보내고 싶은 통합 테스트, 단위 테스트(Jest 등), 실제 DB 변경을 동반해야 하는 시나리오, Cypress/Vitest 코드 작성. |
+| [update-project-docs](../skills/update-project-docs/SKILL.md) | `update-project-docs` | agent-toolkit 저장소의 개발용 문서(AGENTS.md, .claude/CLAUDE.md, README.md, docs/catalog.md)를 현재 단일 skills/ 루트와 Claude/Codex 플러그인 manifest 상태에 맞게 동기화한다. 새 스킬을 추가·이동·삭제했거나, .codex-plugin/plugin.json 또는 .claude-plugin/plugin.json의 skills 설정을 바꿨거나, plugin skill 표면을 다시 정리할 때 사용한다. |
+| [writing-skills](../skills/writing-skills/SKILL.md) | `writing-skills` | Use when creating new skills, editing existing skills, or verifying skills work before deployment |
 
 ## 갱신 방법
 
-이 문서는 `update-project-docs` 스킬로 갱신한다.
+이 문서는 `update-project-docs` 스킬로 갱신한다. 갱신 시 `skills/*/SKILL.md`만 inventory로 사용하고, 링크 검증을 함께 실행한다.

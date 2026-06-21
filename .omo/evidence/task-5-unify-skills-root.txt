@@ -1,0 +1,92 @@
+TASK: Todo 5 - update moved skills that hard-code old topology
+DATE: 2026-06-21T08:52:31Z
+WORKTREE: /Users/happyhsryu/dev/personal/agent-toolkit
+
+NOTE: skills/update-project-docs/SKILL.md was absent at first inspection, then appeared during this run from Todo 3. Only a narrow legacy/remove marker was added after it stabilized.
+
+COMMAND: git status --short -- skills/help-agent-toolkit/SKILL.md skills/project-setup/SKILL.md skills/recommend-project-setting/SKILL.md skills/update-project-docs/SKILL.md .omo/evidence/task-5-unify-skills-root.txt
+?? .omo/evidence/task-5-unify-skills-root.txt
+?? skills/help-agent-toolkit/SKILL.md
+?? skills/project-setup/SKILL.md
+?? skills/recommend-project-setting/SKILL.md
+?? skills/update-project-docs/SKILL.md
+
+COMMAND: rg -n 'skills-system|skills-workflow|forks/taste-skill|\.agents/skills|\.Codex|\.Codex-plugin' skills/help-agent-toolkit skills/project-setup skills/recommend-project-setting skills/update-project-docs
+skills/update-project-docs/SKILL.md:129:find .agents/skills .claude/skills -maxdepth 2 -name SKILL.md -print 2>/dev/null  # legacy/remove: old duplicate local skill copies must be gone
+
+COMMAND: rg -n '\.claude/skills' skills/project-setup skills/recommend-project-setting
+skills/recommend-project-setting/SKILL.md:16:| `manage-skills` | 스킬 | 세션 변경사항 분석 → `verify-*` 스킬 생성/갱신 | `.claude/skills/manage-skills/` (고정) |
+skills/recommend-project-setting/SKILL.md:17:| `verify-implementation` | 스킬 | 등록된 모든 `verify-*` 스킬 통합 실행 | `.claude/skills/verify-implementation/` (고정) |
+skills/recommend-project-setting/SKILL.md:18:| `update-project-docs` | 스킬 | 작업 문서를 코드와 동기화 | `.claude/skills/update-project-docs/` (고정) |
+skills/recommend-project-setting/SKILL.md:39:  - `.claude/skills/manage-skills/` 디렉토리에 SKILL.md 골격 복사
+skills/recommend-project-setting/SKILL.md:43:- **자동 추천 조건**: `.claude/skills/manage-skills/SKILL.md`가 없을 때
+skills/recommend-project-setting/SKILL.md:48:  - `.claude/skills/verify-implementation/` 디렉토리에 SKILL.md 골격 복사
+skills/recommend-project-setting/SKILL.md:51:- **자동 추천 조건**: `.claude/skills/verify-implementation/SKILL.md`가 없을 때. 단, `manage-skills` 없이 단독 설치는 의미가 약하므로 함께 추천한다.
+skills/recommend-project-setting/SKILL.md:56:  - `.claude/skills/update-project-docs/` 디렉토리에 SKILL.md 골격 복사
+skills/recommend-project-setting/SKILL.md:228:ls -d "$TARGET/.claude/skills/manage-skills" 2>/dev/null
+skills/recommend-project-setting/SKILL.md:229:ls -d "$TARGET/.claude/skills/verify-implementation" 2>/dev/null
+skills/recommend-project-setting/SKILL.md:230:ls -d "$TARGET/.claude/skills/update-project-docs" 2>/dev/null
+skills/recommend-project-setting/SKILL.md:363:| 스킬 3종 | `<TARGET>/.claude/skills/<key>/` | 불가 |
+skills/recommend-project-setting/SKILL.md:423:# 스킬은 항상 .claude/skills/ 아래
+skills/recommend-project-setting/SKILL.md:424:[ ${#SELECTED_SKILLS[@]} -gt 0 ] && mkdir -p "$TARGET/.claude/skills"
+skills/recommend-project-setting/SKILL.md:452:cp -r "$TEMPLATE_DIR/<key>" "$TARGET/.claude/skills/<key 또는 변경된 이름>"
+skills/recommend-project-setting/SKILL.md:530:- `.claude/skills/<key>/SKILL.md`
+skills/recommend-project-setting/SKILL.md:590:| `<target>/.claude/skills/<key>/SKILL.md` | 설치 결과물 (스킬, 위치 고정) |
+skills/project-setup/SKILL.md:23:### 스킬 (선택 시 `.claude/skills/`에 설치)
+skills/project-setup/SKILL.md:144:| `manage-skills` | `$TEMPLATE_DIR/manage-skills/` | `$TARGET/.claude/skills/manage-skills/` |
+skills/project-setup/SKILL.md:145:| `verify-implementation` | `$TEMPLATE_DIR/verify-implementation/` | `$TARGET/.claude/skills/verify-implementation/` |
+skills/project-setup/SKILL.md:146:| `update-project-docs` | `$TEMPLATE_DIR/update-project-docs/` | `$TARGET/.claude/skills/update-project-docs/` |
+skills/project-setup/SKILL.md:194:  [스킬]  (.claude/skills/ 아래에 설치)
+skills/project-setup/SKILL.md:245:| 스킬 3종 (manage-skills, verify-implementation, update-project-docs) | `<TARGET>/.claude/skills/<key>/` | 불가 (스킬은 `.claude/skills/` 고정) |
+skills/project-setup/SKILL.md:262:  [스킬]                    .claude/skills/ 고정
+skills/project-setup/SKILL.md:263:    - .claude/skills/manage-skills/
+skills/project-setup/SKILL.md:264:    - .claude/skills/verify-implementation/
+skills/project-setup/SKILL.md:265:    - .claude/skills/update-project-docs/
+skills/project-setup/SKILL.md:389:# 스킬은 항상 .claude/skills/ 아래
+skills/project-setup/SKILL.md:391:  mkdir -p "$TARGET/.claude/skills"
+skills/project-setup/SKILL.md:427:       프로젝트 로컬 `.claude/skills/`에 설치하면 이쪽이 우선되어 외부 스킬을 가립니다.
+skills/project-setup/SKILL.md:439:cp -r "$TEMPLATE_DIR/<key>" "$TARGET/.claude/skills/<key 또는 변경된 이름>"
+skills/project-setup/SKILL.md:453:[ -f "$TARGET/.claude/skills/manage-skills/SKILL.md" ] && \
+skills/project-setup/SKILL.md:454:  grep -q "아직 등록된 검증 스킬이 없습니다" "$TARGET/.claude/skills/manage-skills/SKILL.md"
+skills/project-setup/SKILL.md:536:- `.claude/skills/<key>/SKILL.md`
+skills/project-setup/SKILL.md:606:| `<target>/.claude/skills/manage-skills/SKILL.md` | 설치 결과물 |
+skills/project-setup/SKILL.md:607:| `<target>/.claude/skills/verify-implementation/SKILL.md` | 설치 결과물 |
+skills/project-setup/SKILL.md:608:| `<target>/.claude/skills/update-project-docs/SKILL.md` | 설치 결과물 |
+
+COMMAND: rg -n 'find .*skills|skills/' skills/help-agent-toolkit/SKILL.md skills/update-project-docs/SKILL.md
+skills/update-project-docs/SKILL.md:3:description: agent-toolkit 저장소의 개발용 문서(AGENTS.md, .claude/CLAUDE.md, README.md, docs/catalog.md)를 현재 단일 skills/ 루트와 Claude/Codex 플러그인 manifest 상태에 맞게 동기화한다. 새 스킬을 추가·이동·삭제했거나, .codex-plugin/plugin.json 또는 .claude-plugin/plugin.json의 skills 설정을 바꿨거나, plugin skill 표면을 다시 정리할 때 사용한다.
+skills/update-project-docs/SKILL.md:8:이 스킬은 **이 저장소(agent-toolkit)** 의 개발용 문서와 플러그인 표면이 실제 파일 상태와 어긋나지 않도록 갱신한다. Claude Code와 Codex가 같은 plugin skill 루트인 `skills/`를 사용한다는 전제를 유지한다.
+skills/update-project-docs/SKILL.md:14:- `docs/catalog.md` - `skills/`에 있는 plugin skill 카탈로그
+skills/update-project-docs/SKILL.md:18:위 파일들은 같은 사실을 말해야 한다. `AGENTS.md`와 `.claude/CLAUDE.md`의 구조 설명, `README.md`의 구성 요약, `docs/catalog.md`의 목록, 두 plugin manifest의 skill 루트가 동시에 `skills/` 기준으로 맞아야 한다.
+skills/update-project-docs/SKILL.md:24:1. `skills/` 아래에 plugin skill을 추가, 삭제, 이동했다.
+skills/update-project-docs/SKILL.md:25:2. `skills/<name>/SKILL.md` frontmatter의 `name` 또는 `description`을 의미 있게 바꿨다.
+skills/update-project-docs/SKILL.md:36:plugin skill inventory는 **오직 `skills/`만** 스캔한다.
+skills/update-project-docs/SKILL.md:40:find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print | sort
+skills/update-project-docs/SKILL.md:47:for s in skills/*/SKILL.md; do
+skills/update-project-docs/SKILL.md:56:- `.codex-plugin/plugin.json`과 `.claude-plugin/plugin.json`의 `skills` 값이 `./skills/`로 정합적인가?
+skills/update-project-docs/SKILL.md:61:`docs/catalog.md`는 `skills/*/SKILL.md` frontmatter에서 생성한 plugin skill 카탈로그로 유지한다.
+skills/update-project-docs/SKILL.md:65:- 목록은 `skills/` 아래 실제 `SKILL.md`가 있는 디렉토리만 포함한다.
+skills/update-project-docs/SKILL.md:67:- 링크 경로는 catalog 기준 상대경로인 `../skills/<name>/SKILL.md`를 사용한다.
+skills/update-project-docs/SKILL.md:74:grep -oE '\(\.\./skills/[^)]+/SKILL\.md\)' docs/catalog.md \
+skills/update-project-docs/SKILL.md:87:- 저장소 구조 트리가 `skills/`를 단일 plugin skill 루트로 설명하는가?
+skills/update-project-docs/SKILL.md:91:- `.claude/CLAUDE.md`는 Claude Code 전용 지침을 담되, plugin skill inventory 자체는 `skills/` 기준으로 설명하는가?
+skills/update-project-docs/SKILL.md:101:- `skills/`는 실제 plugin skill 루트로 설명한다.
+skills/update-project-docs/SKILL.md:104:- 디렉토리 개수나 수동 카운트는 꼭 필요할 때만 쓰고, 쓰는 경우 현재 `skills/` inventory와 일치시킨다.
+skills/update-project-docs/SKILL.md:117:- Codex manifest의 `skills`는 `./skills/`
+skills/update-project-docs/SKILL.md:118:- Claude manifest의 `skills`는 단일 `./skills/` 값 또는 그와 동등한 단일 배열
+skills/update-project-docs/SKILL.md:128:test -f skills/update-project-docs/SKILL.md
+skills/update-project-docs/SKILL.md:129:find .agents/skills .claude/skills -maxdepth 2 -name SKILL.md -print 2>/dev/null  # legacy/remove: old duplicate local skill copies must be gone
+skills/update-project-docs/SKILL.md:130:rg -n 'AGENTS.md|\.claude/CLAUDE.md|\.codex-plugin/plugin.json|\.claude-plugin/plugin.json|docs/catalog.md|README.md' skills/update-project-docs/SKILL.md
+skills/update-project-docs/SKILL.md:136:find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print | sort
+skills/update-project-docs/SKILL.md:137:rg -n '\(\.\./skills/[^)]+/SKILL\.md\)' docs/catalog.md
+skills/update-project-docs/SKILL.md:139:python3 /Users/happyhsryu/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py /Users/happyhsryu/dev/personal/agent-toolkit
+skills/update-project-docs/SKILL.md:156:- `skills/` 밖의 plugin-local `SKILL.md`를 현재 활성 skill로 문서화하지 않는다.
+skills/help-agent-toolkit/SKILL.md:23:3. **agent-toolkit 스킬만 다룬다.** `${CLAUDE_PLUGIN_ROOT}/skills/` 디렉토리만 스캔한다. 외부 플러그인이나 사용자 글로벌 스킬은 대상이 아니다.
+skills/help-agent-toolkit/SKILL.md:45:`skills/` 아래의 모든 `SKILL.md`에서 frontmatter를 읽는다.
+skills/help-agent-toolkit/SKILL.md:50:find "$ROOT/skills" -mindepth 2 -maxdepth 2 -name SKILL.md 2>/dev/null
+skills/help-agent-toolkit/SKILL.md:80:### skills/
+skills/help-agent-toolkit/SKILL.md:84:| [`name`](skills/name/SKILL.md) | description 첫 문장 또는 80자 컷 |
+skills/help-agent-toolkit/SKILL.md:171:`skills/`에 SKILL.md가 0개라면:
+skills/help-agent-toolkit/SKILL.md:179:- `skills/create-claude-plugin` 참고 (플러그인 자체를 새로 만들 때)
+skills/help-agent-toolkit/SKILL.md:180:- 직접 `skills/<이름>/SKILL.md` 작성 후 새 세션 시작
+skills/help-agent-toolkit/SKILL.md:203:| `${CLAUDE_PLUGIN_ROOT}/skills/*/SKILL.md` | 플러그인 스킬 카탈로그 원천 |

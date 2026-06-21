@@ -6,44 +6,64 @@
 
 - **개인 큐레이션 베이스** — 직접 만든 것, 외부 OSS에서 가져와 다듬은 것, 실험 중인 것까지 자유롭게 담는다.
 - **단일 plugin, 다중 자산** — Claude Code가 지원하는 자산 종류(`skills/`, `agents/`, `hooks/`, `commands/`)를 한 plugin 안에 섞어 담는다.
+- **공통 스킬 루트** — Claude Code와 Codex 모두 이 저장소의 `skills/`만 플러그인 스킬 루트로 읽는다.
 - **재배포 미고려** — 로컬 directory marketplace(`agent-toolkit-local`)로만 사용.
-- **편한 게 우선** — 형식 강박 없음. 필요하면 추가하고, 안 맞으면 지운다.
+- **편한 게 우선** — 필요하면 추가하고, 안 맞으면 지운다. 단, 로더 구조는 단순하게 유지한다.
 
 ## 디렉토리 구조
 
-```
+```text
 agent-toolkit/
 ├── .claude-plugin/
-│   ├── plugin.json         # plugin 메타
+│   ├── plugin.json         # Claude Code plugin 메타
 │   └── marketplace.json    # 로컬 marketplace 메타
-├── skills/                 # 독립 스킬 — 단일 목적, 다른 스킬에 의존 X
+├── .codex-plugin/
+│   └── plugin.json         # Codex plugin 메타
+├── .agents/plugins/
+│   └── marketplace.json    # Codex 로컬 marketplace 메타
+├── skills/                 # 단일 활성 plugin skill root
 │   └── <name>/SKILL.md
-├── skills-workflow/        # 워크플로우 스킬 — skills/의 것들을 조합/오케스트레이션
-│   └── <name>/SKILL.md
-├── skills-system/          # 메타·스캐폴딩 스킬 — project-setup, create-plugin 등
-│   └── <name>/SKILL.md     #   "처음부터 구조를 세우는" 더 큰 작업
-├── agents/                 # 필요해지면 추가
-├── hooks/                  # 필요해지면 추가
-├── commands/               # 필요해지면 추가
+├── templates/              # 스킬이 대상 프로젝트에 복사하거나 참고하는 템플릿
+├── docs/
+│   └── catalog.md          # skills inventory에서 생성한 사람용 카탈로그
 └── .claude/CLAUDE.md       # 이 파일
 ```
 
-## 스킬 분류 기준
+## 스킬 관리 기준
 
-새 스킬을 추가할 때 어디에 놓을지 결정하는 기준:
+새 스킬을 추가할 때는 `skills/<name>/SKILL.md`에 둔다. 스킬이 워크플로우형인지, 스캐폴딩형인지, 디자인형인지는 문서와 frontmatter 설명으로 표현한다. 디렉토리는 플러그인 로딩 경계가 아니라 개별 스킬의 물리 위치다.
 
-| 디렉토리 | 성격 | 판단 질문 |
-|---|---|---|
-| `skills/` | **독립 스킬** | 다른 스킬을 호출하지 않고 단독으로 한 가지 일을 끝내는가? |
-| `skills-workflow/` | **워크플로우** | `skills/`의 여러 스킬을 묶어 순차/병렬로 돌리는가? |
-| `skills-system/` | **메타·스캐폴딩** | 빈 곳에 프로젝트·플러그인·디렉토리 구조 자체를 세우는가? |
+필수 frontmatter:
 
-> 분류가 애매하면 `skills/`에 둔다. 나중에 묶음·스캐폴딩 성격이 명확해지면 옮긴다.
+```yaml
+---
+name: skill-name
+description: 언제 이 스킬을 써야 하는지 검색 가능한 문장으로 설명
+---
+```
 
-`plugin.json`의 `skills` 배열에 세 디렉토리가 모두 등록되어 있어, Claude Code는 위치와 무관하게 모두 로드한다. 디렉토리 구분은 **사람이 관리하기 쉬우라고** 둔 것.
+`description`이 실제 trigger surface다. 사용자가 말할 법한 문구, 제외 조건, 우선순위를 이 필드에 구체적으로 넣는다.
 
 ## 등록 상태
 
 `~/.claude/settings.json`:
+
 - `extraKnownMarketplaces.agent-toolkit-local` (directory source → 이 디렉토리)
 - `enabledPlugins["agent-toolkit@agent-toolkit-local"]: true`
+
+Claude Code의 plugin manifest와 Codex의 plugin manifest는 모두 `skills/`를 스킬 루트로 가리켜야 한다.
+
+## 문서 갱신
+
+스킬을 추가·이동·삭제했거나 manifest를 바꿨으면 `update-project-docs` 스킬로 다음 파일을 함께 맞춘다.
+
+- `README.md`
+- `docs/catalog.md`
+- `AGENTS.md`
+- `.claude/CLAUDE.md`
+
+카탈로그는 다음 inventory를 기준으로 생성한다.
+
+```bash
+find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print | sort
+```

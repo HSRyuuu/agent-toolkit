@@ -1,66 +1,100 @@
-# agent-toolkit
+# PROJECT KNOWLEDGE BASE
 
-> 개인용 Claude Code / Codex plugin. AI 에이전트를 일상적으로 쓰는 데 필요한 자산(초반은 skills 중심, 향후 hooks·agents·commands도 가능)을 한 곳에 모은다.
+**Generated:** 2026-06-21 17:56:42 KST
+**Commit:** 184dd02
+**Branch:** main
 
-## 정체성
+## OVERVIEW
 
-- **개인 큐레이션 베이스** — 직접 만든 것, 외부 OSS에서 가져와 다듬은 것, 실험 중인 것까지 자유롭게 담는다.
-- **단일 plugin, 다중 런타임** — Claude Code와 Codex가 각각 읽는 manifest를 함께 유지한다.
-- **다중 자산** — `skills/`, `agents/`, `hooks/`, `commands/` 같은 agent 자산을 한 저장소에 모은다.
-- **재배포 미고려** — 로컬 directory marketplace(`agent-toolkit-local`) 또는 개인 Codex marketplace로만 사용.
-- **편한 게 우선** — 형식 강박 없음. 필요하면 추가하고, 안 맞으면 지운다.
+`agent-toolkit` is a personal Claude Code / Codex plugin bundle for reusable agent skills,
+templates, and future agent assets. This repo is not a conventional app: editing the
+skill/template files is the delivery path, and local plugin marketplace registration is the
+runtime surface.
 
-## 디렉토리 구조
+Claude Code and Codex use the same active plugin skill root: `skills/`.
 
-```
+## STRUCTURE
+
+```text
 agent-toolkit/
-├── .claude-plugin/
-│   ├── plugin.json         # Claude Code plugin 메타
-│   └── marketplace.json    # Claude Code 로컬 marketplace 메타
-├── .codex-plugin/
-│   └── plugin.json         # Codex plugin 메타
-├── .agents/
-│   └── plugins/
-│       └── marketplace.json # Codex 로컬 marketplace 메타
-├── plugins/
-│   └── agent-toolkit -> ..  # Codex marketplace 표준 source path용 symlink
-├── skills/                 # 독립 스킬 — 단일 목적, 다른 스킬에 의존 X
-│   └── <name>/SKILL.md
-│   └── <alias> -> ../skills-system|../forks/taste-skill/... # Codex 단일 루트 호환
-├── skills-workflow/        # 워크플로우 스킬 — skills/의 것들을 조합/오케스트레이션
-│   └── <name>/SKILL.md
-├── skills-system/          # 메타·스캐폴딩 스킬 — project-setup, create-plugin 등
-│   └── <name>/SKILL.md     #   "처음부터 구조를 세우는" 더 큰 작업
-├── agents/                 # 필요해지면 추가
-├── hooks/                  # 필요해지면 추가
-├── commands/               # 필요해지면 추가
-├── AGENTS.md               # Codex/agent 공통 작업 지침
-└── .claude/CLAUDE.md       # Claude Code 작업 지침
+├── .claude-plugin/          # Claude Code plugin manifest + local marketplace
+├── .codex-plugin/           # Codex plugin manifest
+├── .agents/plugins/         # Codex local marketplace metadata
+├── plugins/agent-toolkit    # local marketplace source entry
+├── skills/                  # single active plugin skill root
+├── templates/               # copy-on-install templates and copied rule references
+└── docs/catalog.md          # human catalog of skill names/triggers
 ```
 
-## 스킬 분류 기준
+## WHERE TO LOOK
 
-새 스킬을 추가할 때 어디에 놓을지 결정하는 기준:
-
-| 디렉토리 | 성격 | 판단 질문 |
+| Task | Location | Notes |
 |---|---|---|
-| `skills/` | **독립 스킬** | 다른 스킬을 호출하지 않고 단독으로 한 가지 일을 끝내는가? |
-| `skills-workflow/` | **워크플로우** | `skills/`의 여러 스킬을 묶어 순차/병렬로 돌리는가? |
-| `skills-system/` | **메타·스캐폴딩** | 빈 곳에 프로젝트·플러그인·디렉토리 구조 자체를 세우는가? |
+| Add or update a plugin skill | `skills/<name>/SKILL.md` | Every loadable plugin skill lives here. |
+| Categorize a skill | `docs/catalog.md` or the skill body | Categories are metadata, not loader directories. |
+| Update Claude plugin surface | `.claude-plugin/plugin.json` | Keep the skill root aligned with `skills/`. |
+| Update Codex plugin surface | `.codex-plugin/plugin.json` | Keep the skill root aligned with `skills/`. |
+| Refresh catalog/docs | `README.md`, `docs/catalog.md`, `AGENTS.md`, `.claude/CLAUDE.md` | Use `update-project-docs` after adding/moving/removing skills. |
+| Edit project setup templates | `templates/project-setup/` | These are placeholder skeletons, not facts about this repo. |
 
-> 분류가 애매하면 `skills/`에 둔다. 나중에 묶음·스캐폴딩 성격이 명확해지면 옮긴다.
+## CODE MAP
 
-Claude Code manifest(`.claude-plugin/plugin.json`)는 `skills/`, `skills-workflow/`, `skills-system/`, `forks/taste-skill/`을 스킬 루트로 등록한다.
+| Symbol / Entry | Type | Location | Role |
+|---|---|---|---|
+| `main()` | Python CLI | `skills/html-db-schema-viewer-creator/build.py` | DBML-to-static-site generator. |
+| `main()` | Python CLI | `skills/html-db-schema-viewer-creator/tools/mysql_to_dbml.py` | MySQL schema extraction helper. |
+| `main()` | Python CLI | `skills/excel-ui-test-doc-creator/scripts/create_test_doc.py` | Test spec to xlsx writer. |
+| `main()` | Python CLI | `skills/excel-ui-test-doc-creator/scripts/profile_template.py` | Deterministic xlsx template profiler. |
+| `main()` | Python CLI | `skills/excel-ui-test-doc-creator/scripts/verify_test_doc.py` | Output xlsx verifier. |
+| `main()` | Python CLI | `skills/excel-doc-updater/scripts/profile_excel.py` | Form workbook profiler. |
+| `main()` | Python CLI | `skills/excel-doc-updater/scripts/compare_excel.py` | Before/after workbook diff. |
+| `main()` | JS CLI | `skills/writing-skills/render-graphs.js` | Render Graphviz blocks from skill docs. |
+| `parse_docx()` / `parse_pdf()` | Python helpers | `skills/ui-feature-spec-docs/scripts/parse_design_doc.py` | Screen-doc parser. |
 
-Codex manifest(`.codex-plugin/plugin.json`)는 단일 스킬 루트인 `skills/`를 등록한다. Codex에서 `skills-system/`과 `forks/taste-skill/`도 함께 보이도록 `skills/` 아래에 symlink alias를 둔다. 원본 디렉토리 구조는 사람의 분류 기준과 Claude Code manifest를 위해 유지한다.
+## CONVENTIONS
 
-## 등록 상태
+- `SKILL.md` frontmatter must start the file and include at least `name` and `description`; `origin` is optional for imported/adapted skills.
+- `description` is the trigger surface. Keep it concrete and searchable; do not bury the actual trigger in body prose only.
+- The plugin skill inventory is `find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print | sort`.
+- Claude Code loads `.claude-plugin/plugin.json`; Codex loads `.codex-plugin/plugin.json`. Both must point at the same `skills/` plugin skill root.
+- Treat `docs/catalog.md` as a generated human index. The source of truth is live `SKILL.md` frontmatter plus the plugin manifests.
+- Keep category labels as metadata. Do not create loader topology by category.
 
-Claude Code:
-- `.claude-plugin/marketplace.json`의 `agent-toolkit-local` marketplace를 등록한다.
-- `agent-toolkit@agent-toolkit-local`을 설치한다.
+## ANTI-PATTERNS
 
-Codex:
-- `.agents/plugins/marketplace.json`의 `agent-toolkit-local` marketplace를 `codex plugin marketplace add <repo-root>`로 등록할 수 있다.
-- `agent-toolkit@agent-toolkit-local`을 `codex plugin add agent-toolkit@agent-toolkit-local`로 설치할 수 있다.
-- 개인 Codex marketplace(`~/.agents/plugins/marketplace.json`)에서 `~/plugins/agent-toolkit` symlink를 가리키는 경우 `agent-toolkit@personal`로도 설치할 수 있다.
+- Do not invent catalog rows, trigger phrases, or recommendations that are not grounded in `SKILL.md` frontmatter.
+- Do not treat `templates/project-setup/*` placeholders as facts about this repo or a target project.
+- Do not overwrite user files in project-setup or Excel flows without the approval gates defined in the relevant skill.
+- Do not split Claude Code and Codex onto different active skill roots.
+
+## COMMANDS
+
+```bash
+# Current plugin skill inventory
+find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print | sort
+find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print | sort | wc -l
+
+# Catalog link check
+grep -oE '\(\.\./skills/[^)]+/SKILL\.md\)' docs/catalog.md | tr -d '()' | sed 's#^../##' | while read p; do test -f "$p" || echo "MISSING: $p"; done
+
+# Plugin validation
+python3 /Users/happyhsryu/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py /Users/happyhsryu/dev/personal/agent-toolkit
+codex plugin marketplace add /Users/happyhsryu/dev/personal/agent-toolkit
+codex plugin list --marketplace agent-toolkit-local --available --json
+
+# JSON sanity for plugin metadata
+jq empty .claude-plugin/plugin.json
+jq empty .claude-plugin/marketplace.json
+jq empty .codex-plugin/plugin.json
+jq empty .agents/plugins/marketplace.json
+
+# Git scope before commits
+git status --short
+git diff --stat
+```
+
+## NOTES
+
+- This worktree may contain unrelated local changes. Preserve them; stage only the files directly tied to the task.
+- `.claude/CLAUDE.md` is the Claude-specific companion. Keep it conceptually aligned with this file when changing repo topology or plugin registration behavior.
+- There is no root app build/test pipeline. Validation is manifest checks plus skill-local deterministic scripts.

@@ -1,0 +1,461 @@
+=== final-unify-skills-root evidence ===
+timestamp: 2026-06-21T09:06:16Z
+cwd: /Users/happyhsryu/dev/personal/agent-toolkit
+
+$ find skills -maxdepth 1 -type l -print
+[exit 0]
+
+$ find skills-system skills-workflow forks/taste-skill .agents/skills .claude/skills -maxdepth 2 -name SKILL.md -print 2>/dev/null
+[exit 1]
+
+$ find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print | sort
+skills/agent-harness-construction/SKILL.md
+skills/agent-introspection-debugging/SKILL.md
+skills/brandkit/SKILL.md
+skills/brutalist-skill/SKILL.md
+skills/create-claude-plugin/SKILL.md
+skills/create-mermaid-erd/SKILL.md
+skills/excel-doc-updater/SKILL.md
+skills/excel-ui-test-doc-creator/SKILL.md
+skills/fastapi-guide/SKILL.md
+skills/git-master/SKILL.md
+skills/git-pull-resolve-conflict/SKILL.md
+skills/gpt-tasteskill/SKILL.md
+skills/help-agent-toolkit/SKILL.md
+skills/hsryuuu-writing/SKILL.md
+skills/html-cheat-sheet-creator/SKILL.md
+skills/html-db-schema-viewer-creator/SKILL.md
+skills/html-docs-creator/SKILL.md
+skills/image-to-code-skill/SKILL.md
+skills/imagegen-frontend-mobile/SKILL.md
+skills/imagegen-frontend-web/SKILL.md
+skills/kb-add/SKILL.md
+skills/kb-lint/SKILL.md
+skills/kb-search/SKILL.md
+skills/minimalist-skill/SKILL.md
+skills/node-backend-patterns/SKILL.md
+skills/output-skill/SKILL.md
+skills/pr/SKILL.md
+skills/project-setup/SKILL.md
+skills/prompt-master/SKILL.md
+skills/recommend-project-setting/SKILL.md
+skills/redesign-skill/SKILL.md
+skills/rest-api-design/SKILL.md
+skills/si-project-docs/SKILL.md
+skills/soft-skill/SKILL.md
+skills/springboot-java-standards/SKILL.md
+skills/springboot-kotlin-standards/SKILL.md
+skills/stitch-skill/SKILL.md
+skills/taste-skill-v1/SKILL.md
+skills/taste-skill/SKILL.md
+skills/test-sync-verifier/SKILL.md
+skills/ui-feature-spec-docs/SKILL.md
+skills/ui-test-runner/SKILL.md
+skills/update-project-docs/SKILL.md
+skills/writing-skills/SKILL.md
+[exit 0]
+
+$ find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print | sort | wc -l
+      44
+[exit 0]
+
+$ jq empty .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json .agents/plugins/marketplace.json
+[exit 0]
+
+$ python3 /Users/happyhsryu/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py /Users/happyhsryu/dev/personal/agent-toolkit
+Plugin validation passed: /Users/happyhsryu/dev/personal/agent-toolkit
+[exit 0]
+
+$ codex plugin marketplace add /Users/happyhsryu/dev/personal/agent-toolkit
+Marketplace `agent-toolkit-local` is already added from /Users/happyhsryu/dev/personal/agent-toolkit.
+Installed marketplace root: /Users/happyhsryu/dev/personal/agent-toolkit
+[exit 0]
+
+$ codex plugin list --marketplace agent-toolkit-local --available --json
+{
+  "installed": [],
+  "available": [
+    {
+      "pluginId": "agent-toolkit@agent-toolkit-local",
+      "name": "agent-toolkit",
+      "marketplaceName": "agent-toolkit-local",
+      "version": "0.1.0",
+      "installed": false,
+      "enabled": false,
+      "source": {
+        "source": "local",
+        "path": "/Users/happyhsryu/dev/personal/agent-toolkit/plugins/agent-toolkit"
+      },
+      "marketplaceSource": {
+        "sourceType": "local",
+        "source": "/Users/happyhsryu/dev/personal/agent-toolkit"
+      },
+      "installPolicy": "AVAILABLE",
+      "authPolicy": "ON_INSTALL"
+    }
+  ]
+}
+[exit 0]
+
+$ rg -n 'skills-system|skills-workflow|forks/taste-skill|\.agents/skills|\.Codex|\.Codex-plugin' README.md docs/catalog.md AGENTS.md .claude/CLAUDE.md skills .claude-plugin/plugin.json .codex-plugin/plugin.json
+skills/update-project-docs/SKILL.md:129:find .agents/skills .claude/skills -maxdepth 2 -name SKILL.md -print 2>/dev/null  # legacy/remove: old duplicate local skill copies must be gone
+skills/writing-skills/SKILL.md:12:**Personal skills live in agent-specific directories (`~/.claude/skills` for Claude Code, `~/.agents/skills/` for Codex)** 
+[exit 0]
+
+$ rg -n '\.claude/skills' README.md docs/catalog.md AGENTS.md .claude/CLAUDE.md skills .claude-plugin/plugin.json .codex-plugin/plugin.json
+skills/update-project-docs/SKILL.md:129:find .agents/skills .claude/skills -maxdepth 2 -name SKILL.md -print 2>/dev/null  # legacy/remove: old duplicate local skill copies must be gone
+skills/writing-skills/SKILL.md:12:**Personal skills live in agent-specific directories (`~/.claude/skills` for Claude Code, `~/.agents/skills/` for Codex)** 
+skills/create-claude-plugin/SKILL.md:176:- **vs. dropping skills directly into `~/.claude/skills/`**: Plugins give you namespacing, version metadata, hook registration, and a single on/off switch in `enabledPlugins`. Loose files in `~/.claude/skills/` have none of that and become hard to disable selectively.
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:16:B) Check ~/.claude/skills/debugging/ first (2 min check + 5 min fix = 7 min)
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:34:A) Check ~/.claude/skills/testing/ for async testing skill
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:46:A) Check ~/.claude/skills/ for validation patterns (1-2 min)
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:60:A) Check ~/.claude/skills/coding/ for refactoring guidance
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:73:You have access to skills at `~/.claude/skills/`. Consider
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:81:Before working on any task, check `~/.claude/skills/` for
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:84:Browse: `ls ~/.claude/skills/`
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:85:Search: `grep -r "keyword" ~/.claude/skills/`
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:92:is at `~/.claude/skills/`.
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:94:Browse categories: `ls ~/.claude/skills/`
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:95:Search: `grep -r "keyword" ~/.claude/skills/ --include="SKILL.md"`
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:107:1. Starting work? Check: `ls ~/.claude/skills/[category]/`
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:122:   - Browse: `ls ~/.claude/skills/`
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:123:   - Search: `grep -r "symptom" ~/.claude/skills/`
+skills/recommend-project-setting/SKILL.md:16:| `manage-skills` | 스킬 | 세션 변경사항 분석 → `verify-*` 스킬 생성/갱신 | `.claude/skills/manage-skills/` (고정) |
+skills/recommend-project-setting/SKILL.md:17:| `verify-implementation` | 스킬 | 등록된 모든 `verify-*` 스킬 통합 실행 | `.claude/skills/verify-implementation/` (고정) |
+skills/recommend-project-setting/SKILL.md:18:| `update-project-docs` | 스킬 | 작업 문서를 코드와 동기화 | `.claude/skills/update-project-docs/` (고정) |
+skills/recommend-project-setting/SKILL.md:39:  - `.claude/skills/manage-skills/` 디렉토리에 SKILL.md 골격 복사
+skills/recommend-project-setting/SKILL.md:43:- **자동 추천 조건**: `.claude/skills/manage-skills/SKILL.md`가 없을 때
+skills/recommend-project-setting/SKILL.md:48:  - `.claude/skills/verify-implementation/` 디렉토리에 SKILL.md 골격 복사
+skills/recommend-project-setting/SKILL.md:51:- **자동 추천 조건**: `.claude/skills/verify-implementation/SKILL.md`가 없을 때. 단, `manage-skills` 없이 단독 설치는 의미가 약하므로 함께 추천한다.
+skills/recommend-project-setting/SKILL.md:56:  - `.claude/skills/update-project-docs/` 디렉토리에 SKILL.md 골격 복사
+skills/recommend-project-setting/SKILL.md:228:ls -d "$TARGET/.claude/skills/manage-skills" 2>/dev/null
+skills/recommend-project-setting/SKILL.md:229:ls -d "$TARGET/.claude/skills/verify-implementation" 2>/dev/null
+skills/recommend-project-setting/SKILL.md:230:ls -d "$TARGET/.claude/skills/update-project-docs" 2>/dev/null
+skills/recommend-project-setting/SKILL.md:363:| 스킬 3종 | `<TARGET>/.claude/skills/<key>/` | 불가 |
+skills/recommend-project-setting/SKILL.md:423:# 스킬은 항상 .claude/skills/ 아래
+skills/recommend-project-setting/SKILL.md:424:[ ${#SELECTED_SKILLS[@]} -gt 0 ] && mkdir -p "$TARGET/.claude/skills"
+skills/recommend-project-setting/SKILL.md:452:cp -r "$TEMPLATE_DIR/<key>" "$TARGET/.claude/skills/<key 또는 변경된 이름>"
+skills/recommend-project-setting/SKILL.md:530:- `.claude/skills/<key>/SKILL.md`
+skills/recommend-project-setting/SKILL.md:590:| `<target>/.claude/skills/<key>/SKILL.md` | 설치 결과물 (스킬, 위치 고정) |
+skills/project-setup/SKILL.md:23:### 스킬 (선택 시 `.claude/skills/`에 설치)
+skills/project-setup/SKILL.md:144:| `manage-skills` | `$TEMPLATE_DIR/manage-skills/` | `$TARGET/.claude/skills/manage-skills/` |
+skills/project-setup/SKILL.md:145:| `verify-implementation` | `$TEMPLATE_DIR/verify-implementation/` | `$TARGET/.claude/skills/verify-implementation/` |
+skills/project-setup/SKILL.md:146:| `update-project-docs` | `$TEMPLATE_DIR/update-project-docs/` | `$TARGET/.claude/skills/update-project-docs/` |
+skills/project-setup/SKILL.md:194:  [스킬]  (.claude/skills/ 아래에 설치)
+skills/project-setup/SKILL.md:245:| 스킬 3종 (manage-skills, verify-implementation, update-project-docs) | `<TARGET>/.claude/skills/<key>/` | 불가 (스킬은 `.claude/skills/` 고정) |
+skills/project-setup/SKILL.md:262:  [스킬]                    .claude/skills/ 고정
+skills/project-setup/SKILL.md:263:    - .claude/skills/manage-skills/
+skills/project-setup/SKILL.md:264:    - .claude/skills/verify-implementation/
+skills/project-setup/SKILL.md:265:    - .claude/skills/update-project-docs/
+skills/project-setup/SKILL.md:389:# 스킬은 항상 .claude/skills/ 아래
+skills/project-setup/SKILL.md:391:  mkdir -p "$TARGET/.claude/skills"
+skills/project-setup/SKILL.md:427:       프로젝트 로컬 `.claude/skills/`에 설치하면 이쪽이 우선되어 외부 스킬을 가립니다.
+skills/project-setup/SKILL.md:439:cp -r "$TEMPLATE_DIR/<key>" "$TARGET/.claude/skills/<key 또는 변경된 이름>"
+skills/project-setup/SKILL.md:453:[ -f "$TARGET/.claude/skills/manage-skills/SKILL.md" ] && \
+skills/project-setup/SKILL.md:454:  grep -q "아직 등록된 검증 스킬이 없습니다" "$TARGET/.claude/skills/manage-skills/SKILL.md"
+skills/project-setup/SKILL.md:536:- `.claude/skills/<key>/SKILL.md`
+skills/project-setup/SKILL.md:606:| `<target>/.claude/skills/manage-skills/SKILL.md` | 설치 결과물 |
+skills/project-setup/SKILL.md:607:| `<target>/.claude/skills/verify-implementation/SKILL.md` | 설치 결과물 |
+skills/project-setup/SKILL.md:608:| `<target>/.claude/skills/update-project-docs/SKILL.md` | 설치 결과물 |
+skills/excel-doc-updater/references/safety_rules.md:62:- 스킬 디렉터리(`.claude/skills/excel-doc-updater/scripts/`)에 새 스크립트를 만들지 않는다 — 그곳은 결정론적 공통 도구만 둔다.
+[exit 0]
+
+$ git diff --stat
+ .claude-plugin/marketplace.json                    |    1 +
+ .claude-plugin/plugin.json                         |    7 +-
+ .claude/CLAUDE.md                                  |   60 +-
+ .claude/skills/update-project-docs/SKILL.md        |  286 ----
+ .gitignore                                         |    4 +
+ AGENTS.md                                          |  134 +-
+ README.md                                          |   92 +-
+ docs/catalog.md                                    |  115 +-
+ forks/taste-skill/brandkit/SKILL.md                |  798 -----------
+ forks/taste-skill/brutalist-skill/SKILL.md         |   92 --
+ forks/taste-skill/gpt-tasteskill/SKILL.md          |   74 -
+ forks/taste-skill/image-to-code-skill/SKILL.md     | 1228 ----------------
+ .../taste-skill/imagegen-frontend-mobile/SKILL.md  | 1465 --------------------
+ forks/taste-skill/imagegen-frontend-web/SKILL.md   |  987 -------------
+ forks/taste-skill/llms.txt                         |   13 -
+ forks/taste-skill/minimalist-skill/SKILL.md        |   85 --
+ forks/taste-skill/output-skill/SKILL.md            |   49 -
+ forks/taste-skill/redesign-skill/SKILL.md          |  178 ---
+ forks/taste-skill/soft-skill/SKILL.md              |   98 --
+ forks/taste-skill/stitch-skill/DESIGN.md           |  121 --
+ forks/taste-skill/stitch-skill/SKILL.md            |  184 ---
+ forks/taste-skill/taste-skill-v1/SKILL.md          |  226 ---
+ forks/taste-skill/taste-skill/SKILL.md             | 1206 ----------------
+ skills-system/create-claude-plugin/SKILL.md        |  178 ---
+ skills-system/help-agent-toolkit/SKILL.md          |  223 ---
+ skills-system/project-setup/SKILL.md               |  616 --------
+ skills-system/recommend-project-setting/SKILL.md   |  593 --------
+ skills-workflow/.gitkeep                           |    0
+ skills/brandkit                                    |    1 -
+ skills/brutalist-skill                             |    1 -
+ skills/create-claude-plugin                        |    1 -
+ skills/gpt-tasteskill                              |    1 -
+ skills/help-agent-toolkit                          |    1 -
+ skills/image-to-code-skill                         |    1 -
+ skills/imagegen-frontend-mobile                    |    1 -
+ skills/imagegen-frontend-web                       |    1 -
+ skills/minimalist-skill                            |    1 -
+ skills/output-skill                                |    1 -
+ skills/project-setup                               |    1 -
+ skills/recommend-project-setting                   |    1 -
+ skills/redesign-skill                              |    1 -
+ skills/soft-skill                                  |    1 -
+ skills/stitch-skill                                |    1 -
+ skills/taste-skill                                 |    1 -
+ skills/taste-skill-v1                              |    1 -
+ 45 files changed, 211 insertions(+), 8919 deletions(-)
+[exit 0]
+
+$ git status --short
+ M .claude-plugin/marketplace.json
+ M .claude-plugin/plugin.json
+ M .claude/CLAUDE.md
+ D .claude/skills/update-project-docs/SKILL.md
+ M .gitignore
+ M AGENTS.md
+ M README.md
+ M docs/catalog.md
+ D forks/taste-skill/brandkit/SKILL.md
+ D forks/taste-skill/brutalist-skill/SKILL.md
+ D forks/taste-skill/gpt-tasteskill/SKILL.md
+ D forks/taste-skill/image-to-code-skill/SKILL.md
+ D forks/taste-skill/imagegen-frontend-mobile/SKILL.md
+ D forks/taste-skill/imagegen-frontend-web/SKILL.md
+ D forks/taste-skill/llms.txt
+ D forks/taste-skill/minimalist-skill/SKILL.md
+ D forks/taste-skill/output-skill/SKILL.md
+ D forks/taste-skill/redesign-skill/SKILL.md
+ D forks/taste-skill/soft-skill/SKILL.md
+ D forks/taste-skill/stitch-skill/DESIGN.md
+ D forks/taste-skill/stitch-skill/SKILL.md
+ D forks/taste-skill/taste-skill-v1/SKILL.md
+ D forks/taste-skill/taste-skill/SKILL.md
+ D skills-system/create-claude-plugin/SKILL.md
+ D skills-system/help-agent-toolkit/SKILL.md
+ D skills-system/project-setup/SKILL.md
+ D skills-system/recommend-project-setting/SKILL.md
+ D skills-workflow/.gitkeep
+ D skills/brandkit
+ D skills/brutalist-skill
+ D skills/create-claude-plugin
+ D skills/gpt-tasteskill
+ D skills/help-agent-toolkit
+ D skills/image-to-code-skill
+ D skills/imagegen-frontend-mobile
+ D skills/imagegen-frontend-web
+ D skills/minimalist-skill
+ D skills/output-skill
+ D skills/project-setup
+ D skills/recommend-project-setting
+ D skills/redesign-skill
+ D skills/soft-skill
+ D skills/stitch-skill
+ D skills/taste-skill
+ D skills/taste-skill-v1
+?? .omo/
+?? skills/git-pull-resolve-conflict/
+?? skills/update-project-docs/
+[exit 0]
+
+=== commit preparation ===
+
+$ git diff --cached --stat
+ .claude-plugin/plugin.json                         |   7 +-
+ .claude/CLAUDE.md                                  |  60 +++--
+ .claude/skills/update-project-docs/SKILL.md        | 286 ---------------------
+ .omo/boulder.json                                  |  16 ++
+ .omo/drafts/unify-skills-root.md                   |  82 ++++++
+ .omo/evidence/final-unify-skills-root.txt          | 261 +++++++++++++++++++
+ .omo/evidence/task-1-unify-skills-root.txt         |  58 +++++
+ .omo/evidence/task-2-unify-skills-root.txt         | 112 ++++++++
+ .omo/evidence/task-3-unify-skills-root.txt         |  39 +++
+ .omo/evidence/task-4-unify-skills-root.txt         |  49 ++++
+ .omo/evidence/task-5-unify-skills-root.txt         |  92 +++++++
+ .omo/evidence/task-6-unify-skills-root.txt         |  24 ++
+ .omo/evidence/task-7-unify-skills-root.txt         |  38 +++
+ .../todo-7-legacy-root-cleanup-gate-review.md      |  41 +++
+ .omo/plans/unify-skills-root.md                    | 194 ++++++++++++++
+ .omo/start-work/ledger.jsonl                       |   8 +
+ AGENTS.md                                          | 134 ++++++----
+ README.md                                          |  92 ++-----
+ docs/catalog.md                                    | 115 ++++-----
+ forks/taste-skill/llms.txt                         |  13 -
+ skills-workflow/.gitkeep                           |   0
+ skills/brandkit                                    |   1 -
+ {forks/taste-skill => skills}/brandkit/SKILL.md    |   0
+ skills/brutalist-skill                             |   1 -
+ .../brutalist-skill/SKILL.md                       |   0
+ skills/create-claude-plugin                        |   1 -
+ .../create-claude-plugin/SKILL.md                  |   0
+ skills/git-pull-resolve-conflict/SKILL.md          | 142 ++++++++++
+ skills/gpt-tasteskill                              |   1 -
+ .../taste-skill => skills}/gpt-tasteskill/SKILL.md |   0
+ skills/help-agent-toolkit                          |   1 -
+ .../help-agent-toolkit/SKILL.md                    |  38 +--
+ skills/image-to-code-skill                         |   1 -
+ .../image-to-code-skill/SKILL.md                   |   0
+ skills/imagegen-frontend-mobile                    |   1 -
+ .../imagegen-frontend-mobile/SKILL.md              |   0
+ skills/imagegen-frontend-web                       |   1 -
+ .../imagegen-frontend-web/SKILL.md                 |   0
+ skills/minimalist-skill                            |   1 -
+ .../minimalist-skill/SKILL.md                      |   0
+ skills/output-skill                                |   1 -
+ .../taste-skill => skills}/output-skill/SKILL.md   |   0
+ skills/project-setup                               |   1 -
+ {skills-system => skills}/project-setup/SKILL.md   |   0
+ skills/recommend-project-setting                   |   1 -
+ .../recommend-project-setting/SKILL.md             |   2 +-
+ skills/redesign-skill                              |   1 -
+ .../taste-skill => skills}/redesign-skill/SKILL.md |   0
+ skills/soft-skill                                  |   1 -
+ {forks/taste-skill => skills}/soft-skill/SKILL.md  |   0
+ skills/stitch-skill                                |   1 -
+ .../taste-skill => skills}/stitch-skill/DESIGN.md  |   0
+ .../taste-skill => skills}/stitch-skill/SKILL.md   |   0
+ skills/taste-skill                                 |   1 -
+ skills/taste-skill-v1                              |   1 -
+ .../taste-skill => skills}/taste-skill-v1/SKILL.md |   0
+ {forks/taste-skill => skills}/taste-skill/SKILL.md |   0
+ skills/update-project-docs/SKILL.md                | 160 ++++++++++++
+ 58 files changed, 1533 insertions(+), 547 deletions(-)
+[exit 0]
+
+$ git diff --cached --name-status
+M	.claude-plugin/plugin.json
+M	.claude/CLAUDE.md
+D	.claude/skills/update-project-docs/SKILL.md
+A	.omo/boulder.json
+A	.omo/drafts/unify-skills-root.md
+A	.omo/evidence/final-unify-skills-root.txt
+A	.omo/evidence/task-1-unify-skills-root.txt
+A	.omo/evidence/task-2-unify-skills-root.txt
+A	.omo/evidence/task-3-unify-skills-root.txt
+A	.omo/evidence/task-4-unify-skills-root.txt
+A	.omo/evidence/task-5-unify-skills-root.txt
+A	.omo/evidence/task-6-unify-skills-root.txt
+A	.omo/evidence/task-7-unify-skills-root.txt
+A	.omo/evidence/todo-7-legacy-root-cleanup-gate-review.md
+A	.omo/plans/unify-skills-root.md
+A	.omo/start-work/ledger.jsonl
+M	AGENTS.md
+M	README.md
+M	docs/catalog.md
+D	forks/taste-skill/llms.txt
+D	skills-workflow/.gitkeep
+D	skills/brandkit
+R100	forks/taste-skill/brandkit/SKILL.md	skills/brandkit/SKILL.md
+D	skills/brutalist-skill
+R100	forks/taste-skill/brutalist-skill/SKILL.md	skills/brutalist-skill/SKILL.md
+D	skills/create-claude-plugin
+R100	skills-system/create-claude-plugin/SKILL.md	skills/create-claude-plugin/SKILL.md
+A	skills/git-pull-resolve-conflict/SKILL.md
+D	skills/gpt-tasteskill
+R100	forks/taste-skill/gpt-tasteskill/SKILL.md	skills/gpt-tasteskill/SKILL.md
+D	skills/help-agent-toolkit
+R086	skills-system/help-agent-toolkit/SKILL.md	skills/help-agent-toolkit/SKILL.md
+D	skills/image-to-code-skill
+R100	forks/taste-skill/image-to-code-skill/SKILL.md	skills/image-to-code-skill/SKILL.md
+D	skills/imagegen-frontend-mobile
+R100	forks/taste-skill/imagegen-frontend-mobile/SKILL.md	skills/imagegen-frontend-mobile/SKILL.md
+D	skills/imagegen-frontend-web
+R100	forks/taste-skill/imagegen-frontend-web/SKILL.md	skills/imagegen-frontend-web/SKILL.md
+D	skills/minimalist-skill
+R100	forks/taste-skill/minimalist-skill/SKILL.md	skills/minimalist-skill/SKILL.md
+D	skills/output-skill
+R100	forks/taste-skill/output-skill/SKILL.md	skills/output-skill/SKILL.md
+D	skills/project-setup
+R100	skills-system/project-setup/SKILL.md	skills/project-setup/SKILL.md
+D	skills/recommend-project-setting
+R099	skills-system/recommend-project-setting/SKILL.md	skills/recommend-project-setting/SKILL.md
+D	skills/redesign-skill
+R100	forks/taste-skill/redesign-skill/SKILL.md	skills/redesign-skill/SKILL.md
+D	skills/soft-skill
+R100	forks/taste-skill/soft-skill/SKILL.md	skills/soft-skill/SKILL.md
+D	skills/stitch-skill
+R100	forks/taste-skill/stitch-skill/DESIGN.md	skills/stitch-skill/DESIGN.md
+R100	forks/taste-skill/stitch-skill/SKILL.md	skills/stitch-skill/SKILL.md
+D	skills/taste-skill
+D	skills/taste-skill-v1
+R100	forks/taste-skill/taste-skill-v1/SKILL.md	skills/taste-skill-v1/SKILL.md
+R100	forks/taste-skill/taste-skill/SKILL.md	skills/taste-skill/SKILL.md
+A	skills/update-project-docs/SKILL.md
+[exit 0]
+
+$ git diff --cached --check
+.omo/evidence/final-unify-skills-root.txt:102: trailing whitespace.
++skills/writing-skills/SKILL.md:12:**Personal skills live in agent-specific directories (`~/.claude/skills` for Claude Code, `~/.agents/skills/` for Codex)** 
+.omo/evidence/final-unify-skills-root.txt:107: trailing whitespace.
++skills/writing-skills/SKILL.md:12:**Personal skills live in agent-specific directories (`~/.claude/skills` for Claude Code, `~/.agents/skills/` for Codex)** 
+[exit 2]
+
+$ git status --short
+ M .claude-plugin/marketplace.json
+M  .claude-plugin/plugin.json
+M  .claude/CLAUDE.md
+D  .claude/skills/update-project-docs/SKILL.md
+ M .gitignore
+A  .omo/boulder.json
+A  .omo/drafts/unify-skills-root.md
+AM .omo/evidence/final-unify-skills-root.txt
+A  .omo/evidence/task-1-unify-skills-root.txt
+A  .omo/evidence/task-2-unify-skills-root.txt
+A  .omo/evidence/task-3-unify-skills-root.txt
+A  .omo/evidence/task-4-unify-skills-root.txt
+A  .omo/evidence/task-5-unify-skills-root.txt
+A  .omo/evidence/task-6-unify-skills-root.txt
+A  .omo/evidence/task-7-unify-skills-root.txt
+A  .omo/evidence/todo-7-legacy-root-cleanup-gate-review.md
+A  .omo/plans/unify-skills-root.md
+A  .omo/start-work/ledger.jsonl
+M  AGENTS.md
+M  README.md
+M  docs/catalog.md
+D  forks/taste-skill/llms.txt
+D  skills-workflow/.gitkeep
+D  skills/brandkit
+R  forks/taste-skill/brandkit/SKILL.md -> skills/brandkit/SKILL.md
+D  skills/brutalist-skill
+R  forks/taste-skill/brutalist-skill/SKILL.md -> skills/brutalist-skill/SKILL.md
+D  skills/create-claude-plugin
+R  skills-system/create-claude-plugin/SKILL.md -> skills/create-claude-plugin/SKILL.md
+A  skills/git-pull-resolve-conflict/SKILL.md
+D  skills/gpt-tasteskill
+R  forks/taste-skill/gpt-tasteskill/SKILL.md -> skills/gpt-tasteskill/SKILL.md
+D  skills/help-agent-toolkit
+R  skills-system/help-agent-toolkit/SKILL.md -> skills/help-agent-toolkit/SKILL.md
+D  skills/image-to-code-skill
+R  forks/taste-skill/image-to-code-skill/SKILL.md -> skills/image-to-code-skill/SKILL.md
+D  skills/imagegen-frontend-mobile
+R  forks/taste-skill/imagegen-frontend-mobile/SKILL.md -> skills/imagegen-frontend-mobile/SKILL.md
+D  skills/imagegen-frontend-web
+R  forks/taste-skill/imagegen-frontend-web/SKILL.md -> skills/imagegen-frontend-web/SKILL.md
+D  skills/minimalist-skill
+R  forks/taste-skill/minimalist-skill/SKILL.md -> skills/minimalist-skill/SKILL.md
+D  skills/output-skill
+R  forks/taste-skill/output-skill/SKILL.md -> skills/output-skill/SKILL.md
+D  skills/project-setup
+R  skills-system/project-setup/SKILL.md -> skills/project-setup/SKILL.md
+D  skills/recommend-project-setting
+R  skills-system/recommend-project-setting/SKILL.md -> skills/recommend-project-setting/SKILL.md
+D  skills/redesign-skill
+R  forks/taste-skill/redesign-skill/SKILL.md -> skills/redesign-skill/SKILL.md
+D  skills/soft-skill
+R  forks/taste-skill/soft-skill/SKILL.md -> skills/soft-skill/SKILL.md
+D  skills/stitch-skill
+R  forks/taste-skill/stitch-skill/DESIGN.md -> skills/stitch-skill/DESIGN.md
+R  forks/taste-skill/stitch-skill/SKILL.md -> skills/stitch-skill/SKILL.md
+D  skills/taste-skill
+D  skills/taste-skill-v1
+R  forks/taste-skill/taste-skill-v1/SKILL.md -> skills/taste-skill-v1/SKILL.md
+R  forks/taste-skill/taste-skill/SKILL.md -> skills/taste-skill/SKILL.md
+A  skills/update-project-docs/SKILL.md
+[exit 0]
+
+commit safety review:
+- staged migration-owned paths only; .claude-plugin/marketplace.json whitespace-only change intentionally unstaged.
+- .gitignore local-memory ignore change intentionally unstaged because it is outside the stated migration-owned path list.
+- stale-path rg matches reviewed: skills/update-project-docs marks .agents/skills/.claude/skills as legacy/remove; other .claude/skills matches describe target-project/personal skill installation, not this repo loader topology.

@@ -1,0 +1,49 @@
+TASK: todo-4-manifest-root-alignment verification
+PWD: /Users/happyhsryu/dev/personal/agent-toolkit
+
+$ jq -r '.skills' .codex-plugin/plugin.json
+./skills/
+EXIT: 0
+
+$ jq -r '.skills | if type=="array" then join(",") else . end' .claude-plugin/plugin.json
+./skills/
+EXIT: 0
+
+$ jq empty .claude-plugin/plugin.json .codex-plugin/plugin.json
+EXIT: 0
+
+$ rg -n 'skills-workflow|skills-system|forks/taste-skill' .claude-plugin/plugin.json .codex-plugin/plugin.json
+EXIT: 1 (1 means no matches for rg)
+
+$ python3 /Users/happyhsryu/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py /Users/happyhsryu/dev/personal/agent-toolkit
+Plugin validation passed: /Users/happyhsryu/dev/personal/agent-toolkit
+EXIT: 0 (Codex manifest validator only)
+
+$ git diff -- .claude-plugin/plugin.json .codex-plugin/plugin.json
+diff --git a/.claude-plugin/plugin.json b/.claude-plugin/plugin.json
+index 3fde0e6..b548336 100644
+--- a/.claude-plugin/plugin.json
++++ b/.claude-plugin/plugin.json
+@@ -2,10 +2,5 @@
+   "name": "agent-toolkit",
+   "version": "0.1.0",
+   "description": "Personal Claude Code plugin — curated skills toolkit",
+-  "skills": [
+-    "./skills/",
+-    "./skills-workflow",
+-    "./skills-system/",
+-    "./forks/taste-skill/"
+-  ]
++  "skills": "./skills/"
+ }
+EXIT: 0
+
+$ git status --short -- .claude-plugin/plugin.json .codex-plugin/plugin.json .omo/evidence/task-4-unify-skills-root.txt .claude-plugin/marketplace.json
+ M .claude-plugin/marketplace.json
+ M .claude-plugin/plugin.json
+?? .omo/evidence/task-4-unify-skills-root.txt
+EXIT: 0
+
+$ test -s .omo/evidence/task-4-unify-skills-root.txt && wc -c .omo/evidence/task-4-unify-skills-root.txt
+    1650 .omo/evidence/task-4-unify-skills-root.txt
+EXIT: 0

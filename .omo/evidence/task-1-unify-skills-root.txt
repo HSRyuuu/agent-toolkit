@@ -1,0 +1,58 @@
+TASK: task-1-unify-skills-root RED evidence
+GENERATED_AT: 2026-06-21T08:39:02Z
+
+DIRTY_WORKTREE_COMMAND: git status --short
+ M .claude-plugin/marketplace.json
+ M .gitignore
+ M AGENTS.md
+?? .agents/skills/
+?? .omo/
+?? skills/git-pull-resolve-conflict/
+
+COMMAND 1: find skills -maxdepth 1 -type l -exec basename {} \; | sort
+brandkit
+brutalist-skill
+create-claude-plugin
+gpt-tasteskill
+help-agent-toolkit
+image-to-code-skill
+imagegen-frontend-mobile
+imagegen-frontend-web
+minimalist-skill
+output-skill
+project-setup
+recommend-project-setting
+redesign-skill
+soft-skill
+stitch-skill
+taste-skill
+taste-skill-v1
+
+COMMAND 2: find skills-system forks/taste-skill .agents/skills .claude/skills -maxdepth 2 -name SKILL.md -print 2>/dev/null | sort
+.agents/skills/update-project-docs/SKILL.md
+.claude/skills/update-project-docs/SKILL.md
+forks/taste-skill/brandkit/SKILL.md
+forks/taste-skill/brutalist-skill/SKILL.md
+forks/taste-skill/gpt-tasteskill/SKILL.md
+forks/taste-skill/image-to-code-skill/SKILL.md
+forks/taste-skill/imagegen-frontend-mobile/SKILL.md
+forks/taste-skill/imagegen-frontend-web/SKILL.md
+forks/taste-skill/minimalist-skill/SKILL.md
+forks/taste-skill/output-skill/SKILL.md
+forks/taste-skill/redesign-skill/SKILL.md
+forks/taste-skill/soft-skill/SKILL.md
+forks/taste-skill/stitch-skill/SKILL.md
+forks/taste-skill/taste-skill-v1/SKILL.md
+forks/taste-skill/taste-skill/SKILL.md
+skills-system/create-claude-plugin/SKILL.md
+skills-system/help-agent-toolkit/SKILL.md
+skills-system/project-setup/SKILL.md
+skills-system/recommend-project-setting/SKILL.md
+
+COMMAND 3: jq -r '.skills' .claude-plugin/plugin.json
+[
+  "./skills/",
+  "./skills-workflow",
+  "./skills-system/",
+  "./forks/taste-skill/"
+]

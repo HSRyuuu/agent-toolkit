@@ -586,7 +586,7 @@ cp -r "$TEMPLATE_DIR/<key>" "$TARGET/.claude/skills/<key 또는 변경된 이름
 | File | Purpose |
 |------|---------|
 | `templates/project-setup/` | 추천·설치할 자산 원본 (`project-setup`과 공유) |
-| `skills-system/project-setup/SKILL.md` | 빈 프로젝트용 자매 스킬 (자산 카탈로그·설치 로직 공유) |
+| `skills/project-setup/SKILL.md` | 빈 프로젝트용 자매 스킬 (자산 카탈로그·설치 로직 공유) |
 | `<target>/.claude/skills/<key>/SKILL.md` | 설치 결과물 (스킬, 위치 고정) |
 | `<target>/docs/<doc>` (기본 / 사용자 지정 시 다른 경로) | 설치 결과물 (작업 문서 5종) |
 | `<target>/.claude/LESSONS.md` | 설치 결과물 (자기개선, 위치 고정) |

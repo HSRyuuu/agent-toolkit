@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "active_work_id": "unify-skills-root",
+  "works": {
+    "unify-skills-root": {
+      "work_id": "unify-skills-root",
+      "active_plan": ".omo/plans/unify-skills-root.md",
+      "plan_name": "unify-skills-root",
+      "session_ids": [
+        "codex:019ee918-3937-7c70-8f0c-a59d7a8dda50"
+      ],
+      "status": "active",
+      "worktree_path": null
+    }
+  }
+}

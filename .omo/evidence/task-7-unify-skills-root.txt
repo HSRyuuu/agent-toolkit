@@ -1,0 +1,38 @@
+TASK: Todo 7 - clean legacy root leftovers without removing non-skill templates
+Worktree: /Users/happyhsryu/dev/personal/agent-toolkit
+Artifact generated: 2026-06-21 Asia/Seoul
+
+Scenario: no SKILL.md remains under old skill-source roots
+Invocation: find skills-system skills-workflow forks/taste-skill -maxdepth 2 -name SKILL.md -print 2>/dev/null
+Binary observable: PASS if stdout is empty. A nonzero exit is expected when removed roots are absent.
+stdout:
+exit_code: 1
+
+Scenario: contradictory scoped taste-skill guidance absent or neutralized
+Invocation: test ! -e forks/taste-skill/AGENTS.md || ! rg -n 'not move|symlink' forks/taste-skill/AGENTS.md
+Binary observable: PASS if exit_code is 0 and stdout is empty or contains no contradictory matches.
+stdout:
+exit_code: 0
+
+Scenario: remaining non-skill leftovers under old roots
+Invocation: find skills-system skills-workflow forks/taste-skill -maxdepth 2 -print 2>/dev/null | sort
+Binary observable: PASS if stdout is empty.
+stdout:
+exit_code: 0
+
+Non-skill leftover justification:
+None. skills-system/, skills-workflow/, and forks/taste-skill/ are absent after cleanup, so no old-root non-skill files remain to justify. templates/ was not touched.
+
+Adversarial probes:
+stale_state: PASS - verification was captured after removing the old roots.
+dirty_worktree: PASS - cleanup touched only allowed legacy roots and this evidence file; unrelated dirty paths were not edited.
+misleading_success_output: PASS - exact required invocations, stdout, exit codes, and pass observables are recorded above.
+cancel_resume: PASS - cleanup is idempotent because absent roots produce empty verification stdout with stderr suppressed.
+repeated_interruptions: PASS - remaining tree command above records the post-cleanup state.
+malformed_input: not_applicable - no parser/input format added or changed.
+prompt_injection: not_applicable - no untrusted external text consumed for runtime behavior.
+hung_command: not_applicable - only bounded local filesystem checks were run.
+flaky_tests: not_applicable - no timing-sensitive tests involved.
+
+Cleanup:
+No runtime resources, processes, ports, containers, or temp directories created.

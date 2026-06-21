@@ -1,0 +1,24 @@
+TASK: todo-6-docs-catalog-unified-root
+WORKTREE: /Users/happyhsryu/dev/personal/agent-toolkit
+TIMESTAMP: 2026-06-21 18:01:21 KST
+
+SCENARIO: stale topology terms absent from human docs
+COMMAND: rg -n 'skills-system|skills-workflow|forks/taste-skill|symlink|\.Codex|\.Codex-plugin' README.md docs/catalog.md AGENTS.md .claude/CLAUDE.md
+EXIT: 1 (expected 1 when there are no matches)
+
+SCENARIO: catalog links resolve to physical skills
+COMMAND: grep -oE '\(\.\./skills/[^)]+/SKILL\.md\)' docs/catalog.md | tr -d '()' | sed 's#^../##' | while read p; do test -f "$p" || echo "MISSING: $p"; done
+EXIT: 0
+
+SCENARIO: current skill inventory count
+COMMAND: find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print | sort | wc -l
+      44
+EXIT: 0
+
+SCENARIO: target-project loader path mention absent from human docs
+COMMAND: rg -n '\.claude/skills' README.md docs/catalog.md AGENTS.md .claude/CLAUDE.md
+EXIT: 1 (expected 1 when there are no matches)
+
+REGENERATION COMMANDS USED:
+COMMAND: ruby -ryaml -e 'files = Dir["skills/*/SKILL.md"].sort; files.each { |f| text = File.read(f); fm = text.match(/\A---\s*\n(.*?)\n---\s*\n/m)&.[](1); data = fm ? YAML.safe_load(fm, permitted_classes: [], aliases: false) : {}; dir = f.split("/")[1]; desc = data["description"].to_s.gsub(/\s+/, " ").strip; puts "#{dir}	#{data["name"]}	#{desc}" }'
+COMMAND: apply_patch (replaced README.md, docs/catalog.md, AGENTS.md, .claude/CLAUDE.md)

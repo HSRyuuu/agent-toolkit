@@ -1,0 +1,39 @@
+COMMAND: test -f skills/update-project-docs/SKILL.md
+EXIT: 0
+
+COMMAND: find .agents/skills .claude/skills -maxdepth 2 -name SKILL.md -print 2>/dev/null
+EXIT: 0
+
+COMMAND: rg -n 'skills-workflow|skills-system|\.Codex|\.Codex-plugin' skills/update-project-docs/SKILL.md
+EXIT: 1
+
+COMMAND: rg -n 'AGENTS.md|\.claude/CLAUDE.md|\.codex-plugin/plugin.json|\.claude-plugin/plugin.json|docs/catalog.md|README.md' skills/update-project-docs/SKILL.md
+3:description: agent-toolkit 저장소의 개발용 문서(AGENTS.md, .claude/CLAUDE.md, README.md, docs/catalog.md)를 현재 단일 skills/ 루트와 Claude/Codex 플러그인 manifest 상태에 맞게 동기화한다. 새 스킬을 추가·이동·삭제했거나, .codex-plugin/plugin.json 또는 .claude-plugin/plugin.json의 skills 설정을 바꿨거나, plugin skill 표면을 다시 정리할 때 사용한다.
+11:- `AGENTS.md` - Codex와 공통 에이전트가 읽는 저장소 구조, 규칙, 작업 지침
+12:- `.claude/CLAUDE.md` - Claude Code가 읽는 저장소 구조, 규칙, 작업 지침
+13:- `README.md` - 저장소를 처음 여는 사람이 보는 소개, 설치, 구성 요약
+14:- `docs/catalog.md` - `skills/`에 있는 plugin skill 카탈로그
+15:- `.codex-plugin/plugin.json` - Codex plugin manifest와 skill 루트
+16:- `.claude-plugin/plugin.json` - Claude Code plugin manifest와 skill 루트
+18:위 파일들은 같은 사실을 말해야 한다. `AGENTS.md`와 `.claude/CLAUDE.md`의 구조 설명, `README.md`의 구성 요약, `docs/catalog.md`의 목록, 두 plugin manifest의 skill 루트가 동시에 `skills/` 기준으로 맞아야 한다.
+26:3. `.codex-plugin/plugin.json` 또는 `.claude-plugin/plugin.json`의 `skills`, `name`, `description`, `version`을 바꿨다.
+43:jq '.skills, .name, .description, .version' .codex-plugin/plugin.json
+44:jq '.skills, .name, .description, .version' .claude-plugin/plugin.json
+55:- `AGENTS.md`, `.claude/CLAUDE.md`, `README.md`, `docs/catalog.md`가 같은 skill 목록과 루트 정책을 설명하는가?
+56:- `.codex-plugin/plugin.json`과 `.claude-plugin/plugin.json`의 `skills` 값이 `./skills/`로 정합적인가?
+59:### Step 2 - `docs/catalog.md` 갱신
+61:`docs/catalog.md`는 `skills/*/SKILL.md` frontmatter에서 생성한 plugin skill 카탈로그로 유지한다.
+74:grep -oE '\(\.\./skills/[^)]+/SKILL\.md\)' docs/catalog.md \
+82:### Step 3 - `AGENTS.md`와 `.claude/CLAUDE.md` 갱신
+88:- `.codex-plugin/plugin.json`과 `.claude-plugin/plugin.json`의 역할이 정확히 설명되는가?
+89:- `README.md`와 `docs/catalog.md`를 갱신 대상으로 안내하는가?
+91:- `.claude/CLAUDE.md`는 Claude Code 전용 지침을 담되, plugin skill inventory 자체는 `skills/` 기준으로 설명하는가?
+95:### Step 4 - `README.md` 갱신
+103:- 전체 skill 목록과 트리거는 `docs/catalog.md`로 연결한다.
+111:jq -r '.skills' .codex-plugin/plugin.json
+112:jq -r '.skills | if type=="array" then join(",") else . end' .claude-plugin/plugin.json
+113:jq empty .codex-plugin/plugin.json .claude-plugin/plugin.json
+130:rg -n 'AGENTS.md|\.claude/CLAUDE.md|\.codex-plugin/plugin.json|\.claude-plugin/plugin.json|docs/catalog.md|README.md' skills/update-project-docs/SKILL.md
+137:rg -n '\(\.\./skills/[^)]+/SKILL\.md\)' docs/catalog.md
+138:jq empty .codex-plugin/plugin.json .claude-plugin/plugin.json
+EXIT: 0
