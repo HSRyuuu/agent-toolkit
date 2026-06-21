@@ -2,10 +2,12 @@
 
 > 이 저장소는 [https://github.com/HSRyuuu/AI-Practice-Archive](https://github.com/HSRyuuu/AI-Practice-Archive)를 플러그인 형태로 변경한 것입니다.
 > 더 이상 기존 저장소는 유지보수되지 않고 이 저장소로 마이그레이션 되었습니다.
+>
+> Claude Code와 Codex 양쪽에서 로컬 플러그인으로 등록해 쓰는 개인용 agent toolkit입니다.
 
 ## 설치
 
-이 저장소를 **로컬 directory marketplace**로 등록해서 사용한다.
+먼저 원하는 위치에 저장소를 둔다.
 
 ```bash
 git clone https://github.com/HSRyuuu/agent-toolkit.git
@@ -13,14 +15,26 @@ cd agent-toolkit
 pwd # ~/your-dir/agent-toolkit
 ```
 
-Claude Code 안에서:
+### Claude Code
 
 ```
 /plugin marketplace add ~/your-dir/agent-toolkit
 /plugin install agent-toolkit@agent-toolkit-local
 ```
 
-새 세션을 띄우면 `skills/`, `skills-workflow/`, `skills-system/`의 모든 스킬이 자동 로드된다. 디렉토리를 그대로 편집하면 다음 세션부터 반영 — 빌드·배포 단계 없음.
+Claude Code는 `.claude-plugin/plugin.json`을 사용한다. 현재 `skills/`, `skills-workflow/`, `skills-system/`, `forks/taste-skill/`을 스킬 루트로 등록한다.
+
+### Codex
+
+```bash
+codex plugin marketplace add ~/your-dir/agent-toolkit
+codex plugin add agent-toolkit@agent-toolkit-local
+codex plugin list --available --json
+```
+
+Codex는 `.agents/plugins/marketplace.json`과 `.codex-plugin/plugin.json`을 사용한다. 현재 Codex manifest는 검증 가능한 단일 스킬 루트인 `skills/`를 등록한다.
+
+새 세션을 띄우면 설치된 플러그인 스킬이 자동 로드된다. 디렉토리를 그대로 편집하면 다음 세션부터 반영되며 별도 빌드·배포 단계는 없다.
 
 ## 무엇이 들어 있나
 
@@ -29,7 +43,7 @@ Claude Code 안에서:
 - `skills-system/` — 메타·스캐폴딩 스킬
 - `templates/` — 다른 스킬이 골격 원본으로 쓰는 템플릿 모음
 
-전체 목록과 트리거는 [docs/catalog.md](docs/catalog.md). 디렉토리 분류 기준은 [.claude/CLAUDE.md](.claude/CLAUDE.md).
+전체 목록과 트리거는 [docs/catalog.md](docs/catalog.md). 디렉토리 분류 기준은 [AGENTS.md](AGENTS.md)와 [.claude/CLAUDE.md](.claude/CLAUDE.md)에 맞춘다.
 
 ## 갱신
 
@@ -56,7 +70,6 @@ Claude Code 안에서:
 | [html-cheat-sheet-creator](skills/html-cheat-sheet-creator/SKILL.md)           | 모바일 우선 단일 HTML 치트 시트·학습 카드·레퍼런스 시트 (2~6 탭 + 사이드바)                     |
 | [html-db-schema-viewer-creator](skills/html-db-schema-viewer-creator/SKILL.md) | DBML·DDL·MCP 결과를 다중 페이지 정적 HTML DB 사이트로 (ERD + 테이블 상세 + DBML 뷰어)           |
 | [html-docs-creator](skills/html-docs-creator/SKILL.md)                         | 임의의 input을 외부 CDN 의존 없는 단일 자기완결 HTML 문서로 (노션 톤)                           |
-| [html-erd-viewer-creator](skills/html-erd-viewer-creator/SKILL.md)             | DDL·mmd·schema 명세서를 단일 self-contained 인터랙티브 ERD HTML 파일로                          |
 | [kb-add](skills/kb-add/SKILL.md)                                               | KB 단일 input 통로 — URL/파일/텍스트/Inbox, 신규/append/modify/remove 모드, 수정·제거 시 스냅샷 |
 | [kb-lint](skills/kb-lint/SKILL.md)                                             | KB 건강 점검 + 위키링크 보강 — 깨진 링크·고아·tags 누락·_inbox 방치·_raw 고아·진부·폴더 컨벤션 검사, `--boost-links`로 양방향 보강 |
 | [kb-search](skills/kb-search/SKILL.md)                                         | KB 읽기 전용 질의응답 — 4계층 검색(tags/title/body/wikilink) + 출처 인용                        |

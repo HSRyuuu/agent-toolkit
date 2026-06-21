@@ -1,17 +1,17 @@
 # Skill Catalog
 
-> `agent-toolkit` plugin에 등록된 스킬 목록. 분류 기준은 [.claude/CLAUDE.md](../.claude/CLAUDE.md) 참고.
+> `agent-toolkit` 저장소의 기본 스킬 목록. 분류 기준은 [AGENTS.md](../AGENTS.md)와 [.claude/CLAUDE.md](../.claude/CLAUDE.md) 참고.
 >
-> Last updated: 2026-05-22
+> Last updated: 2026-06-21
 
 ## 요약
 
 | 디렉토리 | 개수 |
 |---|---|
-| `skills/` (독립 스킬) | 26 |
+| `skills/` (독립 스킬) | 25 |
 | `skills-workflow/` (워크플로우) | 0 |
 | `skills-system/` (메타·스캐폴딩) | 4 |
-| **합계** | **30** |
+| **합계** | **29** |
 
 ---
 
@@ -32,7 +32,6 @@
 | [html-cheat-sheet-creator](../skills/html-cheat-sheet-creator/SKILL.md) | 모바일 우선 단일 HTML 치트 시트·학습 카드·레퍼런스 시트 (2~6 탭, 사이드바, 스크롤 스파이) | "cheat sheet 만들어줘", "치트시트 HTML", "학습 카드 HTML" |
 | [html-db-schema-viewer-creator](../skills/html-db-schema-viewer-creator/SKILL.md) | DBML·DDL·MCP 결과를 다중 페이지 정적 HTML DB 사이트로 변환 (ERD + 테이블 상세 + DBML 뷰어) | "ERD 사이트 만들어줘", "DB 뷰어 정적 사이트", "schema.dbml viewer" |
 | [html-docs-creator](../skills/html-docs-creator/SKILL.md) | 임의의 input을 외부 CDN 의존 없는 단일 자기완결 HTML 문서로 (노션 톤, 스크롤 스파이, copy 버튼) | "이 내용 HTML로", "보고서·계획서 HTML로", "단일 파일 HTML 문서" |
-| [html-erd-viewer-creator](../skills/html-erd-viewer-creator/SKILL.md) | DDL·mmd·schema 명세서를 단일 self-contained 인터랙티브 ERD HTML 파일로 | "ERD HTML 만들어줘", "인터랙티브 ERD", "mmd to HTML" |
 | [kb-add](../skills/kb-add/SKILL.md) | KB 단일 input 통로 — URL/파일/텍스트/Inbox, 신규·append·modify·remove 모드, 수정·제거 시 ~/.kb-snapshots/ 스냅샷 | "/kb-add", "KB에 추가", "지식 저장소에 추가", "이거 정리해서 넣어줘" |
 | [kb-lint](../skills/kb-lint/SKILL.md) | KB 건강 점검 + 위키링크 보강 — 깨진 링크·고아·tags 누락·_inbox 방치·_raw 고아·진부·폴더 컨벤션 검사, `--boost-links`로 4종 변형 인식 양방향 엣지 추가 | "/kb-lint", "KB 점검", "위키 건강 체크", "그래프 보강해줘" |
 | [kb-search](../skills/kb-search/SKILL.md) | KB 읽기 전용 질의응답 — 4계층 검색(tags/title/body/wikilink) + 출처 [[wikilink]] 인용 | "/kb-search", "KB에서 찾아줘", "위키에서 검색" |

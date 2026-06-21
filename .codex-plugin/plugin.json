@@ -1,0 +1,29 @@
+{
+  "name": "agent-toolkit",
+  "version": "0.1.0",
+  "description": "Personal Codex plugin - curated skills toolkit",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit",
+    "personal-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agent Toolkit",
+    "shortDescription": "Personal curated skills toolkit",
+    "longDescription": "A local Codex plugin that exposes the agent-toolkit skills directory.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Find the right agent-toolkit skill"
+    ],
+    "brandColor": "#2563EB"
+  }
+}
