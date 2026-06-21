@@ -1,0 +1,75 @@
+# context-mining-fix evidence
+
+## Failing-first proof
+
+Scenario: stale Global Review context-mining guidance in `skills/writing-skills/SKILL.md`.
+Invocation:
+
+```bash
+rg -n 'Personal skills live in agent-specific directories|~/.claude/skills|~/.agents/skills' skills/writing-skills/SKILL.md
+```
+
+Binary observable: command exited 0 and printed stale root guidance.
+Captured output:
+
+```text
+12:**Personal skills live in agent-specific directories (`~/.claude/skills` for Claude Code, `~/.agents/skills/` for Codex)** 
+```
+
+## Verification after fix
+
+Scenario: stale canonical-root phrase no longer appears.
+Invocation:
+
+```bash
+rg -n 'Personal skills live in agent-specific directories' skills/writing-skills/SKILL.md
+```
+
+Binary observable: command exited 1 and printed nothing.
+Captured output:
+
+```text
+```
+
+Scenario: user-level skill paths are not described as this plugin repo root.
+Invocation:
+
+```bash
+rg -n '~/.claude/skills|~/.agents/skills' skills/writing-skills/SKILL.md
+```
+
+Binary observable: command exited 0 and printed only personal ad-hoc/user-level wording.
+Captured output:
+
+```text
+14:Personal ad-hoc skills outside this plugin may still live in user-level locations such as `~/.claude/skills` or `~/.agents/skills`, but do not describe those as this repo's plugin root.
+```
+
+Scenario: shared plugin `skills/` root guidance is present for Claude Code and Codex.
+Invocation:
+
+```bash
+rg -n 'plugin.*skills/|skills/.*plugin|Claude Code.*Codex' skills/writing-skills/SKILL.md
+```
+
+Binary observable: command exited 0 and printed the shared plugin surface sentence.
+Captured output:
+
+```text
+12:**Plugin skills in this repository live under `./skills/` so Claude Code and Codex load the same plugin surface.**
+```
+
+Scenario: staged commit scope includes only allowed paths.
+Invocation:
+
+```bash
+git diff --cached --name-status
+```
+
+Binary observable: command exited 0 and listed only the evidence artifact and writing skill file.
+Captured output:
+
+```text
+A	.omo/evidence/context-mining-fix.txt
+M	skills/writing-skills/SKILL.md
+```

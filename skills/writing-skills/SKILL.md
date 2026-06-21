@@ -9,7 +9,9 @@ description: Use when creating new skills, editing existing skills, or verifying
 
 **Writing skills IS Test-Driven Development applied to process documentation.**
 
-**Personal skills live in agent-specific directories (`~/.claude/skills` for Claude Code, `~/.agents/skills/` for Codex)** 
+**Plugin skills in this repository live under `./skills/` so Claude Code and Codex load the same plugin surface.**
+
+Personal ad-hoc skills outside this plugin may still live in user-level locations such as `~/.claude/skills` or `~/.agents/skills`, but do not describe those as this repo's plugin root.
 
 You write test cases (pressure scenarios with subagents), watch them fail (baseline behavior), write the skill (documentation), watch tests pass (agents comply), and refactor (close loopholes).
 
