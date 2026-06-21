@@ -26,6 +26,7 @@ agent-toolkit/
 │   └── agent-toolkit -> ..  # Codex marketplace 표준 source path용 symlink
 ├── skills/                 # 독립 스킬 — 단일 목적, 다른 스킬에 의존 X
 │   └── <name>/SKILL.md
+│   └── <alias> -> ../skills-system|../forks/taste-skill/... # Codex 단일 루트 호환
 ├── skills-workflow/        # 워크플로우 스킬 — skills/의 것들을 조합/오케스트레이션
 │   └── <name>/SKILL.md
 ├── skills-system/          # 메타·스캐폴딩 스킬 — project-setup, create-plugin 등
@@ -51,7 +52,7 @@ agent-toolkit/
 
 Claude Code manifest(`.claude-plugin/plugin.json`)는 `skills/`, `skills-workflow/`, `skills-system/`, `forks/taste-skill/`을 스킬 루트로 등록한다.
 
-Codex manifest(`.codex-plugin/plugin.json`)는 현재 검증 가능한 단일 스킬 루트인 `skills/`를 등록한다. `skills-workflow/`와 `skills-system/`은 저장소 관리와 Claude Code 플러그인에서 계속 유지하되, Codex에서 함께 노출해야 하는 스킬은 Codex manifest 제약에 맞춰 별도 조정한다.
+Codex manifest(`.codex-plugin/plugin.json`)는 단일 스킬 루트인 `skills/`를 등록한다. Codex에서 `skills-system/`과 `forks/taste-skill/`도 함께 보이도록 `skills/` 아래에 symlink alias를 둔다. 원본 디렉토리 구조는 사람의 분류 기준과 Claude Code manifest를 위해 유지한다.
 
 ## 등록 상태
 

@@ -14,7 +14,7 @@
   "interface": {
     "displayName": "Agent Toolkit",
     "shortDescription": "Personal curated skills toolkit",
-    "longDescription": "A local Codex plugin that exposes the agent-toolkit skills directory.",
+    "longDescription": "A local Codex plugin that exposes agent-toolkit skills through a single skills directory.",
     "developerName": "happyhsryu",
     "category": "Productivity",
     "capabilities": [

@@ -1,6 +1,7 @@
 # Skill Catalog
 
 > `agent-toolkit` 저장소의 기본 스킬 목록. 분류 기준은 [AGENTS.md](../AGENTS.md)와 [.claude/CLAUDE.md](../.claude/CLAUDE.md) 참고.
+> Codex는 단일 `skills/` 루트만 등록하므로 `skills-system/`과 `forks/taste-skill/`은 `skills/` 아래 symlink로도 노출한다.
 >
 > Last updated: 2026-06-21
 
