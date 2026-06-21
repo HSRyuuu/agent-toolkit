@@ -202,4 +202,4 @@ awk '/^---$/{c++; if(c==2)exit; next} c==1' "$file"
 |------|---------|
 | `${CLAUDE_PLUGIN_ROOT}/skills/*/SKILL.md` | 플러그인 스킬 카탈로그 원천 |
 | `${CLAUDE_PLUGIN_ROOT}/docs/catalog.md` | 사람이 쓰는 보조 카탈로그 (이 스킬은 신뢰하지 않음) |
-| `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` | 플러그인이 어떤 디렉토리를 스킬 루트로 등록했는지 확인용 (`skills` 배열) |
+| `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` | 플러그인이 어떤 디렉토리를 스킬 루트로 등록했는지 확인용 (`skills` 루트) |

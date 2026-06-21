@@ -1,0 +1,56 @@
+F3 real manual QA evidence
+Timestamp: 2026-06-21T09:16Z
+Worktree: /Users/happyhsryu/dev/personal/agent-toolkit
+Plan: .omo/plans/unify-skills-root.md
+
+Verdict: APPROVE
+Confidence: High
+
+manualQa.surfaceEvidence
+| scenario id | criterion reference | surface | exact invocation | verdict | artifactRefs |
+|---|---|---|---|---|---|
+| F3-CODEX-REAL | F3 Real manual QA: Codex plugin listing after marketplace refresh | Codex plugin CLI marketplace/list | `codex plugin marketplace add /Users/happyhsryu/dev/personal/agent-toolkit && codex plugin list --marketplace agent-toolkit-local --available --json` | PASS | A1 |
+| F3-CODEX-MANIFEST | F3 PASS if `agent-toolkit` is listed and manifest validates from unified root | Codex plugin validator + manifest root shape | `python3 /Users/happyhsryu/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py /Users/happyhsryu/dev/personal/agent-toolkit && jq -r .skills .codex-plugin/plugin.json && jq -r .skills .claude-plugin/plugin.json` | PASS | A2 |
+| F3-CLAUDE-REAL | F3 Claude plugin validation or `claude --plugin-dir ... -p "/help"` when available | Claude CLI prompt surface | `claude --plugin-dir /Users/happyhsryu/dev/personal/agent-toolkit -p "/help"` | PASS_WITH_ENV_LIMITATION: CLI present and exited 0, but `/help` reports it is unavailable in this environment | A3 |
+| F3-CLAUDE-VALIDATE | F3 fallback/validation for Claude plugin manifest | Claude plugin validator | `claude plugin validate /Users/happyhsryu/dev/personal/agent-toolkit` | PASS_WITH_WARNINGS: validation passed; warnings are missing marketplace description and author, not unified root failures | A4 |
+| F3-CLEANUP | Capture cleanup receipt: no processes/resources left running | OS process table | `ps -axo pid=,command= | grep -E '[c]odex plugin|[c]laude --plugin-dir|[a]gent-toolkit-local' || true` | PASS | A8 |
+
+manualQa.adversarialCases
+| scenario id | criterion reference | adversarial class | expected behavior | verdict | artifactRefs |
+|---|---|---|---|---|---|
+| ADV-STALE-STATE | F3 + unified-root manifest validation | stale_state | No top-level `skills/` symlinks, no `SKILL.md` under legacy roots, both manifests print only `./skills/` | PASS | A5 |
+| ADV-MISLEADING-SUCCESS | F3 PASS requires listed `agent-toolkit`, not just exit 0 | misleading_success_output | Parse JSON and confirm `.available[]` contains `name == "agent-toolkit"` with local plugin path | PASS | A6 |
+| ADV-DIRTY-WORKTREE | F3 scope and existing dirty state | dirty_worktree | Dirty state is recorded and does not invalidate plugin listing/root validation; no product files edited by this QA | PASS | A7 |
+| ADV-HUNG-CLI | F3 real Codex plugin CLI | hung command for plugin CLI | Exact Codex invocation returns promptly instead of hanging | PASS: command completed in under 1 second with exit code 0 | A1 |
+
+manualQa.artifactRefs
+| id | kind | description | path |
+|---|---|---|---|
+| A1 | terminal transcript | Exact Codex invocation returned exit code 0. Output: marketplace `agent-toolkit-local` already added from `/Users/happyhsryu/dev/personal/agent-toolkit`; available plugin includes `pluginId: agent-toolkit@agent-toolkit-local`, `name: agent-toolkit`, `marketplaceName: agent-toolkit-local`, source path `/Users/happyhsryu/dev/personal/agent-toolkit/plugins/agent-toolkit`. | .omo/evidence/f3-real-manual-qa.txt |
+| A2 | terminal transcript | Plugin validator output: `Plugin validation passed: /Users/happyhsryu/dev/personal/agent-toolkit`; `.codex-plugin/plugin.json` skills output `./skills/`; `.claude-plugin/plugin.json` skills output `./skills/`. | .omo/evidence/f3-real-manual-qa.txt |
+| A3 | terminal transcript | Claude prompt command output: `/help isn't available in this environment.` Exit code was 0, so the command exists but this environment does not expose `/help` as an interactive help surface. | .omo/evidence/f3-real-manual-qa.txt |
+| A4 | terminal transcript | `claude plugin validate /Users/happyhsryu/dev/personal/agent-toolkit` output: validation passed with warnings for missing marketplace description and missing plugin author. | .omo/evidence/f3-real-manual-qa.txt |
+| A5 | terminal transcript | Stale-state command output contained only two manifest root lines, `./skills/` and `./skills/`; the `find` portions emitted no symlinks or legacy-root `SKILL.md` files. | .omo/evidence/f3-real-manual-qa.txt |
+| A6 | terminal transcript | JSON assertion output: `"agent-toolkit@agent-toolkit-local /Users/happyhsryu/dev/personal/agent-toolkit/plugins/agent-toolkit"` with exit code 0. | .omo/evidence/f3-real-manual-qa.txt |
+| A7 | terminal transcript | Dirty worktree recorded: modified `.claude-plugin/marketplace.json`, `.gitignore`, `.omo/plans/unify-skills-root.md`, `.omo/start-work/ledger.jsonl`; untracked `.omo/evidence/f3-real-manual-qa.txt`, `.omo/evidence/todo-8-final-validation-commit-prep-gate-review.md`. | .omo/evidence/f3-real-manual-qa.txt |
+| A8 | terminal transcript | Final cleanup process check produced no output, confirming no matching Codex plugin, Claude plugin-dir, or marketplace-listing process remained. | .omo/evidence/f3-real-manual-qa.txt |
+
+Raw command outputs inspected
+
+F3-CODEX-REAL:
+Marketplace `agent-toolkit-local` is already added from /Users/happyhsryu/dev/personal/agent-toolkit.
+Installed marketplace root: /Users/happyhsryu/dev/personal/agent-toolkit
+JSON contained available[0].name = agent-toolkit and pluginId = agent-toolkit@agent-toolkit-local.
+
+F3-CODEX-MANIFEST:
+Plugin validation passed: /Users/happyhsryu/dev/personal/agent-toolkit
+./skills/
+./skills/
+
+F3-CLAUDE:
+/help isn't available in this environment.
+Validating marketplace manifest: /Users/happyhsryu/dev/personal/agent-toolkit/.claude-plugin/marketplace.json
+Validation passed with warnings: missing marketplace description and missing author.
+
+Cleanup receipt:
+Final `ps -axo pid=,command= | grep -E '[c]odex plugin|[c]laude --plugin-dir|[a]gent-toolkit-local' || true` produced no output.
