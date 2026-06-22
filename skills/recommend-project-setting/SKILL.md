@@ -7,6 +7,8 @@ description: 이미 일부 세팅이 된 프로젝트에 agent-toolkit의 자산
 
 이미 어느 정도 세팅이 된 프로젝트를 스캔해서, agent-toolkit의 자산 중 **빠진 것 / 더 보강하면 좋은 것**을 사용자에게 알려주고, 사용자가 고른 것만 설치한다.
 
+> 이 문서의 `AskUserQuestion`은 사용자 확인 게이트를 뜻한다. Claude Code에서는 해당 도구를 쓰고, Codex에서는 사용 가능한 입력 도구가 없으면 짧은 직접 질문으로 확인한다.
+
 ## 추천 자산 한눈에 보기
 
 이 스킬이 분석·추천 대상으로 삼는 자산 전체 목록이다. 각 자산의 종류, 한 줄 설명, 적용 시 필요한 세팅을 요약한다.
@@ -152,7 +154,8 @@ description: 이미 일부 세팅이 된 프로젝트에 agent-toolkit의 자산
 ## 사전 조건
 
 - **대상 디렉토리**: git 저장소이거나, 최소한 프로젝트 루트로 명확히 식별 가능해야 한다.
-- **템플릿 원본 디렉토리 (필수)**: `${CLAUDE_PLUGIN_ROOT}/templates/project-setup/`
+- **템플릿 원본 디렉토리 (필수)**: `<plugin-root>/templates/project-setup/`
+  - 플러그인 루트는 현재 `SKILL.md` 위치 기준으로 찾는다. 이 파일은 `<plugin-root>/skills/recommend-project-setting/SKILL.md`에 있으므로 두 단계 상위 디렉토리가 플러그인 루트다. Codex/omo에서 `${PLUGIN_ROOT}`가 있거나 Claude Code에서 `${CLAUDE_PLUGIN_ROOT}`가 있으면 그 값을 우선 사용해도 된다.
   - 없으면 즉시 중단.
 
 ## 대전제

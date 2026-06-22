@@ -1,7 +1,8 @@
 ---
 name: springboot-kotlin-standards
 description: "Kotlin + Spring Boot 코딩 표준 및 서비스 개발 가이드. Kotlin 코드 작성/리뷰, data class, null safety, 확장 함수, companion object, 생성자 주입, 예외 처리, 테스트 작성 시 사용. Spring Boot 프로젝트에서는 references/spring-boot-patterns.md, JPA/QueryDSL 작업 시에는 references/jpa-patterns.md를 함께 참조."
-origin: ECC
+metadata:
+  origin: ECC
 ---
 
 # Kotlin 코딩 표준 (Kotlin Coding Standards)

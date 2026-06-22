@@ -7,7 +7,7 @@ description: Use when the user provides DB schema information in any form (DB MC
 
 ## Overview
 
-DB 스키마를 **여러 HTML/CSS/JS 파일로 구성된 정적 사이트**로 변환한다. 진실의 원천은 `schema.dbml` 하나이며, `build.py`가 그것을 파싱해 `assets/schema.js`와 테이블별 상세 페이지를 자동 생성한다. (단일 HTML 한 파일 결과가 필요하면 별도 스킬 `html-erd-viewer-creator`를 사용.)
+DB 스키마를 **여러 HTML/CSS/JS 파일로 구성된 정적 사이트**로 변환한다. 진실의 원천은 `schema.dbml` 하나이며, `build.py`가 그것을 파싱해 `assets/schema.js`와 테이블별 상세 페이지를 자동 생성한다. (단일 ERD HTML 미리보기가 필요하면 별도 스킬 `create-mermaid-erd`를 사용.)
 
 핵심 원칙:
 - **DBML이 단일 IR(intermediate representation)**. 입력 형태(MCP/DDL/평문/.mmd/.dbml)와 무관하게 LLM이 먼저 `schema.dbml`로 정규화한다.

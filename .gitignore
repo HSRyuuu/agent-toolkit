@@ -1,3 +1,8 @@
 # plugins
 .omc/
 .DS_Store
+.omo/
+
+# LazyCodex scoped project-memory files
+AGENTS.md
+!/AGENTS.md

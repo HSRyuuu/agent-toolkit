@@ -53,7 +53,7 @@ agent-toolkit/
 
 ## CONVENTIONS
 
-- `SKILL.md` frontmatter must start the file and include at least `name` and `description`; `origin` is optional for imported/adapted skills.
+- `SKILL.md` frontmatter must start the file and include at least `name` and `description`; use `metadata.origin` for imported/adapted skills, not a top-level `origin` key.
 - `description` is the trigger surface. Keep it concrete and searchable; do not bury the actual trigger in body prose only.
 - The plugin skill inventory is `find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print | sort`.
 - Claude Code loads `.claude-plugin/plugin.json`; Codex loads `.codex-plugin/plugin.json`. Both must point at the same `skills/` plugin skill root.

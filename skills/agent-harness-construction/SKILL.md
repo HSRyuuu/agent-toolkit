@@ -1,7 +1,8 @@
 ---
 name: agent-harness-construction
 description: Use when designing or improving an AI agent's harness — action space, tool definitions, observation format, error recovery contract, or context budgeting strategy. Triggers - "agent design review", "tool definition cleanup", "improve completion rate", "harness construction", "observation schema", "agent benchmarking", "action space granularity".
-origin: ECC
+metadata:
+  origin: ECC
 ---
 
 # Agent Harness Construction

@@ -1,7 +1,8 @@
 ---
 name: springboot-java-standards
 description: "Java 17+ 코딩 표준 및 Spring Boot 서비스 개발 가이드. Java 코드 작성/리뷰, 명명 규칙, 불변성, Optional, 스트림, 예외 처리, 제네릭, Lombok 활용, 테스트 작성 시 사용. Spring Boot 프로젝트에서는 references/spring-boot-patterns.md, JPA/QueryDSL 작업 시에는 references/jpa-patterns.md를 함께 참조."
-origin: ECC
+metadata:
+  origin: ECC
 ---
 
 # Java 코딩 표준 (Java Coding Standards)
