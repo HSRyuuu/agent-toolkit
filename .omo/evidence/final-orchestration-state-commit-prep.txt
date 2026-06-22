@@ -1,0 +1,24 @@
+Scenario: final orchestration-state commit for completed unified skills-root start-work run
+Plan: .omo/plans/unify-skills-root.md
+Invocation: git status --short
+Binary observable:
+ M .claude-plugin/marketplace.json
+ M .gitignore
+ M .omo/boulder.json
+ M .omo/plans/unify-skills-root.md
+ M .omo/start-work/ledger.jsonl
+
+Invocation: git diff -- .omo/boulder.json .omo/plans/unify-skills-root.md .omo/start-work/ledger.jsonl
+Binary observable:
+- .omo/boulder.json changes status from active to completed.
+- .omo/plans/unify-skills-root.md marks F1. Plan compliance audit complete.
+- .omo/start-work/ledger.jsonl records F1 approval, global review approval, and work-completed.
+
+Invocation: git diff --cached --name-status
+Binary observable:
+M	.omo/boulder.json
+A	.omo/evidence/final-orchestration-state-commit-prep.txt
+M	.omo/plans/unify-skills-root.md
+M	.omo/start-work/ledger.jsonl
+
+Result: every staged path is under .omo/.
