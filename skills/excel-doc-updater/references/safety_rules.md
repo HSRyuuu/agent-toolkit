@@ -59,4 +59,4 @@
 ## R10. 스크립트 코드는 일회성으로 격리
 
 - 생성한 일회성 스크립트는 `/tmp/excel_update_<timestamp>.py`에만 저장한다.
-- 스킬 디렉터리(`.claude/skills/excel-doc-updater/scripts/`)에 새 스크립트를 만들지 않는다 — 그곳은 결정론적 공통 도구만 둔다.
+- 플러그인 스킬 스크립트 디렉터리(`skills/excel-doc-updater/scripts/`)에 새 스크립트를 만들지 않는다 — 그곳은 결정론적 공통 도구만 둔다.

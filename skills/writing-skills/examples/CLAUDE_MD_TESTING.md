@@ -2,6 +2,8 @@
 
 Testing different documentation variants to find what actually makes agents discover and use skills under pressure.
 
+Scope note: the `~/.claude/skills/` paths below are Claude user-level/ad-hoc examples for testing CLAUDE.md behavior, not this repository's active plugin loader topology. In this plugin, Claude Code and Codex share `./skills/` as the canonical plugin skill root.
+
 ## Test Scenarios
 
 ### Scenario 1: Time Pressure + Confidence
@@ -88,7 +90,7 @@ Search: `grep -r "keyword" ~/.claude/skills/`
 ### Variant C: Claude.AI Emphatic Style
 ```xml
 <available_skills>
-Your personal library of proven techniques, patterns, and tools
+Your Claude user-level ad-hoc library of proven techniques, patterns, and tools
 is at `~/.claude/skills/`.
 
 Browse categories: `ls ~/.claude/skills/`

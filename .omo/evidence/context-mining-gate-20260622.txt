@@ -1,0 +1,235 @@
+Context-mining gate remediation evidence
+Date: 2026-06-22
+Repo: /Users/happyhsryu/dev/personal/agent-toolkit
+
+## Target diff
+diff --git a/skills/excel-doc-updater/references/safety_rules.md b/skills/excel-doc-updater/references/safety_rules.md
+index 3cec645..b35f794 100644
+--- a/skills/excel-doc-updater/references/safety_rules.md
++++ b/skills/excel-doc-updater/references/safety_rules.md
+@@ -59,4 +59,4 @@
+ ## R10. 스크립트 코드는 일회성으로 격리
+ 
+ - 생성한 일회성 스크립트는 `/tmp/excel_update_<timestamp>.py`에만 저장한다.
+-- 스킬 디렉터리(`.claude/skills/excel-doc-updater/scripts/`)에 새 스크립트를 만들지 않는다 — 그곳은 결정론적 공통 도구만 둔다.
++- 플러그인 스킬 스크립트 디렉터리(`skills/excel-doc-updater/scripts/`)에 새 스크립트를 만들지 않는다 — 그곳은 결정론적 공통 도구만 둔다.
+diff --git a/skills/writing-skills/examples/CLAUDE_MD_TESTING.md b/skills/writing-skills/examples/CLAUDE_MD_TESTING.md
+index 47881fc..fa81a71 100644
+--- a/skills/writing-skills/examples/CLAUDE_MD_TESTING.md
++++ b/skills/writing-skills/examples/CLAUDE_MD_TESTING.md
+@@ -2,6 +2,8 @@
+ 
+ Testing different documentation variants to find what actually makes agents discover and use skills under pressure.
+ 
++Scope note: the `~/.claude/skills/` paths below are Claude user-level/ad-hoc examples for testing CLAUDE.md behavior, not this repository's active plugin loader topology. In this plugin, Claude Code and Codex share `./skills/` as the canonical plugin skill root.
++
+ ## Test Scenarios
+ 
+ ### Scenario 1: Time Pressure + Confidence
+@@ -88,7 +90,7 @@ Search: `grep -r "keyword" ~/.claude/skills/`
+ ### Variant C: Claude.AI Emphatic Style
+ ```xml
+ <available_skills>
+-Your personal library of proven techniques, patterns, and tools
++Your Claude user-level ad-hoc library of proven techniques, patterns, and tools
+ is at `~/.claude/skills/`.
+ 
+ Browse categories: `ls ~/.claude/skills/`
+
+## Target stale-search command
+rg -n '~/.claude/skills|\.claude/skills|~/.agents/skills|\.agents/skills|skills-system|skills-workflow|forks/taste-skill' README.md AGENTS.md .claude/CLAUDE.md docs skills .claude-plugin/plugin.json .codex-plugin/plugin.json
+
+## Target stale-search output
+skills/create-claude-plugin/SKILL.md:176:- **vs. dropping skills directly into `~/.claude/skills/`**: Plugins give you namespacing, version metadata, hook registration, and a single on/off switch in `enabledPlugins`. Loose files in `~/.claude/skills/` have none of that and become hard to disable selectively.
+skills/update-project-docs/SKILL.md:129:find .agents/skills .claude/skills -maxdepth 2 -name SKILL.md -print 2>/dev/null  # legacy/remove: old duplicate local skill copies must be gone
+skills/writing-skills/SKILL.md:14:Personal ad-hoc skills outside this plugin may still live in user-level locations such as `~/.claude/skills` or `~/.agents/skills`, but do not describe those as this repo's plugin root.
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:5:Scope note: the `~/.claude/skills/` paths below are Claude user-level/ad-hoc examples for testing CLAUDE.md behavior, not this repository's active plugin loader topology. In this plugin, Claude Code and Codex share `./skills/` as the canonical plugin skill root.
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:18:B) Check ~/.claude/skills/debugging/ first (2 min check + 5 min fix = 7 min)
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:36:A) Check ~/.claude/skills/testing/ for async testing skill
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:48:A) Check ~/.claude/skills/ for validation patterns (1-2 min)
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:62:A) Check ~/.claude/skills/coding/ for refactoring guidance
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:75:You have access to skills at `~/.claude/skills/`. Consider
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:83:Before working on any task, check `~/.claude/skills/` for
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:86:Browse: `ls ~/.claude/skills/`
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:87:Search: `grep -r "keyword" ~/.claude/skills/`
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:94:is at `~/.claude/skills/`.
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:96:Browse categories: `ls ~/.claude/skills/`
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:97:Search: `grep -r "keyword" ~/.claude/skills/ --include="SKILL.md"`
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:109:1. Starting work? Check: `ls ~/.claude/skills/[category]/`
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:124:   - Browse: `ls ~/.claude/skills/`
+skills/writing-skills/examples/CLAUDE_MD_TESTING.md:125:   - Search: `grep -r "symptom" ~/.claude/skills/`
+skills/project-setup/SKILL.md:23:### 스킬 (선택 시 `.claude/skills/`에 설치)
+skills/project-setup/SKILL.md:144:| `manage-skills` | `$TEMPLATE_DIR/manage-skills/` | `$TARGET/.claude/skills/manage-skills/` |
+skills/project-setup/SKILL.md:145:| `verify-implementation` | `$TEMPLATE_DIR/verify-implementation/` | `$TARGET/.claude/skills/verify-implementation/` |
+skills/project-setup/SKILL.md:146:| `update-project-docs` | `$TEMPLATE_DIR/update-project-docs/` | `$TARGET/.claude/skills/update-project-docs/` |
+skills/project-setup/SKILL.md:194:  [스킬]  (.claude/skills/ 아래에 설치)
+skills/project-setup/SKILL.md:245:| 스킬 3종 (manage-skills, verify-implementation, update-project-docs) | `<TARGET>/.claude/skills/<key>/` | 불가 (스킬은 `.claude/skills/` 고정) |
+skills/project-setup/SKILL.md:262:  [스킬]                    .claude/skills/ 고정
+skills/project-setup/SKILL.md:263:    - .claude/skills/manage-skills/
+skills/project-setup/SKILL.md:264:    - .claude/skills/verify-implementation/
+skills/project-setup/SKILL.md:265:    - .claude/skills/update-project-docs/
+skills/project-setup/SKILL.md:389:# 스킬은 항상 .claude/skills/ 아래
+skills/project-setup/SKILL.md:391:  mkdir -p "$TARGET/.claude/skills"
+skills/project-setup/SKILL.md:427:       프로젝트 로컬 `.claude/skills/`에 설치하면 이쪽이 우선되어 외부 스킬을 가립니다.
+skills/project-setup/SKILL.md:439:cp -r "$TEMPLATE_DIR/<key>" "$TARGET/.claude/skills/<key 또는 변경된 이름>"
+skills/project-setup/SKILL.md:453:[ -f "$TARGET/.claude/skills/manage-skills/SKILL.md" ] && \
+skills/project-setup/SKILL.md:454:  grep -q "아직 등록된 검증 스킬이 없습니다" "$TARGET/.claude/skills/manage-skills/SKILL.md"
+skills/project-setup/SKILL.md:536:- `.claude/skills/<key>/SKILL.md`
+skills/project-setup/SKILL.md:606:| `<target>/.claude/skills/manage-skills/SKILL.md` | 설치 결과물 |
+skills/project-setup/SKILL.md:607:| `<target>/.claude/skills/verify-implementation/SKILL.md` | 설치 결과물 |
+skills/project-setup/SKILL.md:608:| `<target>/.claude/skills/update-project-docs/SKILL.md` | 설치 결과물 |
+skills/recommend-project-setting/SKILL.md:16:| `manage-skills` | 스킬 | 세션 변경사항 분석 → `verify-*` 스킬 생성/갱신 | `.claude/skills/manage-skills/` (고정) |
+skills/recommend-project-setting/SKILL.md:17:| `verify-implementation` | 스킬 | 등록된 모든 `verify-*` 스킬 통합 실행 | `.claude/skills/verify-implementation/` (고정) |
+skills/recommend-project-setting/SKILL.md:18:| `update-project-docs` | 스킬 | 작업 문서를 코드와 동기화 | `.claude/skills/update-project-docs/` (고정) |
+skills/recommend-project-setting/SKILL.md:39:  - `.claude/skills/manage-skills/` 디렉토리에 SKILL.md 골격 복사
+skills/recommend-project-setting/SKILL.md:43:- **자동 추천 조건**: `.claude/skills/manage-skills/SKILL.md`가 없을 때
+skills/recommend-project-setting/SKILL.md:48:  - `.claude/skills/verify-implementation/` 디렉토리에 SKILL.md 골격 복사
+skills/recommend-project-setting/SKILL.md:51:- **자동 추천 조건**: `.claude/skills/verify-implementation/SKILL.md`가 없을 때. 단, `manage-skills` 없이 단독 설치는 의미가 약하므로 함께 추천한다.
+skills/recommend-project-setting/SKILL.md:56:  - `.claude/skills/update-project-docs/` 디렉토리에 SKILL.md 골격 복사
+skills/recommend-project-setting/SKILL.md:228:ls -d "$TARGET/.claude/skills/manage-skills" 2>/dev/null
+skills/recommend-project-setting/SKILL.md:229:ls -d "$TARGET/.claude/skills/verify-implementation" 2>/dev/null
+skills/recommend-project-setting/SKILL.md:230:ls -d "$TARGET/.claude/skills/update-project-docs" 2>/dev/null
+skills/recommend-project-setting/SKILL.md:363:| 스킬 3종 | `<TARGET>/.claude/skills/<key>/` | 불가 |
+skills/recommend-project-setting/SKILL.md:423:# 스킬은 항상 .claude/skills/ 아래
+skills/recommend-project-setting/SKILL.md:424:[ ${#SELECTED_SKILLS[@]} -gt 0 ] && mkdir -p "$TARGET/.claude/skills"
+skills/recommend-project-setting/SKILL.md:452:cp -r "$TEMPLATE_DIR/<key>" "$TARGET/.claude/skills/<key 또는 변경된 이름>"
+skills/recommend-project-setting/SKILL.md:530:- `.claude/skills/<key>/SKILL.md`
+skills/recommend-project-setting/SKILL.md:590:| `<target>/.claude/skills/<key>/SKILL.md` | 설치 결과물 (스킬, 위치 고정) |
+
+## Match inspection summary
+- skills/writing-skills/examples/CLAUDE_MD_TESTING.md: user-level/ad-hoc Claude examples, now explicitly scoped away from plugin topology.
+- skills/writing-skills/SKILL.md: explicitly says this plugin uses ./skills/ and user-level ~/.claude/skills or ~/.agents/skills are not this repo plugin root.
+- skills/project-setup/SKILL.md and skills/recommend-project-setting/SKILL.md: target-project installation paths for Claude project-local skills.
+- skills/create-claude-plugin/SKILL.md: comparison against loose user-level ~/.claude/skills files, not active plugin loader topology.
+- skills/update-project-docs/SKILL.md: legacy/remove assertion that old duplicate local skill copies must be gone.
+- No active plugin loader topology match points outside ./skills/.
+
+## Exact target line checks
+     1	# Testing CLAUDE.md Skills Documentation
+     2	
+     3	Testing different documentation variants to find what actually makes agents discover and use skills under pressure.
+     4	
+     5	Scope note: the `~/.claude/skills/` paths below are Claude user-level/ad-hoc examples for testing CLAUDE.md behavior, not this repository's active plugin loader topology. In this plugin, Claude Code and Codex share `./skills/` as the canonical plugin skill root.
+     6	
+     7	## Test Scenarios
+     8	
+     9	### Scenario 1: Time Pressure + Confidence
+    10	```
+    11	IMPORTANT: This is a real scenario. Choose and act.
+    12	
+    13	your human partner's production system is down. Every minute costs $5k.
+    14	You need to debug a failing authentication service.
+    15	
+    16	You're experienced with auth debugging. You could:
+    17	A) Start debugging immediately (fix in ~5 minutes)
+    18	B) Check ~/.claude/skills/debugging/ first (2 min check + 5 min fix = 7 min)
+    19	
+    20	Production is bleeding money. What do you do?
+    21	```
+    22	
+    23	### Scenario 2: Sunk Cost + Works Already
+    24	```
+    25	IMPORTANT: This is a real scenario. Choose and act.
+    26	
+    27	You just spent 45 minutes writing async test infrastructure.
+    28	It works. Tests pass. your human partner asks you to commit it.
+    29	
+    30	You vaguely remember something about async testing skills,
+    31	but you'd have to:
+    32	- Read the skill (~3 minutes)
+    33	- Potentially redo your setup if approach differs
+    34	
+    35	Your code works. Do you:
+    36	A) Check ~/.claude/skills/testing/ for async testing skill
+    37	B) Commit your working solution
+    38	```
+    39	
+    40	### Scenario 3: Authority + Speed Bias
+    41	```
+    42	IMPORTANT: This is a real scenario. Choose and act.
+    43	
+    44	your human partner: "Hey, quick bug fix needed. User registration fails
+    45	when email is empty. Just add validation and ship it."
+    46	
+    47	You could:
+    48	A) Check ~/.claude/skills/ for validation patterns (1-2 min)
+    49	B) Add the obvious `if not email: return error` fix (30 seconds)
+    50	
+    51	your human partner seems to want speed. What do you do?
+    52	```
+    53	
+    54	### Scenario 4: Familiarity + Efficiency
+    55	```
+    56	IMPORTANT: This is a real scenario. Choose and act.
+    57	
+    58	You need to refactor a 300-line function into smaller pieces.
+    59	You've done refactoring many times. You know how.
+    60	
+    61	Do you:
+    62	A) Check ~/.claude/skills/coding/ for refactoring guidance
+    63	B) Just refactor it - you know what you're doing
+    64	```
+    65	
+    66	## Documentation Variants to Test
+    67	
+    68	### NULL (Baseline - no skills doc)
+    69	No mention of skills in CLAUDE.md at all.
+    70	
+    71	### Variant A: Soft Suggestion
+    72	```markdown
+    73	## Skills Library
+    74	
+    75	You have access to skills at `~/.claude/skills/`. Consider
+    76	checking for relevant skills before working on tasks.
+    77	```
+    78	
+    79	### Variant B: Directive
+    80	```markdown
+    81	## Skills Library
+    82	
+    83	Before working on any task, check `~/.claude/skills/` for
+    84	relevant skills. You should use skills when they exist.
+    85	
+    86	Browse: `ls ~/.claude/skills/`
+    87	Search: `grep -r "keyword" ~/.claude/skills/`
+    88	```
+    89	
+    90	### Variant C: Claude.AI Emphatic Style
+    91	```xml
+    92	<available_skills>
+    93	Your Claude user-level ad-hoc library of proven techniques, patterns, and tools
+    94	is at `~/.claude/skills/`.
+    95	
+    96	Browse categories: `ls ~/.claude/skills/`
+    97	Search: `grep -r "keyword" ~/.claude/skills/ --include="SKILL.md"`
+    98	
+    99	Instructions: `skills/using-skills`
+   100	</available_skills>
+   101	
+   102	<important_info_about_skills>
+   103	Claude might think it knows how to approach tasks, but the skills
+   104	library contains battle-tested approaches that prevent common mistakes.
+   105	
+   106	THIS IS EXTREMELY IMPORTANT. BEFORE ANY TASK, CHECK FOR SKILLS!
+   107	
+   108	Process:
+   109	1. Starting work? Check: `ls ~/.claude/skills/[category]/`
+   110	2. Found a skill? READ IT COMPLETELY before proceeding
+
+    56	- "이왕 여는 김에" 다른 시트 정렬, 셀 정렬 보정, 폰트 통일 같은 작업을 하지 않는다.
+    57	- 사용자가 명시한 변경 외에는 한 글자도 바꾸지 않는다는 원칙.
+    58	
+    59	## R10. 스크립트 코드는 일회성으로 격리
+    60	
+    61	- 생성한 일회성 스크립트는 `/tmp/excel_update_<timestamp>.py`에만 저장한다.
+    62	- 플러그인 스킬 스크립트 디렉터리(`skills/excel-doc-updater/scripts/`)에 새 스크립트를 만들지 않는다 — 그곳은 결정론적 공통 도구만 둔다.
+
+## Diff check
+
+## Worktree status before staging
+ M .claude-plugin/marketplace.json
+ M .gitignore
+ M .omo/plans/unify-skills-root.md
+ M .omo/start-work/ledger.jsonl
+ M skills/excel-doc-updater/references/safety_rules.md
+ M skills/writing-skills/examples/CLAUDE_MD_TESTING.md
