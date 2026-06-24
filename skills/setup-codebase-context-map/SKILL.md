@@ -1,9 +1,9 @@
 ---
-name: codebase-context-map
-description: Use when creating or updating token-saving source exploration files for any codebase, including SOURCE_MAP.md, CODEBASE_CONTEXT.md, route/schema/component maps, Codesight outputs, and agent instructions for reading less code while still verifying against real source files.
+name: setup-codebase-context-map
+description: Use when setting up or refreshing token-saving source exploration files for any codebase, including SOURCE_MAP.md, CODEBASE_CONTEXT.md, route/schema/component maps, Codesight outputs, and agent instructions for reading less code while still verifying against real source files.
 ---
 
-# Codebase Context Map
+# Setup Codebase Context Map
 
 Create compact, source-grounded navigation files that help coding agents find the right files before spending tokens on broad repository exploration.
 
