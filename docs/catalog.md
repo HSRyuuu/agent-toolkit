@@ -3,13 +3,13 @@
 > `agent-toolkit` 저장소의 현재 플러그인 스킬 목록.
 > 이 문서는 `skills/*/SKILL.md` frontmatter에서 생성한다.
 >
-> Last updated: 2026-06-21
+> Last updated: 2026-06-24
 
 ## 요약
 
 | 항목 | 개수 |
 |---|---:|
-| Physical plugin skills under `skills/` | 44 |
+| Physical plugin skills under `skills/` | 45 |
 
 스킬 카테고리는 이름과 설명에서 읽는 메타데이터다. 플러그인 로더 기준의 활성 스킬 루트는 `skills/` 하나다.
 
@@ -21,6 +21,7 @@
 | [agent-introspection-debugging](../skills/agent-introspection-debugging/SKILL.md) | `agent-introspection-debugging` | Use when an AI agent run is failing repeatedly, looping on the same tools, consuming tokens without progress, hitting tool-call limits, or drifting from the intended task. Triggers - "agent stuck", "agent looping", "max tool calls", "context overflow", "self-debug", "introspection report", "why is the agent failing". |
 | [brandkit](../skills/brandkit/SKILL.md) | `brandkit` | Premium brand-kit image generation skill for creating high-end brand-guidelines boards, logo systems, identity decks, and visual-world presentations. Trained for minimalist, cinematic, editorial, dark-tech, luxury, cultural, security, gaming, developer-tool, and consumer-app brand systems. Optimized for intentional logo concepting, refined composition, sparse typography, strong symbolic meaning, premium mockups, art-directed imagery, and flexible grid layouts. |
 | [brutalist-skill](../skills/brutalist-skill/SKILL.md) | `industrial-brutalist-ui` | Raw mechanical interfaces fusing Swiss typographic print with military terminal aesthetics. Rigid grids, extreme type scale contrast, utilitarian color, analog degradation effects. For data-heavy dashboards, portfolios, or editorial sites that need to feel like declassified blueprints. |
+| [codebase-context-map](../skills/codebase-context-map/SKILL.md) | `codebase-context-map` | Use when creating or updating token-saving source exploration files for any codebase, including SOURCE_MAP.md, CODEBASE_CONTEXT.md, route/schema/component maps, Codesight outputs, and agent instructions for reading less code while still verifying against real source files. |
 | [create-claude-plugin](../skills/create-claude-plugin/SKILL.md) | `create-claude-plugin` | Scaffold a new local Claude Code plugin from scratch — directory structure, plugin.json, marketplace.json, settings.json registration, and load verification. Use whenever the user wants to create a new plugin, register a local directory as a Claude Code marketplace, set up a personal toolkit/skill-collection plugin, or troubleshoot why a newly created plugin is not loading. Trigger phrases include "플러그인 만들기", "plugin 세팅", "plugin scaffold", "local marketplace 등록", "plugin이 로드 안 됨". |
 | [create-mermaid-erd](../skills/create-mermaid-erd/SKILL.md) | `create-mermaid-erd` | PRD·도메인 설명·테이블 목록 등을 입력받아 ERD(Entity-Relationship Diagram)를 Mermaid `.mmd` 파일로 생성하고, 그 mmd를 즉시 시각화하는 단일 `viewer.html` 도 함께 출력한다. 개념(Conceptual)·논리(Logical)·물리(Physical) 3종 ERD 지원, 다크 테마 + handDrawn 스타일. "ERD 만들어줘", "테이블 관계도", "DB 설계 시각화", "엔티티 관계 다이어그램", "데이터 모델링", "개념 ERD", "논리 ERD", "물리 ERD", "mermaid ERD", "DB 스키마 그려줘", "테이블 설계", "mmd 뷰어", "ERD HTML 미리보기" 등의 요청에 트리거한다. |
 | [excel-doc-updater](../skills/excel-doc-updater/SKILL.md) | `excel-doc-updater` | Use when the user explicitly asks to update or regenerate a form-based xlsx (interface spec sheet, program list, requirements form, etc.) against a separate data source (markdown, JSON/YAML, DB/API result, another xlsx). Do not trigger on regular code edits or other doc updates. If a project-specific updater skill already exists for the same form, that one takes priority. |
