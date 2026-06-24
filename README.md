@@ -75,5 +75,5 @@ find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print | sort
 
 | 이름 | 설명 |
 |---|---|
-| [project-setup/](templates/project-setup/) | `project-setup` 스킬이 대상 프로젝트에 설치하는 작업 문서와 보조 스킬 템플릿 |
+| [project-setup/](templates/project-setup/) | `setup-*` 계열 스킬이 대상 프로젝트에 설치하거나 참고하는 작업 문서와 보조 스킬 템플릿 |
 | [rules/](templates/rules/) | 외부 가이드라인 사본 |
