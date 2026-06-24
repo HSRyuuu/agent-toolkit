@@ -64,7 +64,7 @@ agent-toolkit/
 
 - Do not invent catalog rows, trigger phrases, or recommendations that are not grounded in `SKILL.md` frontmatter.
 - Do not treat `templates/project-setup/*` placeholders as facts about this repo or a target project.
-- Do not overwrite user files in project-setup or Excel flows without the approval gates defined in the relevant skill.
+- Do not overwrite user files in setup or Excel flows without the approval gates defined in the relevant skill.
 - Do not split Claude Code and Codex onto different active skill roots.
 
 ## COMMANDS
