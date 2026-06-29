@@ -22,7 +22,8 @@ agent-toolkit/
 ├── .agents/plugins/
 │   └── marketplace.json    # Codex 로컬 marketplace 메타
 ├── skills/                 # 단일 활성 plugin skill root
-│   └── <name>/SKILL.md
+│   ├── <name>/SKILL.md
+│   └── kb-common/          # kb-* 공유 schema/templates/scripts, 로드되는 스킬 아님
 ├── templates/              # 스킬이 대상 프로젝트에 복사하거나 참고하는 템플릿
 ├── docs/
 │   └── catalog.md          # skills inventory에서 생성한 사람용 카탈로그
@@ -32,6 +33,8 @@ agent-toolkit/
 ## 스킬 관리 기준
 
 새 스킬을 추가할 때는 `skills/<name>/SKILL.md`에 둔다. 스킬이 워크플로우형인지, 스캐폴딩형인지, 디자인형인지는 문서와 frontmatter 설명으로 표현한다. 디렉토리는 플러그인 로딩 경계가 아니라 개별 스킬의 물리 위치다.
+
+`skills/kb-common/`처럼 `SKILL.md`가 없는 디렉토리는 공유 자산으로만 취급한다. 카탈로그와 inventory에는 넣지 않고, 해당 자산을 참조하는 `kb-*` 스킬 설명에서만 드러낸다.
 
 필수 frontmatter:
 

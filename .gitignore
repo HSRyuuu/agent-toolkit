@@ -2,6 +2,7 @@
 .omc/
 .DS_Store
 .omo/
+.as-usual/
 
 # LazyCodex scoped project-memory files
 AGENTS.md

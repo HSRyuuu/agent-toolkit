@@ -22,6 +22,7 @@ agent-toolkit/
 ├── .agents/plugins/         # Codex local marketplace metadata
 ├── plugins/agent-toolkit    # local marketplace source entry
 ├── skills/                  # single active plugin skill root
+│   └── kb-common/           # shared KB schema/templates/scripts; not a loadable plugin skill
 ├── templates/               # copy-on-install templates and copied rule references
 └── docs/catalog.md          # human catalog of skill names/triggers
 ```
@@ -31,6 +32,7 @@ agent-toolkit/
 | Task | Location | Notes |
 |---|---|---|
 | Add or update a plugin skill | `skills/<name>/SKILL.md` | Every loadable plugin skill lives here. |
+| Update shared KB schema/templates/helpers | `skills/kb-common/` | Shared assets for `kb-*`; intentionally has no `SKILL.md`. |
 | Categorize a skill | `docs/catalog.md` or the skill body | Categories are metadata, not loader directories. |
 | Update Claude plugin surface | `.claude-plugin/plugin.json` | Keep the skill root aligned with `skills/`. |
 | Update Codex plugin surface | `.codex-plugin/plugin.json` | Keep the skill root aligned with `skills/`. |
@@ -56,6 +58,7 @@ agent-toolkit/
 - `SKILL.md` frontmatter must start the file and include at least `name` and `description`; use `metadata.origin` for imported/adapted skills, not a top-level `origin` key.
 - `description` is the trigger surface. Keep it concrete and searchable; do not bury the actual trigger in body prose only.
 - The plugin skill inventory is `find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print | sort`.
+- `skills/kb-common/` is a shared asset directory for KB schema/templates/scripts. Do not catalog it as a plugin skill unless it gains its own `SKILL.md`.
 - Claude Code loads `.claude-plugin/plugin.json`; Codex loads `.codex-plugin/plugin.json`. Both must point at the same `skills/` plugin skill root.
 - Treat `docs/catalog.md` as a generated human index. The source of truth is live `SKILL.md` frontmatter plus the plugin manifests.
 - Keep category labels as metadata. Do not create loader topology by category.
