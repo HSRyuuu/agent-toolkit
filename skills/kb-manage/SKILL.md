@@ -72,17 +72,16 @@ Documents should be easy for humans to scan and maintain.
 Use the first matching source:
 
 1. User-provided absolute path.
-2. The nearest ancestor of the user-provided path or current working directory that looks like a KB.
-3. Current working directory, if it looks like a KB.
+2. The nearest ancestor of the user-provided path or current working directory that has an explicit KB marker.
+3. Current working directory, if it has an explicit KB marker.
 4. `~/.config/kb/path`, if it exists and points to a directory.
 
-A directory looks like a KB when it has at least one of:
+A directory has an explicit KB marker when it has at least one of:
 
-- `AGENTS.md`, `CLAUDE.md`, or `.agents/rules/`
-- `index.md`
-- `log.jsonl`
-- several Markdown documents with KB-style frontmatter
-- `.obsidian/` plus Markdown notes
+- `index.md` and `log.jsonl` together
+- a local KB config file such as `.kb/config`, `.kb/config.yml`, `.kb/config.yaml`, `kb.config.json`, or `kb.config.yml`
+
+Do not treat a repository as a KB only because it has `AGENTS.md`, `CLAUDE.md`, `.agents/rules/`, `.obsidian/`, or Markdown files with frontmatter. Those are common in codebases and Obsidian vaults that are not this KB model.
 
 If no root can be resolved, ask for an absolute path. Do not guess from unrelated home directories.
 
