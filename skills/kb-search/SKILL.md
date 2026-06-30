@@ -49,8 +49,9 @@ rg -n --glob '*.md' --glob '!**/.git/**' --glob '!**/.obsidian/**' \
 Recent KB activity when `log.jsonl` exists:
 
 ```bash
-tail -50 log.jsonl
-rg -n '"files":|"summary":|"date":' log.jsonl
+tail -100 log.jsonl
+rg -n '"files":|"summary":|"datetime":|"type":|"source":|검색어|synonym' log.jsonl
+jq -c . log.jsonl >/dev/null
 ```
 
 Git history fallback:

@@ -112,7 +112,7 @@ When initializing a KB:
 2. Create the root directory only after user approval if it does not exist.
 3. Create or adapt `AGENTS.md` from `templates/AGENTS.md` if no agent entrypoint exists.
 4. Create or adapt `index.md` from `templates/index.md` if missing.
-5. Create or adapt `log.jsonl` from `templates/log.jsonl` if missing, replacing placeholder values with the setup date and root-specific summary.
+5. Create or adapt `log.jsonl` from `templates/log.jsonl` if missing, replacing placeholder values with the setup datetime and root-specific summary.
 6. Optionally write `~/.config/kb/path` after user approval.
 7. Do not create `_raw/` or `_archive/`.
 8. Create `_inbox/` only if the user explicitly wants a staging area.
@@ -146,7 +146,7 @@ Use the templates as starting points, not as immutable boilerplate. Replace plac
 Each line is one JSON object:
 
 ```json
-{"date":"YYYY-MM-DD","type":"setup|add|update|merge|append|lint","summary":"짧은 작업 요약","files":["index.md"],"source":"agent","commit":null}
+{"datetime":"YYYY-MM-DDTHH:MM:SS+09:00","type":"setup|add|update|merge|append|lint","summary":"짧은 작업 요약","files":["index.md"],"source":"agent","commit":null}
 ```
 
 Rules:
@@ -155,6 +155,7 @@ Rules:
 - no trailing commas
 - no secrets or sensitive raw values
 - paths relative to KB root
+- `datetime` must include timezone offset, using the KB/user local timezone when known
 - `commit` may be `null` until a commit exists
 
 ## Frontmatter Default

@@ -206,8 +206,10 @@ After successful writes:
 Recommended log shape:
 
 ```json
-{"date":"YYYY-MM-DD","type":"add|update|merge|append","summary":"짧은 작업 요약","files":["path/to/doc.md"],"source":"user-note","commit":null}
+{"datetime":"YYYY-MM-DDTHH:MM:SS+09:00","type":"add|update|merge|append","summary":"짧은 작업 요약","files":["path/to/doc.md"],"source":"user-note","commit":null}
 ```
+
+Use timezone-aware ISO 8601 datetimes. Prefer the KB/user local timezone when known; never write a bare date or timezone-less local time.
 
 If `index.md` or `log.jsonl` does not exist, do not create them unless the user asked for KB setup/management or the local rules say they are required.
 
