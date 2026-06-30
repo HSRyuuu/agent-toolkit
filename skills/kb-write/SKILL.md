@@ -33,6 +33,21 @@ Before writing:
 
 If the KB has project-local add/search/security/writing rules, follow those over the generic defaults here.
 
+## Optional Obsidian Skill Use
+
+Use Obsidian skills only when they are available and the write task needs Obsidian-specific behavior. Read `kb-manage` and, when relevant, its `references/obsidian-skills.md` guidance first. Plain Markdown KB writing must work without these skills.
+
+| Situation during write | Helpful skill | Use it for | Keep `kb-write` responsible for |
+|---|---|---|---|
+| Creating or editing Obsidian-flavored notes | `obsidian-markdown` | wikilinks, embeds, callouts, properties/frontmatter syntax, Obsidian Markdown conventions | document ownership, factual preservation, security gate, washing, index/log updates |
+| User asks to add internal links between notes | `obsidian-markdown` | checking wikilink syntax and suggesting focused links | avoiding bulk links; only adding links that support the document's meaning |
+| User asks for a database-like Obsidian view | `obsidian-bases` | `.base` files, table/card views, filters, formulas, summaries | deciding which KB documents are source of truth and whether a view is needed |
+| User asks for a visual map or canvas | `json-canvas` | `.canvas` files, nodes, edges, groups, relationships | preserving the source documents and not replacing them with a canvas-only artifact |
+| User asks to interact with an Obsidian vault directly | `obsidian-cli` | vault search, note creation, note updates, plugin/theme-oriented vault operations | applying KB root guidance, write modes, security review, and completion reporting |
+| User provides a web page to turn into a note | `defuddle` | extracting clean Markdown from a web page | curating the extracted content into a maintained KB document instead of storing raw source |
+
+Do not use Obsidian skills just because a KB has `.obsidian/`. Use them when the requested output or local KB rules actually need Obsidian behavior.
+
 ## Input Handling
 
 | Input | Action |

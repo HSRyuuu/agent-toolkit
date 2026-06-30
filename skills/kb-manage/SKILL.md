@@ -98,6 +98,12 @@ Read whichever exists, in this order:
 
 If the agent is working from a nested directory or from another directory entirely, still use the resolved KB root guidance. Local root guidance overrides the generic defaults in this skill.
 
+## Optional Obsidian Support
+
+If the KB is also an Obsidian vault or the user asks for Obsidian-specific Markdown, Bases, Canvas, CLI, wikilinks, embeds, callouts, or properties, read `references/obsidian-skills.md`.
+
+Do not require Obsidian skills for normal KB work. Treat them as optional helpers for vault-specific features.
+
 ## Setup
 
 When initializing a KB:
