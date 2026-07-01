@@ -1,4 +1,0 @@
-interface:
-  display_name: "Local Plugin Lifecycle"
-  short_description: "Toggle and refresh local Claude/Codex plugins"
-  default_prompt: "Use $local-plugin-lifecycle to turn a local Claude or Codex plugin on, off, or refresh it safely."

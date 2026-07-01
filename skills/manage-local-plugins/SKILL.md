@@ -1,9 +1,9 @@
 ---
-name: local-plugin-lifecycle
+name: manage-local-plugins
 description: Use when turning local Claude Code or Codex plugins on, off, reloading, refreshing snapshots, checking plugin status, or troubleshooting local marketplace plugin changes that do not appear in a new session.
 ---
 
-# Local Plugin Lifecycle
+# Manage Local Plugins
 
 ## Overview
 
