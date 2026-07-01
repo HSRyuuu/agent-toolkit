@@ -32,6 +32,7 @@ Never auto-fix sensitive content. Report it and ask.
 - missing YAML frontmatter where the KB requires it
 - missing `title`, `summary`, `tags`, `aliases`, `created`, `updated`, `agent_edit_mode`
 - invalid `agent_edit_mode`; expected `read_only`, `append_only`, or `editable`
+- files under `_archived/` that are nested deeper than one level or do not use `agent_edit_mode: read_only`
 - title/H1 mismatch
 - invalid or inconsistent date format
 - weak `summary`, sparse `tags`, missing likely aliases
@@ -144,6 +145,7 @@ Suggested next actions:
 ## Do Not
 
 - Do not create `_raw/`, `_archive/`, canonical kinds, or daily-log schemas.
+- Do not treat top-level `_archived/` as an error; it is valid when files are one depth below it and use `agent_edit_mode: read_only`.
 - Do not silently remove or mask sensitive information.
 - Do not rewrite documents during report mode.
 - Do not bulk-add wikilinks. Suggest candidates first.

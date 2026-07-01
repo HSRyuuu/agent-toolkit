@@ -15,6 +15,7 @@ Search a curated Markdown KB in read-only mode. The maintained documents are the
 
 - Read only. Do not create, edit, delete, stage, commit, or reformat files.
 - Prefer KB evidence over memory or general knowledge.
+- Include `_archived/` documents in search results when they match. Treat them as archived historical context, not as automatically current facts.
 - Distinguish confirmed facts from `확인 필요`, `미정`, `추정`, and `과거 정보`.
 - Cite local documents with paths or KB links.
 - If the KB does not contain enough information, say so plainly.
@@ -71,6 +72,8 @@ Prioritize:
 3. Documents with current `updated` dates or body-level 기준일.
 4. Documents with exact terms from the question.
 5. Related documents linked from the strongest candidate.
+
+When a result is under `_archived/`, include it if useful but label it as archived in the answer.
 
 Limit full reads to the smallest useful set. For broad questions, return the top matches rather than every hit.
 
