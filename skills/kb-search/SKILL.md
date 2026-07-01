@@ -35,6 +35,16 @@ Search a curated Markdown KB in read-only mode. The maintained documents are the
 
 ## Useful Commands
 
+Structured frontmatter search using `python-frontmatter`:
+
+```bash
+python3 /path/to/agent-toolkit/skills/kb-search/scripts/kb_meta_search.py /path/to/kb --updated 2026-07-01
+python3 /path/to/agent-toolkit/skills/kb-search/scripts/kb_meta_search.py /path/to/kb --created 2026-07-01 --tag kafka
+python3 /path/to/agent-toolkit/skills/kb-search/scripts/kb_recent_activity.py /path/to/kb --date 2026-07-01
+```
+
+Use these scripts before `rg` when the query is about structured frontmatter fields such as `title`, `summary`, `tags`, `aliases`, `source`, `created`, `updated`, or `agent_edit_mode`. They require `python-frontmatter`; if it is absent, install the dependency listed in `scripts/requirements.txt` or fall back to `rg`.
+
 Inventory:
 
 ```bash
