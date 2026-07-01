@@ -11,6 +11,8 @@ Manage the KB itself: root path, identity, setup files, conventions, `index.md`,
 
 This model intentionally rejects the old `sources -> wiki -> schema` shape. Do not create `_raw/` for source preservation, do not require canonical/daily-log document kinds, and do not treat raw source files as the KB foundation.
 
+Archived documents live under the top-level `_archived/` folder and keep normal KB document rules except that they use `agent_edit_mode: read_only`.
+
 ## KB Identity
 
 The KB is a curated Markdown repository where maintained documents are the source of truth.
@@ -29,6 +31,7 @@ Use local KB rules if present. Otherwise use these defaults:
 
 - Record facts, context, decisions, procedures, system knowledge, collaboration norms, and operational notes that should be found later.
 - Keep documents current. When new information conflicts with old information, update the owning document and preserve only useful historical context.
+- Retire documents by moving them to top-level `_archived/` and setting `agent_edit_mode: read_only`.
 - Do not mix confirmed facts with guesses. Mark uncertainty as `확인 필요`, `미정`, `추정`, `unknown`, or `past information`.
 - Avoid duplicate ownership. Choose one source-of-truth document for each fact and link or reference it from related documents.
 - Read the existing context before changing a document.
@@ -121,7 +124,7 @@ When initializing a KB:
 4. Create or adapt `index.md` from `templates/index.md` if missing.
 5. Create or adapt `log.jsonl` from `templates/log.jsonl` if missing, replacing placeholder values with the setup datetime and root-specific summary.
 6. Optionally write `~/.config/kb/path` after user approval.
-7. Do not create `_raw/` or `_archive/`.
+7. Do not create `_raw/`.
 8. Create `_inbox/` only if the user explicitly wants a staging area.
 
 ### Template Usage
@@ -162,6 +165,25 @@ Keep directory `README.md` files short by default. Include only:
 - naming guidance when useful
 
 Do not use directory `README.md` files as file lists, detailed catalogs, changelogs, or substitutes for root `index.md`. Add or expand them when the user describes how a folder should be used, such as "이 폴더는 앞으로 이렇게 쓸거야."
+
+## Archived Documents
+
+Use `_archived/` for KB documents the owner wants to keep but no longer treat as active current knowledge.
+
+Rules:
+
+- The archive folder is exactly top-level `_archived/`.
+- Put archived files directly under `_archived/` at one depth, such as `_archived/old-project-notes.md`.
+- Do not create archive subfolders or alternate names such as `_archive/`.
+- Archived documents are still normal Markdown KB documents and may be found by search.
+- Links from active documents, `index.md`, or other KB files to `_archived/` documents are allowed.
+- Do not add a separate archive-specific edit ban. Set the archived document's `agent_edit_mode` to `read_only` and follow the normal Agent Edit Mode rules.
+
+When archiving a document:
+
+1. Move it to `_archived/<filename>.md`, preserving the filename unless there is a collision.
+2. Set or update frontmatter `agent_edit_mode: read_only`.
+3. Update `index.md` and `log.jsonl` when the KB maintains them.
 
 ### `log.jsonl` Default Shape
 

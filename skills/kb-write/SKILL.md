@@ -21,6 +21,7 @@ Add knowledge to a Markdown KB as curated source-of-truth documents. The maintai
 - Create new documents when the input is a distinct topic that someone would naturally search for later.
 - Keep the KB readable by humans first; Obsidian links and graph health are secondary.
 - Never create `_raw/` for source preservation. If provenance matters, record a safe `source` value in frontmatter or a short source note in the body.
+- Archive retired documents only by following `kb-manage`: move them to top-level `_archived/` at one depth and set `agent_edit_mode: read_only`.
 
 ## Required First Reads
 
@@ -58,6 +59,7 @@ Do not use Obsidian skills just because a KB has `.obsidian/`. Use them when the
 | Pasted text | Treat the provided text as the source context. |
 | Local file path | Read the file, then write a curated KB document or update. Do not copy the source into `_raw/`. |
 | URL | Read/extract the useful content if available, then store only the curated result and safe source reference. |
+| Archive request | Move the document to top-level `_archived/<filename>.md`, set `agent_edit_mode: read_only`, and update `index.md`/`log.jsonl` if maintained. |
 | Broad question | Do not add. Use `kb-search` unless the user explicitly asks to file the answer back. |
 | Ambiguous note | Ask only when a wrong document choice would be risky; otherwise choose the most natural location. |
 
@@ -242,6 +244,15 @@ Use when the document intentionally accumulates dated notes, examples, or change
 - For `append_only`, preserve the original text exactly and add content around it without rewriting it.
 - Avoid repeating the same fact in multiple sections.
 - Include exact dates when dates affect meaning.
+
+### Archive Existing Document
+
+Use when the user wants to retire a KB document without deleting it.
+
+- Follow the `_archived/` rules from `kb-manage`.
+- Preserve the original filename unless `_archived/` already has that file.
+- Keep the document content intact except for the minimum frontmatter change needed to set `agent_edit_mode: read_only`.
+- Do not invent extra archive metadata unless local KB rules require it or the user asks.
 
 ## Index And Log
 
