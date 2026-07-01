@@ -21,11 +21,17 @@ This repository is a Markdown knowledge base. Maintained documents are the sourc
 - Preserve meaning while improving structure and readability.
 - Avoid duplicate ownership. Choose one source-of-truth document and link or reference it from related documents.
 - Prefer exact dates over relative dates when timing matters.
+- Respect `agent_edit_mode` in Markdown frontmatter:
+  - `read_only`: agents must not edit the file.
+  - `append_only`: agents may add new content anywhere, including `>` blockquotes or notes, but must preserve existing text exactly.
+  - `editable`: agents may edit text, structure, frontmatter, and remove content when appropriate.
+- In git repositories, run the edit-mode guard before completing Markdown changes: `python3 /path/to/agent-toolkit/skills/kb-manage/scripts/check_agent_edit_mode.py`.
+- If the guard reports a protected-file violation, ask whether the change was intentionally made by a human before proceeding.
 
 ## Document Structure
 
 - New knowledge documents should use YAML frontmatter unless local rules say otherwise.
-- Keep `title`, `summary`, `tags`, `aliases`, `created`, and `updated` useful for search.
+- Keep `title`, `summary`, `tags`, `aliases`, `created`, `updated`, and `agent_edit_mode` useful for search and maintenance.
 - Keep root agent entrypoints such as this file free of KB document frontmatter.
 - Use ordinary Markdown links for external URLs.
 - Add internal links only when they are clearly useful.

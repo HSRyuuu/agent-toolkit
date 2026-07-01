@@ -30,11 +30,13 @@ Never auto-fix sensitive content. Report it and ask.
 ### Metadata
 
 - missing YAML frontmatter where the KB requires it
-- missing `title`, `summary`, `tags`, `aliases`, `created`, `updated`
+- missing `title`, `summary`, `tags`, `aliases`, `created`, `updated`, `agent_edit_mode`
+- invalid `agent_edit_mode`; expected `read_only`, `append_only`, or `editable`
 - title/H1 mismatch
 - invalid or inconsistent date format
 - weak `summary`, sparse `tags`, missing likely aliases
 - `updated` older than a meaningful body change indicated by git history
+- `read_only` or `append_only` files with git changes that need confirmation
 
 ### Index
 
@@ -105,6 +107,12 @@ Index/log drift:
 ```bash
 test -f index.md && rg -n "\\.md\\)|\\.md" index.md
 test -f log.jsonl && tail -100 log.jsonl
+```
+
+Agent edit-mode guard in git repositories:
+
+```bash
+python3 /path/to/agent-toolkit/skills/kb-manage/scripts/check_agent_edit_mode.py
 ```
 
 ## Report Shape

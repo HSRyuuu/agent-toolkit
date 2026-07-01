@@ -30,6 +30,7 @@ Before writing:
 2. Read root guidance files from the resolved KB root, even if the current shell directory is elsewhere: `AGENTS.md`, `CLAUDE.md`, `.agents/rules/*.md`, or equivalent.
 3. Read `index.md` if present to find existing topics.
 4. Read relevant existing documents before deciding create/append/merge.
+5. Check each target document's `agent_edit_mode` before drafting edits.
 
 If the KB has project-local add/search/security/writing rules, follow those over the generic defaults here.
 
@@ -120,6 +121,28 @@ Completion check:
 - Sensitive procedures are not more detailed than necessary.
 - Redacted sections still preserve the useful meaning or explicitly mark the missing context.
 
+## Agent Edit Mode Gate
+
+Follow `kb-manage` for the authoritative `agent_edit_mode` definition.
+
+| Mode | Write behavior |
+|---|---|
+| `read_only` | Do not edit the file at all. If the user asks for a change, explain that the file is protected and ask for explicit approval before changing it. |
+| `append_only` | Keep the original file text exactly intact. You may add new content anywhere: below a relevant heading, between paragraphs, in a new section, or as a Markdown blockquote/comment near the source context. Prefer `>` blockquotes when adding commentary that should sit beside preserved original text. Do not rewrite sentences, delete text, rename headings, reorder sections, change existing frontmatter values, or clean up formatting. |
+| `editable` | Normal KB writing rules apply. Text edits, structure changes, merges, removals, and frontmatter cleanup are allowed when they preserve important facts and meaning. |
+
+If a target file has no `agent_edit_mode`, use local KB rules. If none exist, treat it as `editable` and add `agent_edit_mode: editable` during the next meaningful update.
+
+In a git-backed KB, after writing and before completion or any git action, run the guard from `kb-manage`:
+
+```bash
+python3 /path/to/agent-toolkit/skills/kb-manage/scripts/check_agent_edit_mode.py
+```
+
+If it reports a `read_only` or `append_only` violation, stop. Tell the user which protected file changed and ask whether the change was intentional. Human edits are allowed, but agent-made protected changes require user confirmation.
+
+In a non-git KB, the guard cannot compare against tracked history. Respect the field directly and ask before any protected change.
+
 ## Document Washing Protocol
 
 Apply this internal prompt when turning rough input into a KB document:
@@ -172,6 +195,7 @@ aliases:
 created: "YYYY-MM-DD"
 updated: "YYYY-MM-DD"
 source: "user-note"
+agent_edit_mode: editable
 ---
 ```
 
@@ -180,15 +204,17 @@ source: "user-note"
 Use when the new input updates current knowledge.
 
 - Read the full relevant section first.
+- Respect `agent_edit_mode` before merging; `read_only` cannot be merged into, and `append_only` can only receive additive notes.
 - Preserve existing facts unless the new input clearly supersedes them.
 - If new and old information conflict, do not silently choose; mark the conflict and what needs confirmation.
-- Update `updated` when the KB uses that frontmatter field.
+- Update `updated` when the KB uses that frontmatter field and the file is `editable`; for `append_only`, add an update note instead unless the user approves changing frontmatter.
 
 ### Append To Existing Document
 
 Use when the document intentionally accumulates dated notes, examples, or change history.
 
 - Add the new material where it fits the existing structure.
+- For `append_only`, preserve the original text exactly and add content around it without rewriting it.
 - Avoid repeating the same fact in multiple sections.
 - Include exact dates when dates affect meaning.
 
@@ -220,6 +246,7 @@ Report briefly:
 - created/modified files
 - mode used: create, merge, append
 - any index/log updates
+- `agent_edit_mode` guard result when protected files were touched
 - security-sensitive items excluded or masked
 - remaining `확인 필요` items
 
