@@ -49,10 +49,10 @@ Never auto-fix sensitive content. Report it and ask.
 
 ### Log
 
-- malformed `log.jsonl`
-- recent changed documents with no approximate log entry
-- log entries pointing to missing files
-- log entries containing sensitive raw values
+- malformed `log.jsonl`, when present
+- recent changed documents with no approximate log entry, when the KB maintains `log.jsonl`
+- log entries pointing to missing files, when present
+- log entries containing sensitive raw values, when present
 
 `log.jsonl` is an aid for finding work and git history. It is not a source of truth.
 
@@ -70,6 +70,8 @@ Never auto-fix sensitive content. Report it and ask.
 - broken Obsidian wikilinks, if the KB uses them
 - obvious missing related-document links
 - excessive wikilinks that reduce readability
+
+Missing related-document links are suggestions, not hard failures. Prefer focused pairs such as concept/system documents linked to usage/procedure documents.
 
 ### Security Hygiene
 

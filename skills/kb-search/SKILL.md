@@ -7,7 +7,7 @@ description: Use when answering questions from a Markdown Knowledge Base, findin
 
 ## Overview
 
-Search a curated Markdown KB in read-only mode. The maintained documents are the source-of-truth surface. Do not depend on `_raw/`, daily logs, canonical kinds, embeddings, or general web knowledge unless the user explicitly asks outside-KB research.
+Search a curated Markdown KB in read-only mode. The maintained documents are the source-of-truth surface. Do not depend on `_raw/`, daily logs, canonical kinds, embeddings, `log.jsonl`, or general web knowledge unless the user explicitly asks outside-KB research.
 
 **Required orientation:** read and follow `kb-manage` for KB root, identity, repository defaults, frontmatter, `index.md`, `log.jsonl`, and shared conventions.
 
@@ -56,6 +56,8 @@ rg -n '"files":|"summary":|"datetime":|"type":|"source":|검색어|synonym' log.
 jq -c . log.jsonl >/dev/null
 ```
 
+If `log.jsonl` is absent, skip these commands without warning unless the user asked to audit KB maintenance files.
+
 Git history fallback:
 
 ```bash
@@ -103,5 +105,5 @@ Example:
 
 - Do not update `index.md` or `log.jsonl` during search.
 - Do not infer missing company/project facts from general knowledge.
-- Do not treat `log.jsonl` as a source of truth; use it only to find relevant files or git history.
+- Do not treat `log.jsonl` as a source of truth; use it only to find relevant files or git history, and ignore it when it is absent.
 - Do not add bulk Obsidian wikilinks while answering a search question.
