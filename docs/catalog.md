@@ -9,7 +9,7 @@
 
 | 항목 | 개수 |
 |---|---:|
-| Physical plugin skills under `skills/` | 36 |
+| Physical plugin skills under `skills/` | 37 |
 
 스킬 카테고리는 이름과 설명에서 읽는 메타데이터다. 플러그인 로더 기준의 활성 스킬 루트는 `skills/` 하나다.
 
@@ -38,6 +38,7 @@
 | [manage-local-plugins](../skills/manage-local-plugins/SKILL.md) | `manage-local-plugins` | Use when turning local Claude Code or Codex plugins on, off, reloading, refreshing snapshots, checking plugin status, or troubleshooting local marketplace plugin changes that do not appear in a new session. |
 | [node-backend-patterns](../skills/node-backend-patterns/SKILL.md) | `node-backend-patterns` | Node.js·Express·Next.js API 라우트(또는 NestJS) 기반 백엔드를 작성·리뷰·리팩토링할 때 사용한다. Repository/Service/미들웨어 레이어 설계, DB 쿼리 최적화(N+1·인덱싱·커넥션 풀링), 캐싱, 에러 처리, 인증·인가, 속도 제한, 백그라운드 작업, 구조화 로깅 등이 트리거. 트리거 - "Node 백엔드", "Express 라우트", "Next.js API", "NestJS", "Repository 패턴", "N+1 쿼리", "캐싱 전략", "JWT 검증", "미들웨어 작성". |
 | [prompt-master](../skills/prompt-master/SKILL.md) | `prompt-master` | LLM에 줄 프롬프트(시스템 프롬프트, 에이전트 프롬프트, 1회성 챗 프롬프트, API 파이프라인 프롬프트 등)를 새로 작성하거나, 기존 프롬프트를 리뷰·평가·비교해야 할 때 사용한다. 멀티에이전트 위임 구조나 서브에이전트 오케스트레이션이 필요한 프롬프트 설계에도 사용. 트리거 - "프롬프트 만들어줘", "프롬프트 작성", "prompt 개선", "시스템 프롬프트", "에이전트 프롬프트", "프롬프트 리뷰", "프롬프트 평가", "멀티에이전트 설계". |
+| [publish-agent-toolkit](../skills/publish-agent-toolkit/SKILL.md) | `publish-agent-toolkit` | Use only when the user explicitly invokes `$agent-toolkit:publish-agent-toolkit`, `$publish-agent-toolkit`, says "agent-toolkit publish", or asks to run the agent-toolkit commit-push-reload sequence. Do not use for ordinary commit, push, or reload requests. |
 | [rest-api-design](../skills/rest-api-design/SKILL.md) | `rest-api-design` | 새 REST API 엔드포인트를 설계하거나 기존 API 규약(URL 구조·상태 코드·응답 형식·페이지네이션·필터링·버전 관리)을 검토할 때 사용한다. 공개/파트너용 API를 설계할 때도 사용. 트리거 - "API 설계", "REST API 만들어줘", "엔드포인트 설계", "페이지네이션 패턴", "버전 관리 전략", "에러 응답 표준", "API 컨트랙트 리뷰". |
 | [setup-agent-entrypoint](../skills/setup-agent-entrypoint/SKILL.md) | `setup-agent-entrypoint` | Use when a project needs AGENTS.md, CLAUDE.md, .claude/CLAUDE.md, or an agent entrypoint that maps project docs and local helper skills without installing those assets itself. |
 | [setup-codebase-context-map](../skills/setup-codebase-context-map/SKILL.md) | `setup-codebase-context-map` | Use when setting up or refreshing token-saving source exploration files for any codebase, including SOURCE_MAP.md, CODEBASE_CONTEXT.md, route/schema/component maps, Codesight outputs, and agent instructions for reading less code while still verifying against real source files. |
