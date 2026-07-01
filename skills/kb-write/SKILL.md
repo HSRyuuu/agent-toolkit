@@ -29,8 +29,9 @@ Before writing:
 1. Resolve the KB root using `kb-manage` rules.
 2. Read root guidance files from the resolved KB root, even if the current shell directory is elsewhere: `AGENTS.md`, `CLAUDE.md`, `.agents/rules/*.md`, or equivalent.
 3. Read `index.md` if present to find existing topics.
-4. Read relevant existing documents before deciding create/append/merge.
-5. Check each target document's `agent_edit_mode` before drafting edits.
+4. Read relevant directory `README.md` files when choosing or using a folder. They describe folder intent, not file inventory.
+5. Read relevant existing documents before deciding create/append/merge.
+6. Check each target document's `agent_edit_mode` before drafting edits.
 
 If the KB has project-local add/search/security/writing rules, follow those over the generic defaults here.
 
@@ -179,6 +180,7 @@ Preservation rules:
 Use when no existing document naturally owns the topic.
 
 - Choose the most natural filename language.
+- Follow the target folder's `README.md` when present.
 - Korean business docs: `한글_파일명.md`.
 - English technical terms: `lower-kebab-case.md`.
 - Add YAML frontmatter when the KB uses it.

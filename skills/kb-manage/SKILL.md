@@ -142,6 +142,19 @@ Use the templates as starting points, not as immutable boilerplate. Replace plac
 
 Normal KB documents should include `agent_edit_mode: editable` unless the owner chooses `read_only` or `append_only`.
 
+### Directory `README.md` Files
+
+Use `README.md` for folder-level intent notes. Root `index.md` remains the KB-wide document catalog; directory `README.md` files explain how a folder should be used.
+
+Keep directory `README.md` files short by default. Include only:
+
+- folder purpose
+- what belongs in the folder
+- what does not belong when the boundary is easy to confuse
+- naming guidance when useful
+
+Do not use directory `README.md` files as file lists, detailed catalogs, changelogs, or substitutes for root `index.md`. Add or expand them when the user describes how a folder should be used, such as "이 폴더는 앞으로 이렇게 쓸거야."
+
 ### `log.jsonl` Default Shape
 
 Each line is one JSON object:

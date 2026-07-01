@@ -25,11 +25,12 @@ Search a curated Markdown KB in read-only mode. The maintained documents are the
 1. Resolve the KB root using `kb-manage` rules.
 2. Read root guidance files from the resolved KB root, even if the current shell directory is elsewhere.
 3. Read `index.md` first if it exists.
-4. Search frontmatter fields: `title`, `summary`, `tags`, `aliases`, `source`, `created`, `updated`.
-5. Search filenames and headings.
-6. Search body text with exact terms and likely synonyms.
-7. Read the most relevant documents or sections.
-8. Follow only clearly useful related links; avoid broad graph walks.
+4. Read relevant directory `README.md` files when folder intent helps narrow the search.
+5. Search frontmatter fields: `title`, `summary`, `tags`, `aliases`, `source`, `created`, `updated`.
+6. Search filenames and headings.
+7. Search body text with exact terms and likely synonyms.
+8. Read the most relevant documents or sections.
+9. Follow only clearly useful related links; avoid broad graph walks.
 
 ## Useful Commands
 
