@@ -72,9 +72,9 @@ Documents should be easy for humans to scan and maintain.
 Use the first matching source:
 
 1. User-provided absolute path.
-2. The nearest ancestor of the user-provided path or current working directory that has an explicit KB marker.
-3. Current working directory, if it has an explicit KB marker.
-4. `~/.config/kb/path`, if it exists and points to a directory.
+2. The nearest ancestor of the user-provided path or current working directory that has a local KB config file.
+3. `~/.config/kb/path`, if it exists and points to a directory.
+4. The nearest ancestor of the user-provided path or current working directory that has `index.md` and `log.jsonl` together.
 
 A directory has an explicit KB marker when it has at least one of:
 
@@ -82,6 +82,14 @@ A directory has an explicit KB marker when it has at least one of:
 - a local KB config file such as `.kb/config`, `.kb/config.yml`, `.kb/config.yaml`, `kb.config.json`, or `kb.config.yml`
 
 Do not treat a repository as a KB only because it has `AGENTS.md`, `CLAUDE.md`, `.agents/rules/`, `.obsidian/`, or Markdown files with frontmatter. Those are common in codebases and Obsidian vaults that are not this KB model.
+
+For write or setup requests, config is the safety anchor:
+
+- Always check `~/.config/kb/path` before using the current project directory as the KB root.
+- If `~/.config/kb/path` points to a valid directory, use that root unless the user explicitly provides another absolute KB path.
+- Do not initialize or write KB setup files into the current working directory just because it is writable.
+- If the current working directory is a git repository or application project and has no local KB config file, treat it as a project workspace, not a KB root. Use the configured KB root or ask for an absolute KB path.
+- Use `index.md` and `log.jsonl` as a fallback root marker only when no global config is available or the user explicitly points at that directory.
 
 If no root can be resolved, ask for an absolute path. Do not guess from unrelated home directories.
 

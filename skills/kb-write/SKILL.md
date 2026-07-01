@@ -27,11 +27,12 @@ Add knowledge to a Markdown KB as curated source-of-truth documents. The maintai
 Before writing:
 
 1. Resolve the KB root using `kb-manage` rules.
-2. Read root guidance files from the resolved KB root, even if the current shell directory is elsewhere: `AGENTS.md`, `CLAUDE.md`, `.agents/rules/*.md`, or equivalent.
-3. Read `index.md` if present to find existing topics.
-4. Read relevant directory `README.md` files when choosing or using a folder. They describe folder intent, not file inventory.
-5. Read relevant existing documents before deciding create/append/merge.
-6. Check each target document's `agent_edit_mode` before drafting edits.
+2. Confirm the resolved root did not silently default to the current project workspace. If `~/.config/kb/path` exists, use it unless the user explicitly provided another absolute KB path.
+3. Read root guidance files from the resolved KB root, even if the current shell directory is elsewhere: `AGENTS.md`, `CLAUDE.md`, `.agents/rules/*.md`, or equivalent.
+4. Read `index.md` if present to find existing topics.
+5. Read relevant directory `README.md` files when choosing or using a folder. They describe folder intent, not file inventory.
+6. Read relevant existing documents before deciding create/append/merge.
+7. Check each target document's `agent_edit_mode` before drafting edits.
 
 If the KB has project-local add/search/security/writing rules, follow those over the generic defaults here.
 
