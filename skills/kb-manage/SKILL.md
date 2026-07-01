@@ -140,6 +140,8 @@ Use the templates as starting points, not as immutable boilerplate. Replace plac
 | [Example](./example.md) | One-line summary. | `kb` | 2026-06-30 |
 ```
 
+Normal KB documents should include `agent_edit_mode: editable` unless the owner chooses `read_only` or `append_only`.
+
 ### `log.jsonl` Default Shape
 
 Each line is one JSON object:
@@ -172,6 +174,7 @@ aliases:
 created: "YYYY-MM-DD"
 updated: "YYYY-MM-DD"
 source: "user-note"
+agent_edit_mode: editable
 ---
 ```
 
@@ -183,6 +186,7 @@ Required fields:
 - `aliases`
 - `created`
 - `updated`
+- `agent_edit_mode`
 
 Optional:
 
@@ -197,6 +201,7 @@ Field rules:
 - `created`: first creation date in `YYYY-MM-DD`.
 - `updated`: last meaningful update date in `YYYY-MM-DD`.
 - `source`: safe provenance such as `user-note`, `meeting`, `slack`, `docs`, a filename, or a non-sensitive URL.
+- `agent_edit_mode`: agent edit permission. Must be one of `read_only`, `append_only`, or `editable`.
 
 Writing rules:
 
@@ -214,6 +219,44 @@ Scope defaults:
 - Do not add frontmatter to non-Markdown files.
 
 Do not add `kind: canonical`, `kind: daily-log`, or raw-source link fields unless the local KB already intentionally uses them.
+
+## Agent Edit Mode
+
+`agent_edit_mode` controls what an agent may do to an individual Markdown file. Human edits are always allowed; this policy exists to make agents stop before they accidentally rewrite protected notes.
+
+| Value | Agent rule |
+|---|---|
+| `read_only` | No agent edits. Do not add, delete, rewrite, rename, reformat, or change frontmatter. Ask the user instead. |
+| `append_only` | Preserve all existing text exactly. Add new content anywhere it fits, including between existing sections, as comments, or as Markdown blockquotes using `>`, but do not delete, edit, reorder, or restructure existing text. Do not change existing frontmatter values such as `updated`; add a body note instead unless the user approves. |
+| `editable` | Full editing is allowed: wording changes, structure changes, merges, removals, and frontmatter cleanup are permitted while preserving important facts and source meaning. |
+
+When a file has no `agent_edit_mode`, use local KB rules. If there are no local rules, treat new KB documents as `editable` and add the field during the next meaningful update.
+
+### Git Guard
+
+In a git-backed KB, run this guard before reporting completion or preparing a git action after changing Markdown files:
+
+```bash
+python3 /path/to/agent-toolkit/skills/kb-manage/scripts/check_agent_edit_mode.py
+```
+
+For staged-only checks, such as a pre-commit hook:
+
+```bash
+python3 /path/to/agent-toolkit/skills/kb-manage/scripts/check_agent_edit_mode.py --staged
+```
+
+The guard compares changed Markdown files against `HEAD` by default.
+
+- `read_only`: any tracked content change is reported.
+- `append_only`: the previous tracked file must remain an exact ordered subsequence of the new file, so additions anywhere pass but deletions, line edits, frontmatter value changes, and reordering fail.
+- Exit code `0`: no guarded violations found.
+- Exit code `1`: guarded violation found. Stop and ask the user whether the change is intentional before proceeding.
+- Exit code `2`: no usable git baseline, such as a non-git directory or missing base ref.
+
+Git cannot prove whether a human or an agent made a change. If the guard reports a violation, say which protected file changed and ask: `이 변경이 사람이 의도한 변경이 맞나요?` Continue only after the user confirms.
+
+For a non-git KB, this preservation check is not enforceable from repository history. The agent must rely on the frontmatter rule and explicit user approval, or the KB owner must provide another snapshot/baseline mechanism.
 
 ## Migration From Old KB Model
 
