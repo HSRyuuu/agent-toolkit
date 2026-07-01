@@ -20,7 +20,7 @@ The KB is a curated Markdown repository where maintained documents are the sourc
 - Human-readable documents are primary.
 - LLMs help add, search, lint, and reorganize.
 - `index.md` is the content catalog.
-- `log.jsonl` is a small work-history pointer for finding files and git history.
+- `log.jsonl`, when present, is a small work-history pointer for finding files and git history.
 - Git history is the durable audit trail.
 - Source/provenance is recorded safely in frontmatter or body notes, not by storing raw source copies.
 - Security and privacy override source preservation.
@@ -51,6 +51,7 @@ Documents should be easy for humans to scan and maintain.
 - Use tables only when comparison or repeated attributes become easier to scan.
 - Do not add unstated background knowledge or stronger conclusions while cleaning text.
 - Make the next action or main conclusion easy to find.
+- Add a small related-documents section when two maintained documents naturally complement each other, especially when one explains a concept/system and another explains usage/procedure. Keep this selective; do not bulk-link.
 
 ## Maintenance Defaults
 
@@ -77,11 +78,13 @@ Use the first matching source:
 1. User-provided absolute path.
 2. The nearest ancestor of the user-provided path or current working directory that has a local KB config file.
 3. `~/.config/kb/path`, if it exists and points to a directory.
-4. The nearest ancestor of the user-provided path or current working directory that has `index.md` and `log.jsonl` together.
+4. For read-only search or exploration, the nearest ancestor of the user-provided path or current working directory that has `index.md`, with or without `log.jsonl`.
+5. For write/setup work, the nearest ancestor of the user-provided path or current working directory that has `index.md` and `log.jsonl` together.
 
 A directory has an explicit KB marker when it has at least one of:
 
 - `index.md` and `log.jsonl` together
+- for read-only search or exploration, `index.md` alone
 - a local KB config file such as `.kb/config`, `.kb/config.yml`, `.kb/config.yaml`, `kb.config.json`, or `kb.config.yml`
 
 Do not treat a repository as a KB only because it has `AGENTS.md`, `CLAUDE.md`, `.agents/rules/`, `.obsidian/`, or Markdown files with frontmatter. Those are common in codebases and Obsidian vaults that are not this KB model.
@@ -92,7 +95,7 @@ For write or setup requests, config is the safety anchor:
 - If `~/.config/kb/path` points to a valid directory, use that root unless the user explicitly provides another absolute KB path.
 - Do not initialize or write KB setup files into the current working directory just because it is writable.
 - If the current working directory is a git repository or application project and has no local KB config file, treat it as a project workspace, not a KB root. Use the configured KB root or ask for an absolute KB path.
-- Use `index.md` and `log.jsonl` as a fallback root marker only when no global config is available or the user explicitly points at that directory.
+- Use `index.md` and `log.jsonl` as a fallback root marker only when no global config is available or the user explicitly points at that directory. For read-only search or exploration, if `index.md` exists but `log.jsonl` is absent, continue without `log.jsonl`; do not create it or treat its absence as a blocker.
 
 If no root can be resolved, ask for an absolute path. Do not guess from unrelated home directories.
 
@@ -165,6 +168,26 @@ Keep directory `README.md` files short by default. Include only:
 - naming guidance when useful
 
 Do not use directory `README.md` files as file lists, detailed catalogs, changelogs, or substitutes for root `index.md`. Add or expand them when the user describes how a folder should be used, such as "이 폴더는 앞으로 이렇게 쓸거야."
+
+## Inbox Documents
+
+Use top-level `_inbox/` for material that should remain findable but is not yet a maintained source-of-truth document.
+
+Good `_inbox/` candidates:
+
+- unclassified notes waiting for routing
+- short source material that still needs washing
+- unfinished stubs that only have a title/frontmatter or "to be written" content
+- documents that would look authoritative if left in a normal topic folder
+
+Use `_inbox/stubs/` for placeholder documents that identify a future topic but do not yet contain useful maintained knowledge, such as planned API specs, auth notes, standards, or system pages.
+
+Rules:
+
+- `_inbox/` documents are temporary candidates, not current source of truth.
+- Do not rely on `_inbox/` to preserve raw sensitive source text.
+- When a stub becomes useful, move it to the proper topic folder, update frontmatter/tags, and update `index.md`/`log.jsonl` if the KB maintains them.
+- If `index.md` lists `_inbox/` documents, put them in a clearly labeled section such as "Inbox" or "Stubs" so readers do not mistake them for maintained documents.
 
 ## Archived Documents
 
@@ -332,6 +355,8 @@ Do not include every heading or long excerpts.
 ## Log Maintenance
 
 `log.jsonl` exists to make git history easier to navigate. It is not a replacement for git and not a source of truth.
+
+If `log.jsonl` is missing during read-only search or exploration, ignore it and continue with `index.md`, frontmatter, filenames, body search, related links, and git history if available. Do not create `log.jsonl` just because it is absent during exploration.
 
 Append entries for:
 

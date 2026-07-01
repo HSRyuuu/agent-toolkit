@@ -60,6 +60,7 @@ Do not use Obsidian skills just because a KB has `.obsidian/`. Use them when the
 | Local file path | Read the file, then write a curated KB document or update. Do not copy the source into `_raw/`. |
 | URL | Read/extract the useful content if available, then store only the curated result and safe source reference. |
 | Archive request | Move the document to top-level `_archived/<filename>.md`, set `agent_edit_mode: read_only`, and update `index.md`/`log.jsonl` if maintained. |
+| Stub or unfinished document | Move it to `_inbox/stubs/` when it only names a future topic or says "to be written". Do not leave it in a normal topic folder where it may look authoritative. |
 | Broad question | Do not add. Use `kb-search` unless the user explicitly asks to file the answer back. |
 | Ambiguous note | Ask only when a wrong document choice would be risky; otherwise choose the most natural location. |
 
@@ -254,6 +255,28 @@ Use when the user wants to retire a KB document without deleting it.
 - Keep the document content intact except for the minimum frontmatter change needed to set `agent_edit_mode: read_only`.
 - Do not invent extra archive metadata unless local KB rules require it or the user asks.
 
+### Move To Inbox Stub
+
+Use when a document is only a placeholder and does not yet contain maintained knowledge.
+
+- Move it under top-level `_inbox/stubs/`.
+- Keep or add frontmatter so it remains searchable.
+- Add tags such as `inbox` and `stub` while preserving useful topic tags.
+- Remove it from the main maintained-document section of `index.md`; if helpful, list it under a clearly labeled "Inbox" or "Stubs" section.
+- When the stub becomes a real document, move it to the owning folder and update `summary`, `tags`, related links, `index.md`, and `log.jsonl` if maintained.
+
+### Related Document Links
+
+Add a small related-documents section when it improves human navigation and search follow-up.
+
+Best candidates:
+
+- a concept/system page and its usage/procedure page
+- an architecture page and a troubleshooting page
+- a glossary page and a domain/system page that depends on the term
+
+Keep links selective. Do not bulk-add wikilinks or graph-style links. Use normal Markdown links unless local Obsidian rules say otherwise.
+
 ## Index And Log
 
 After successful writes:
@@ -273,7 +296,7 @@ Recommended log shape:
 
 Use timezone-aware ISO 8601 datetimes. Prefer the KB/user local timezone when known; never write a bare date or timezone-less local time.
 
-If `index.md` or `log.jsonl` does not exist, do not create them unless the user asked for KB setup/management or the local rules say they are required.
+If `index.md` or `log.jsonl` does not exist, do not create them unless the user asked for KB setup/management or the local rules say they are required. A missing `log.jsonl` should not block writing; just skip the log append.
 
 ## Completion Report
 
