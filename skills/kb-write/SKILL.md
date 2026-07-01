@@ -74,6 +74,28 @@ Ask or present a short split plan when:
 
 When asking, state what is ambiguous and propose the smallest useful options. Preserve all input until the user decides.
 
+## Multi-document Write
+
+Use this when one input contains multiple durable knowledge units.
+
+1. Split the input into the smallest useful units by topic, system, procedure, decision, or working context.
+2. For each unit, choose one route:
+   - `merge`: update an existing source-of-truth document
+   - `append`: add to an intentionally accumulating document
+   - `create`: make a new document when no existing document naturally owns it
+   - `skip`: do not store broad questions, duplicates, or unsafe details
+3. Read `index.md`, relevant directory `README.md` files, and candidate target documents before final routing.
+4. Proceed without asking only when every unit has a clear owner, no content conflict, no security gate issue, and no protected edit-mode issue.
+5. When routing is ambiguous, stop before writing that unit. Present candidate targets and ask the user to decide where it belongs.
+
+Candidate routing format:
+
+| Unit | Candidate target | Route | Why this target | Decision needed |
+|---|---|---|---|---|
+| Short unit label | `path/to/doc.md` or new path | `merge/create/append/skip` | One-line reason | Ask the user to choose or confirm |
+
+Do not scatter facts across documents by guessing. Preserve the original input until the user resolves ambiguous routing.
+
 ## Security Gate
 
 Pause and ask before writing if the input or target document contains:
@@ -247,6 +269,7 @@ Report briefly:
 
 - created/modified files
 - mode used: create, merge, append
+- routing summary when one input was split across multiple documents
 - any index/log updates
 - `agent_edit_mode` guard result when protected files were touched
 - security-sensitive items excluded or masked
