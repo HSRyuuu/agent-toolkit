@@ -1,0 +1,4 @@
+interface:
+  display_name: "Daily Dev Log"
+  short_description: "Draft daily development work logs"
+  default_prompt: "Use $daily-dev-log to collect today's development sessions and draft a personal daily work log."
