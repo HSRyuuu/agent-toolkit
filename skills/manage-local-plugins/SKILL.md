@@ -73,6 +73,19 @@ claude plugin update "$PLUGIN_ID" || true
 claude plugin details "$PLUGIN_ID"
 ```
 
+**Known gotcha — stale skill-invocation cache:** `claude plugin details` reads the source directory live and will show renamed/added/removed skills immediately, which makes it *look* like the reload worked. But the content actually loaded when a skill is invoked comes from a separate versioned snapshot at `~/.claude/plugins/cache/$MARKETPLACE_NAME/$PLUGIN_NAME/$VERSION/`. If `plugin.json`'s `version` field doesn't change, both `claude plugin marketplace update` and `claude plugin update` report "already at the latest version" and do **not** refresh that snapshot — edited/renamed/deleted skill files silently keep serving old content from cache.
+
+If `claude plugin details` shows different skills than what actually fires, force a resync:
+
+```bash
+VERSION=$(jq -r '.version' "$PLUGIN_ROOT/.claude-plugin/plugin.json")
+rm -rf "$HOME/.claude/plugins/cache/$MARKETPLACE_NAME/$PLUGIN_NAME/$VERSION"
+claude plugin marketplace update "$MARKETPLACE_NAME"
+claude plugin update "$PLUGIN_ID" || true
+```
+
+Only remove the resolved `$PLUGIN_NAME/$VERSION` subpath, never the whole `~/.claude/plugins/cache` tree. The safest long-term fix is to bump `version` in `plugin.json` on every source change to a local plugin — that makes the cache key change and forces a real resync instead of relying on manual cache deletion.
+
 Tell the user to start a new Claude Code session after changing plugin state, hooks, skills, or manifests.
 
 ## Codex
