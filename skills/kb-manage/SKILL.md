@@ -76,28 +76,25 @@ Documents should be easy for humans to scan and maintain.
 Use the first matching source:
 
 1. User-provided absolute path.
-2. The nearest ancestor of the user-provided path or current working directory that has a local KB config file.
-3. `~/.config/kb/path`, if it exists and points to a directory.
-4. For read-only search or exploration, the nearest ancestor of the user-provided path or current working directory that has `index.md`, with or without `log.jsonl`.
-5. For write/setup work, the nearest ancestor of the user-provided path or current working directory that has `index.md` and `log.jsonl` together.
+2. `~/.config/kb/path`, if it exists and points to a directory.
 
-A directory has an explicit KB marker when it has at least one of:
+If neither source resolves, ask the user for an absolute KB path. Do not infer a KB root from the current working directory, parent directories, `index.md`, `log.jsonl`, `.obsidian/`, Markdown frontmatter, or repository guidance files.
 
-- `index.md` and `log.jsonl` together
-- for read-only search or exploration, `index.md` alone
-- a local KB config file such as `.kb/config`, `.kb/config.yml`, `.kb/config.yaml`, `kb.config.json`, or `kb.config.yml`
+The global config file has no extension. It is a UTF-8 plaintext file named `path`; the first non-empty line is the absolute KB root.
 
-Do not treat a repository as a KB only because it has `AGENTS.md`, `CLAUDE.md`, `.agents/rules/`, `.obsidian/`, or Markdown files with frontmatter. Those are common in codebases and Obsidian vaults that are not this KB model.
+For the fastest deterministic check, run:
 
-For write or setup requests, config is the safety anchor:
+```bash
+python3 /path/to/agent-toolkit/skills/kb-manage/scripts/resolve_kb_root.py
+```
 
-- Always check `~/.config/kb/path` before using the current project directory as the KB root.
-- If `~/.config/kb/path` points to a valid directory, use that root unless the user explicitly provides another absolute KB path.
-- Do not initialize or write KB setup files into the current working directory just because it is writable.
-- If the current working directory is a git repository or application project and has no local KB config file, treat it as a project workspace, not a KB root. Use the configured KB root or ask for an absolute KB path.
-- Use `index.md` and `log.jsonl` as a fallback root marker only when no global config is available or the user explicitly points at that directory. For read-only search or exploration, if `index.md` exists but `log.jsonl` is absent, continue without `log.jsonl`; do not create it or treat its absence as a blocker.
+To honor a user-provided path:
 
-If no root can be resolved, ask for an absolute path. Do not guess from unrelated home directories.
+```bash
+python3 /path/to/agent-toolkit/skills/kb-manage/scripts/resolve_kb_root.py /absolute/path/to/kb
+```
+
+The script prints the resolved root on stdout and exits nonzero when no valid root is configured. If it fails, ask the user to provide an absolute KB path or to create/update `~/.config/kb/path`.
 
 ## Root Guidance Files
 
