@@ -3,13 +3,13 @@
 > `agent-toolkit` 저장소의 현재 플러그인 스킬 목록.
 > 이 문서는 `skills/*/SKILL.md` frontmatter에서 생성한다.
 >
-> Last updated: 2026-07-02
+> Last updated: 2026-07-03
 
 ## 요약
 
 | 항목 | 개수 |
 |---|---:|
-| Physical plugin skills under `skills/` | 38 |
+| Physical plugin skills under `skills/` | 39 |
 
 스킬 카테고리는 이름과 설명에서 읽는 메타데이터다. 플러그인 로더 기준의 활성 스킬 루트는 `skills/` 하나다.
 
@@ -22,6 +22,7 @@
 | [create-claude-plugin](../skills/create-claude-plugin/SKILL.md) | `create-claude-plugin` | Scaffold a new local Claude Code plugin from scratch — directory structure, plugin.json, marketplace.json, settings.json registration, and load verification. Use whenever the user wants to create a new plugin, register a local directory as a Claude Code marketplace, set up a personal toolkit/skill-collection plugin, or troubleshoot why a newly created plugin is not loading. Trigger phrases include "플러그인 만들기", "plugin 세팅", "plugin scaffold", "local marketplace 등록", "plugin이 로드 안 됨". |
 | [create-mermaid-erd](../skills/create-mermaid-erd/SKILL.md) | `create-mermaid-erd` | PRD·도메인 설명·테이블 목록 등을 입력받아 ERD(Entity-Relationship Diagram)를 Mermaid `.mmd` 파일로 생성하고, 그 mmd를 즉시 시각화하는 단일 `viewer.html` 도 함께 출력한다. 개념(Conceptual)·논리(Logical)·물리(Physical) 3종 ERD 지원, 다크 테마 + handDrawn 스타일. "ERD 만들어줘", "테이블 관계도", "DB 설계 시각화", "엔티티 관계 다이어그램", "데이터 모델링", "개념 ERD", "논리 ERD", "물리 ERD", "mermaid ERD", "DB 스키마 그려줘", "테이블 설계", "mmd 뷰어", "ERD HTML 미리보기" 등의 요청에 트리거한다. |
 | [daily-dev-log](../skills/daily-dev-log/SKILL.md) | `daily-dev-log` | Use when creating or preparing a personal daily development work log from Codex sessions, Claude sessions, KB notes, git context, troubleshooting notes, or the user's end-of-day recap. |
+| [daily-work-log](../skills/daily-work-log/SKILL.md) | `daily-work-log` | 개인 daily work log 템플릿을 만들거나, 직군과 무관하게 하루 업무 기록 Markdown을 작성·준비할 때 사용한다. |
 | [dev-teacher](../skills/dev-teacher/SKILL.md) | `dev-teacher` | 코드·인프라·아키텍처를 탐색하며 사용자의 이해를 돕는 학습 티처. "설명해줘", "어떻게 동작해?", "왜 이렇게 했어?", "X 패턴이 뭐야?", "흐름이 뭐야?", "구조가 어떻게 돼?" 등 이해·학습이 목적인 질문에 사용한다. |
 | [excel-doc-updater](../skills/excel-doc-updater/SKILL.md) | `excel-doc-updater` | Use when the user explicitly asks to update or regenerate a form-based xlsx (interface spec sheet, program list, requirements form, etc.) against a separate data source (markdown, JSON/YAML, DB/API result, another xlsx). Do not trigger on regular code edits or other doc updates. If a project-specific updater skill already exists for the same form, that one takes priority. |
 | [excel-ui-test-doc-creator](../skills/excel-ui-test-doc-creator/SKILL.md) | `excel-ui-test-doc-creator` | 테스트 시나리오 또는 테스트 수행 결과(JSON/markdown)를 입력받아 단위테스트 산출물 Excel(.xlsx) 파일을 작성할 때 사용한다. 사용자가 제공한 템플릿 xlsx가 있으면 그 양식의 컬럼 구조·스타일을 우선 따르고(한↔영 컬럼명 자동 매칭), 없으면 기본 양식(단위테스트 ID/명/데이터/절차/기대 결과/화면 URL/실제 결과)으로 신규 생성한다. openpyxl로 처리하며 긴 텍스트는 자동 wrap_text, pass/fail 행 색상 차등을 적용한다. 트리거 - "테스트 결과 엑셀로 정리해줘", "단위테스트 산출물 만들어줘", "테스트 시나리오 xlsx로", "QA 테스트 결과서 엑셀", "/excel-ui-test-doc-creator". 사용하지 않을 때 - 기존 양식 xlsx 갱신(`excel-doc-updater`가 우선), PDF/docx 테스트 보고서, 코드 테스트 실행 자체. |
