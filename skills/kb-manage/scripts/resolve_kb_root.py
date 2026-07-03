@@ -3,28 +3,37 @@
 
 Resolution order:
 1. User-provided absolute path argument.
-2. First non-empty line of ~/.config/kb/path, when it is an existing directory.
+2. ~/.config/kb/kb-config.json `path`, when it is an existing directory.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
+from typing import Any
 
 
-CONFIG_PATH = Path.home() / ".config" / "kb" / "path"
+CONFIG_PATH = Path.home() / ".config" / "kb" / "kb-config.json"
 
 
-def first_non_empty_line(path: Path) -> str | None:
+def load_config(path: Path) -> dict[str, Any]:
     try:
-        for line in path.read_text(encoding="utf-8").splitlines():
-            stripped = line.strip()
-            if stripped:
-                return stripped
-    except OSError:
-        return None
-    return None
+        raw = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return {}
+    except OSError as exc:
+        raise ValueError(f"Cannot read {path}: {exc}") from exc
+
+    try:
+        config = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid JSON in {path}: {exc}") from exc
+
+    if not isinstance(config, dict):
+        raise ValueError(f"{path} must contain a JSON object.")
+    return config
 
 
 def valid_root(raw_path: str) -> Path | None:
@@ -40,8 +49,11 @@ def resolve_root(user_path: str | None) -> Path | None:
     if user_path:
         return valid_root(user_path)
 
-    configured = first_non_empty_line(CONFIG_PATH)
+    config = load_config(CONFIG_PATH)
+    configured = config.get("path") or config.get("kb_root") or config.get("root")
     if configured:
+        if not isinstance(configured, str):
+            raise ValueError(f"{CONFIG_PATH} path must be a string.")
         return valid_root(configured)
     return None
 
@@ -51,7 +63,11 @@ def main() -> int:
     parser.add_argument("path", nargs="?", help="User-provided absolute KB path")
     args = parser.parse_args()
 
-    root = resolve_root(args.path)
+    try:
+        root = resolve_root(args.path)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
     if root is None:
         print(
             "No valid KB root resolved. Provide an absolute path or configure "
