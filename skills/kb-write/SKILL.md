@@ -28,7 +28,7 @@ Add knowledge to a Markdown KB as curated source-of-truth documents. The maintai
 Before writing:
 
 1. Resolve the KB root using `kb-manage` rules.
-2. If no user-provided absolute path or valid `~/.config/kb/path` exists, stop and ask the user for an absolute KB path.
+2. If no user-provided absolute path or valid `~/.config/kb/kb-config.json` exists, stop and ask the user for an absolute KB path.
 3. Read root guidance files from the resolved KB root, even if the current shell directory is elsewhere: `AGENTS.md`, `CLAUDE.md`, `.agents/rules/*.md`, or equivalent.
 4. Read `index.md` if present to find existing topics.
 5. Read relevant directory `README.md` files when choosing or using a folder. They describe folder intent, not file inventory.

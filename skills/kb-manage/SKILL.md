@@ -76,11 +76,17 @@ Documents should be easy for humans to scan and maintain.
 Use the first matching source:
 
 1. User-provided absolute path.
-2. `~/.config/kb/path`, if it exists and points to a directory.
+2. `~/.config/kb/kb-config.json`, if it contains a valid absolute KB path.
 
 If neither source resolves, ask the user for an absolute KB path. Do not infer a KB root from the current working directory, parent directories, `index.md`, `log.jsonl`, `.obsidian/`, Markdown frontmatter, or repository guidance files.
 
-The global config file has no extension. It is a UTF-8 plaintext file named `path`; the first non-empty line is the absolute KB root.
+The global config file is a UTF-8 JSON object. The `path` field is the absolute KB root. `kb_root` and `root` are accepted aliases.
+
+```json
+{
+  "path": "/absolute/path/to/kb"
+}
+```
 
 For the fastest deterministic check, run:
 
@@ -94,7 +100,7 @@ To honor a user-provided path:
 python3 /path/to/agent-toolkit/skills/kb-manage/scripts/resolve_kb_root.py /absolute/path/to/kb
 ```
 
-The script prints the resolved root on stdout and exits nonzero when no valid root is configured. If it fails, ask the user to provide an absolute KB path or to create/update `~/.config/kb/path`.
+The script prints the resolved root on stdout and exits nonzero when no valid root is configured. If it fails, ask the user to provide an absolute KB path or to create/update `~/.config/kb/kb-config.json`.
 
 ## Root Guidance Files
 
@@ -123,7 +129,7 @@ When initializing a KB:
 3. Create or adapt `AGENTS.md` from `templates/AGENTS.md` if no agent entrypoint exists.
 4. Create or adapt `index.md` from `templates/index.md` if missing.
 5. Create or adapt `log.jsonl` from `templates/log.jsonl` if missing, replacing placeholder values with the setup datetime and root-specific summary.
-6. Optionally write `~/.config/kb/path` after user approval.
+6. Optionally write `~/.config/kb/kb-config.json` after user approval.
 7. Do not create `_raw/`.
 8. Create `_inbox/` only if the user explicitly wants a staging area.
 
