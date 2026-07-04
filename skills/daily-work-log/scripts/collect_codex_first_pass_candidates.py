@@ -217,7 +217,7 @@ def main() -> int:
     parser.add_argument("--date", required=True, help="대상 날짜 YYYY-MM-DD")
     parser.add_argument("--sessions-root", default=str(DEFAULT_SESSIONS_ROOT))
     parser.add_argument("--include-supporting", action="store_true", help="subagent/supporting 후보도 primary 판단에 포함")
-    parser.add_argument("--output", help="출력 JSON 경로. 기본값은 ~/.daily-work-log/first-pass/YYYY-MM-DD/codex-candidates.json")
+    parser.add_argument("--output", help="출력 JSON 경로. 기본값은 ~/.daily-work-log/YYYY/YYYY-MM-DD/codex-candidates.json")
     parser.add_argument("--stdout", action="store_true", help="파일에 쓰지 않고 stdout으로 출력")
     args = parser.parse_args()
 

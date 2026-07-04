@@ -370,7 +370,8 @@ def split_candidates(candidates: list[dict[str, Any]]) -> tuple[list[dict[str, A
 
 
 def default_output_path(source: str, target_date: str, state_root: Path = DEFAULT_STATE_ROOT) -> Path:
-    return state_root / "first-pass" / target_date / f"{source}-candidates.json"
+    year = target_date[:4]
+    return state_root / year / target_date / f"{source}-candidates.json"
 
 
 def write_or_print(result: dict[str, Any], output: str | None, stdout: bool) -> Path | None:

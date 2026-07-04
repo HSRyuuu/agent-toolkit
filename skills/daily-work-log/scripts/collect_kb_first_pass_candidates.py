@@ -392,7 +392,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="KB 1차 후보 카드를 선택적으로 수집한다.")
     parser.add_argument("--date", required=True, help="대상 날짜 YYYY-MM-DD")
     parser.add_argument("--kb-root", help="KB root 절대 경로. 없으면 ~/.config/kb 설정을 사용")
-    parser.add_argument("--output", help="출력 JSON 경로. 기본값은 ~/.daily-work-log/first-pass/YYYY-MM-DD/kb-candidates.json")
+    parser.add_argument("--output", help="출력 JSON 경로. 기본값은 ~/.daily-work-log/YYYY/YYYY-MM-DD/kb-candidates.json")
     parser.add_argument("--stdout", action="store_true", help="파일에 쓰지 않고 stdout으로 출력")
     parser.add_argument("--emit-empty", action="store_true", help="KB가 없거나 후보가 없어도 빈 JSON을 출력")
     args = parser.parse_args()
