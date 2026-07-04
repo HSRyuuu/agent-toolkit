@@ -20,7 +20,7 @@ from typing import Any
 DEFAULT_CONFIG_DIR = Path("~/.config/slack-helper").expanduser()
 DEFAULT_BOT_SCOPES = ["team:read", "users:read", "channels:read", "channels:history"]
 DEFAULT_USER_SCOPES = ["search:read"]
-DEFAULT_REDIRECT_URI = "http://localhost:8765/callback"
+DEFAULT_REDIRECT_URI = "http://localhost:8765/slack-helper/callback"
 SLACK_API_BASE = "https://slack.com/api"
 SLACK_AUTHORIZE_URL = "https://slack.com/oauth/v2/authorize"
 USER_ID_RE = re.compile(r"^[UW][A-Z0-9]+$")

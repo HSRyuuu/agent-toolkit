@@ -4,9 +4,9 @@ Use this file when a Slack request does not exactly match one of the three workf
 
 ## Common Pattern
 
-1. Read local context first: `python3 skills/slack-helper/scripts/slack_context.py show`
-2. Search broadly with compact output: `python3 skills/slack-helper/scripts/slack_search.py search <keywords> --days 7`
-3. Open only useful threads: `python3 skills/slack-helper/scripts/slack_read.py thread --channel <id-or-alias> --ts <thread_ts>`
+1. Read local context first: `python3 "<SKILL_DIR>/scripts/slack_context.py" show`
+2. Search broadly with compact output: `python3 "<SKILL_DIR>/scripts/slack_search.py" search <keywords> --days 7`
+3. Open only useful threads: `python3 "<SKILL_DIR>/scripts/slack_read.py" thread --channel <id-or-alias> --ts <thread_ts>`
 4. Use `--raw` only when compact output hides a field you truly need.
 
 ## Scripts
@@ -32,22 +32,22 @@ Use this file when a Slack request does not exactly match one of the three workf
 Project history:
 
 ```bash
-python3 skills/slack-helper/scripts/slack_search.py search "project phoenix" decision rollout --after 2026-06-01
-python3 skills/slack-helper/scripts/slack_read.py thread --channel backend --ts 1717243200.000100
+python3 "<SKILL_DIR>/scripts/slack_search.py" search "project phoenix" decision rollout --after 2026-06-01
+python3 "<SKILL_DIR>/scripts/slack_read.py" thread --channel backend --ts 1717243200.000100
 ```
 
 Person/channel focused search:
 
 ```bash
-python3 skills/slack-helper/scripts/slack_context.py show
-python3 skills/slack-helper/scripts/slack_search.py search migration --from @sample.user --in backend --days 30
+python3 "<SKILL_DIR>/scripts/slack_context.py" show
+python3 "<SKILL_DIR>/scripts/slack_search.py" search migration --from @sample.user --in backend --days 30
 ```
 
 Keyword monitoring snapshot:
 
 ```bash
-python3 skills/slack-helper/scripts/slack_search.py search incident deploy rollback --days 7 --count 50
-python3 skills/slack-helper/scripts/slack_read.py thread --channel C0123456789 --ts 1717243200.000100
+python3 "<SKILL_DIR>/scripts/slack_search.py" search incident deploy rollback --days 7 --count 50
+python3 "<SKILL_DIR>/scripts/slack_read.py" thread --channel C0123456789 --ts 1717243200.000100
 ```
 
 ## Limits

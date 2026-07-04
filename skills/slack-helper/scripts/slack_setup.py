@@ -52,15 +52,15 @@ slack-helper 처음 설정 가이드
    앱 생성 후 Basic Information 화면에서 Client ID와 Client Secret을 확인합니다.
    Client Secret은 절대 이 채팅에 붙여넣지 마세요.
 
-   아래 명령을 터미널에서 그대로 실행하면 대화형으로 값을 물어봅니다.
+   아래 명령을 터미널에서 그대로 실행하면 Client ID와 Client Secret 두 가지만 물어봅니다.
    Client Secret은 화면에 보이지 않게 입력받고, 셸 히스토리에도 남지 않습니다.
-   Redirect URI와 scope는 Enter만 누르면 개인 로컬 검색용 기본값으로 저장됩니다.
+   Redirect URI와 범위(scope)는 묻지 않고 기본값으로 저장됩니다. 이후 단계에서 Slack 웹 화면에 직접 등록합니다.
 
    python3 "{script}" init-oauth
 
 4. Redirect URL 등록
    왼쪽 메뉴 OAuth & Permissions > Redirect URLs
-   Add New Redirect URL > http://localhost:8765/callback 입력 > Add > Save URLs
+   Add New Redirect URL > http://localhost:8765/slack-helper/callback 입력 > Add > Save URLs
    주의: 나중에 oauth-app.json에 넣는 redirect_uri와 Slack에 등록한 Redirect URL이 같아야 합니다.
 
 5. Bot Token Scopes 추가
@@ -77,19 +77,19 @@ slack-helper 처음 설정 가이드
    참고: search.messages는 User token을 사용합니다. Bot Token Scopes만으로는 검색할 수 없습니다.
    결론: 기본 권한은 Bot 4개 + User search:read 입니다.
 
-7. Slack 이름/핸들 저장하기
-   Slack 이름/핸들은 민감정보가 아니므로 에이전트가 대신 저장해도 됩니다.
-   python3 "{script}" set-me --slack-user "YOUR_SLACK_NAME_OR_HANDLE"
-
-8. Slack 승인 화면 열기
+7. Slack 승인 화면 열기
    python3 "{script}" oauth-start --open
 
-9. 승인 후 주소창의 code 값을 복사해서 토큰 저장
-   localhost 페이지가 열리지 않아도 괜찮습니다. 주소창에 code=...가 보이면 그 값만 복사합니다.
-   python3 "{script}" oauth-finish --code CODE_FROM_REDIRECT --workspace default
+8. 승인 후 주소창의 주소 전체를 복사해서 토큰 저장
+   localhost 페이지가 "연결할 수 없음"으로 떠도 괜찮습니다. 주소창의 주소를 통째로 복사합니다.
+   python3 "{script}" oauth-finish --url "붙여넣은_주소_전체" --workspace default
 
-10. 아무 데이터 하나 읽어서 확인
+9. 아무 데이터 하나 읽어서 확인
    python3 "{script}" read-sample --workspace default
+
+10. 내 Slack 이름/핸들 저장하기 (연결 확인 후)
+   Slack 이름/핸들은 민감정보가 아니므로 에이전트가 대신 저장해도 됩니다.
+   python3 "{script}" set-me --slack-user "YOUR_SLACK_NAME_OR_HANDLE"
 
 11. 내 Slack 계정 식별자 확인
    set-me로 저장한 이름/핸들을 users.list로 찾아 U... member ID까지 저장합니다.
@@ -102,17 +102,6 @@ slack-helper 처음 설정 가이드
 
 def script_path() -> str:
     return str(Path(__file__).resolve())
-
-
-def command_text(command: str) -> str:
-    return f'python3 "{script_path()}" {command}'
-
-
-def input_or_default(prompt: str, default: str) -> str:
-    if not sys.stdin.isatty():
-        return default
-    value = input(prompt).strip()
-    return value or default
 
 
 def is_supported_redirect_uri(value: str) -> bool:
@@ -182,25 +171,15 @@ def command_init_oauth(args: argparse.Namespace) -> int:
     print()
 
     client_id = (args.client_id or input("Client ID: ")).strip()
-    secret_value = getpass.getpass("Client Secret 입력(화면에 보이지 않습니다)> ").strip()
+    secret_value = getpass.getpass("Client Secret: ").strip()
 
-    default_scopes = ",".join(DEFAULT_BOT_SCOPES)
-    default_user_scopes = ",".join(DEFAULT_USER_SCOPES)
-    redirect_uri = args.redirect_uri or input_or_default(
-        f"Redirect URI [{DEFAULT_REDIRECT_URI}]: ", DEFAULT_REDIRECT_URI
-    )
-    scopes = split_scopes(
-        args.scopes or input_or_default(f"Bot Token Scopes [{default_scopes}]: ", default_scopes)
-    )
-    user_scopes = split_scopes(
-        args.user_scopes
-        or input_or_default(f"User Token Scopes [{default_user_scopes}]: ", default_user_scopes)
-    )
-    slack_user_value = args.slack_user_id or args.slack_user or input_or_default(
-        "내 Slack 표시 이름/@핸들/member ID(선택, 예: your-name 또는 U123...): ", ""
-    )
+    # Redirect URI, scope, Slack 이름은 여기서 묻지 않는다.
+    # 앞의 둘은 사용자가 Slack 웹 화면에서 직접 설정하고, 이름은 연결 테스트 후 set-me로 저장한다.
+    redirect_uri = args.redirect_uri or DEFAULT_REDIRECT_URI
+    scopes = split_scopes(args.scopes) if args.scopes else list(DEFAULT_BOT_SCOPES)
+    user_scopes = split_scopes(args.user_scopes) if args.user_scopes else list(DEFAULT_USER_SCOPES)
     user_identity = user_identity_from_value(
-        slack_user_value,
+        args.slack_user_id or args.slack_user or "",
         force_user_id=bool(args.slack_user_id),
     )
 
@@ -230,15 +209,11 @@ def command_init_oauth(args: argparse.Namespace) -> int:
         oauth_config["user_identity"] = user_identity
     write_json_secure(target_path, oauth_config)
     print()
+    print("✅ Client ID / Client Secret 등록에 성공했어요!")
     print(f"설정 파일을 저장했습니다: {target_path}")
     print(f"기본 Redirect URI: {redirect_uri}")
     print(f"기본 Bot Token Scopes: {', '.join(scopes)}")
     print(f"기본 User Token Scopes: {', '.join(user_scopes)}")
-    if not user_identity:
-        print("Slack 이름/@핸들은 필요할 때 set-me 명령으로 저장하면 됩니다.")
-    print()
-    print("다음 단계:")
-    print(command_text("oauth-start --open"))
     return 0
 
 
@@ -257,10 +232,31 @@ def workspace_slug(value: str) -> str:
     return slug or "default"
 
 
+def extract_oauth_code(value: str) -> str:
+    value = value.strip().strip('"').strip("'")
+    if not value:
+        raise SlackHelperError("code 또는 redirect 주소가 비어 있습니다.")
+    looks_like_url = "://" in value or "code=" in value or value.startswith("localhost")
+    if not looks_like_url:
+        return value
+    parsed = urllib.parse.urlparse(value)
+    params = urllib.parse.parse_qs(parsed.query)
+    codes = params.get("code")
+    if codes and codes[0].strip():
+        return codes[0].strip()
+    raise SlackHelperError(
+        "붙여넣은 주소에서 code 값을 찾지 못했습니다. "
+        "Slack 승인 후 이동한 페이지의 주소창 전체를 그대로 복사했는지 확인해 주세요."
+    )
+
+
 def command_oauth_finish(args: argparse.Namespace) -> int:
+    raw_code = args.redirect_url or args.code
+    if not raw_code:
+        raise SlackHelperError("--url(redirect 주소 전체) 또는 --code 값이 필요합니다.")
     oauth_app = load_oauth_app()
     payload = {
-        "code": args.code,
+        "code": extract_oauth_code(raw_code),
         "client_id": oauth_app["client_id"],
     }
     payload["client" + "_secret"] = oauth_app["client" + "_secret"]
@@ -401,6 +397,32 @@ def member_match_values(member: dict[str, Any]) -> list[str]:
     return [value for value in values if isinstance(value, str) and value.strip()]
 
 
+def format_member_brief(member: dict[str, Any]) -> str:
+    profile = member.get("profile") if isinstance(member.get("profile"), dict) else {}
+    return (
+        f"{member.get('id')} / @{member.get('name')} / "
+        f"{profile.get('display_name') or member.get('real_name') or '-'}"
+    )
+
+
+def suggest_user_candidates(
+    members: list[dict[str, Any]], identifier: str, *, limit: int = 5
+) -> list[dict[str, Any]]:
+    needle = normalize_match_value(identifier)
+    if len(needle) < 2:
+        return []
+    suggestions: list[dict[str, Any]] = []
+    for member in members:
+        if member.get("deleted") or member.get("is_bot"):
+            continue
+        normalized = [normalize_match_value(value) for value in member_match_values(member)]
+        if any(needle in value or value in needle for value in normalized if value):
+            suggestions.append(member)
+            if len(suggestions) >= limit:
+                break
+    return suggestions
+
+
 def match_user_identity(members: list[dict[str, Any]], identity: dict[str, Any]) -> dict[str, Any]:
     user_id = identity.get("user_id")
     identifier = identity.get("identifier") or user_id
@@ -417,21 +439,20 @@ def match_user_identity(members: list[dict[str, Any]], identity: dict[str, Any])
             matches.append(member)
 
     if not matches:
-        raise SlackHelperError(
+        suggestions = suggest_user_candidates(members, identifier)
+        message = (
             f"'{identifier}'와 정확히 일치하는 Slack 사용자를 찾지 못했습니다. "
             "Slack 표시 이름, @핸들, 또는 U로 시작하는 member ID를 확인해 주세요."
         )
+        if suggestions:
+            message += " 비슷한 사용자 후보: " + "; ".join(
+                format_member_brief(member) for member in suggestions
+            ) + " — 맞는 후보가 있으면 set-me --slack-user-id U... 로 다시 저장한 뒤 resolve-me를 실행하세요."
+        raise SlackHelperError(message)
     if len(matches) > 1:
-        candidates = []
-        for member in matches[:5]:
-            profile = member.get("profile") if isinstance(member.get("profile"), dict) else {}
-            candidates.append(
-                f"{member.get('id')} / @{member.get('name')} / "
-                f"{profile.get('display_name') or member.get('real_name') or '-'}"
-            )
         raise SlackHelperError(
             "여러 사용자가 일치합니다. --slack-user-id U... 로 다시 실행해 주세요. 후보: "
-            + "; ".join(candidates)
+            + "; ".join(format_member_brief(member) for member in matches[:5])
         )
     return matches[0]
 
@@ -554,7 +575,8 @@ def build_parser() -> argparse.ArgumentParser:
     oauth_start.set_defaults(func=command_oauth_start)
 
     oauth_finish = subparsers.add_parser("oauth-finish", help="OAuth code를 토큰으로 교환하고 저장")
-    oauth_finish.add_argument("--code", required=True, help="Redirect URL에서 복사한 임시 code")
+    oauth_finish.add_argument("--url", dest="redirect_url", help="승인 후 브라우저 주소창에서 복사한 redirect 주소 전체")
+    oauth_finish.add_argument("--code", help="Redirect 주소에서 뽑은 임시 code (주소 전체를 넣어도 됨)")
     oauth_finish.add_argument("--workspace", help="api-key.json에 저장할 workspace 이름")
     oauth_finish.add_argument("--redirect-uri", "--redirect_uri", dest="redirect_uri", help="oauth-app.json의 redirect_uri 대신 사용할 값")
     oauth_finish.set_defaults(func=command_oauth_finish)

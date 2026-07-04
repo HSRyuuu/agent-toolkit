@@ -57,7 +57,10 @@ def _to_me_user_id(args: argparse.Namespace) -> str | None:
 def build_search_query(keywords: list[str], args: argparse.Namespace) -> list[str]:
     terms = [_quote_keyword(keyword) for keyword in keywords if keyword.strip()]
     if not terms:
-        raise SlackHelperError("검색어가 비어 있습니다.")
+        if getattr(args, "to_me", False):
+            terms = [""]
+        else:
+            raise SlackHelperError("검색어가 비어 있습니다.")
 
     shared: list[str] = []
     if getattr(args, "from_user", None):
@@ -178,7 +181,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     search = subparsers.add_parser("search", help="Slack 메시지 검색")
     add_workspace_arg(search)
-    search.add_argument("query", nargs="+", help="검색어. 여러 개면 키워드별로 검색 후 병합")
+    search.add_argument("query", nargs="*", default=[], help="검색어. 여러 개면 키워드별로 검색 후 병합. --to-me만 쓰면 생략 가능")
     search.add_argument("--from", dest="from_user", help="Slack search from: modifier 값")
     search.add_argument("--in", dest="in_channel", help="채널명 또는 context.json 별칭")
     search.add_argument("--to-me", action="store_true", help="저장된 내 member ID 멘션 검색")

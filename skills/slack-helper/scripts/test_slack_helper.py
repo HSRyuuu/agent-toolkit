@@ -673,26 +673,30 @@ def case_search_days_after_conflict_and_to_me_error() -> bool:
         )
     except common.SlackHelperError:
         conflict = True
-    try:
-        search.build_search_query(
-            ["deploy"],
-            type(
-                "Args",
-                (),
-                {
-                    "from_user": None,
-                    "in_channel": None,
-                    "to_me": True,
-                    "after": None,
-                    "before": None,
-                    "on": None,
-                    "days": None,
-                    "user_id": None,
-                },
-            )(),
-        )
-    except common.SlackHelperError as exc:
-        missing_me = "resolve-me" in str(exc)
+    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
+        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
+        try:
+            search.build_search_query(
+                ["deploy"],
+                type(
+                    "Args",
+                    (),
+                    {
+                        "from_user": None,
+                        "in_channel": None,
+                        "to_me": True,
+                        "after": None,
+                        "before": None,
+                        "on": None,
+                        "days": None,
+                        "user_id": None,
+                    },
+                )(),
+            )
+        except common.SlackHelperError as exc:
+            missing_me = "resolve-me" in str(exc)
+        finally:
+            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
     return check(
         "slack_search rejects --days/--after conflict and missing --to-me identity",
         conflict and missing_me,
