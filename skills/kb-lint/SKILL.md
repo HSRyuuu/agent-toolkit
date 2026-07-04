@@ -36,7 +36,7 @@ Never auto-fix sensitive content. Report it and ask.
 - title/H1 mismatch
 - invalid or inconsistent date format
 - weak `summary`, sparse `tags`, missing likely aliases
-- `updated` older than a meaningful body change indicated by git history
+- `updated` older than a meaningful body change indicated by git history; skip this for `append_only` documents, whose `updated` field is intentionally frozen (add a body-level dated note instead)
 - `read_only` or `append_only` files with git changes that need confirmation
 
 ### Index

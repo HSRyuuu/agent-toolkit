@@ -7,7 +7,7 @@ description: Use when answering questions from a Markdown Knowledge Base, findin
 
 ## Overview
 
-Search a curated Markdown KB in read-only mode. The maintained documents are the source-of-truth surface. Do not depend on `_raw/`, daily logs, canonical kinds, embeddings, `log.jsonl`, or general web knowledge unless the user explicitly asks outside-KB research.
+Search a curated Markdown KB in read-only mode. The maintained documents are the source-of-truth surface. Do not cite `log.jsonl` as evidence for a fact; use it only as a pointer to relevant files and git history. Do not rely on embeddings or general web knowledge unless the user explicitly asks for outside-KB research.
 
 **Required orientation:** read and follow `kb-manage` for KB root, identity, repository defaults, frontmatter, `index.md`, `log.jsonl`, and shared conventions.
 

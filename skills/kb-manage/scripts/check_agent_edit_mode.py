@@ -172,9 +172,10 @@ def first_missing_old_line(old_text: str | None, new_text: str | None) -> int | 
     return None
 
 
-def evaluate(root: Path, base: str, staged: bool) -> tuple[list[Finding], list[Finding]]:
+def evaluate(root: Path, base: str, staged: bool) -> tuple[list[Finding], list[Finding], list[Finding]]:
     violations: list[Finding] = []
     warnings: list[Finding] = []
+    notes: list[Finding] = []
 
     for change in changed_files(root, base, staged):
         old_text = read_base_file(root, base, change.old_path)
@@ -193,8 +194,22 @@ def evaluate(root: Path, base: str, staged: bool) -> tuple[list[Finding], list[F
                     )
                 )
 
-        guarded_modes = ({old_mode, new_mode} - {None}) & GUARDED_MODES
-        if "read_only" in guarded_modes:
+        # Protection is defined by the file's PRIOR (baseline) mode, not its new
+        # mode. Creating a new protected file, or moving an editable file into a
+        # protected mode (for example archiving a document as read_only), is a
+        # legitimate transition, not a change to already-protected content.
+        if old_mode not in GUARDED_MODES:
+            if new_mode in GUARDED_MODES and old_mode != new_mode:
+                notes.append(
+                    Finding(
+                        path=display_path,
+                        mode=str(new_mode),
+                        message="file entered a protected mode; future agent edits to it will be guarded",
+                    )
+                )
+            continue
+
+        if old_mode == "read_only":
             if old_text != new_text or change.old_path != change.new_path:
                 violations.append(
                     Finding(
@@ -205,7 +220,7 @@ def evaluate(root: Path, base: str, staged: bool) -> tuple[list[Finding], list[F
                 )
             continue
 
-        if "append_only" in guarded_modes and not old_content_is_preserved(old_text, new_text):
+        if old_mode == "append_only" and not old_content_is_preserved(old_text, new_text):
             missing_line = first_missing_old_line(old_text, new_text)
             line_hint = f" first non-preserved original line: {missing_line}." if missing_line else ""
             violations.append(
@@ -220,7 +235,7 @@ def evaluate(root: Path, base: str, staged: bool) -> tuple[list[Finding], list[F
                 )
             )
 
-    return violations, warnings
+    return violations, warnings, notes
 
 
 def print_findings(title: str, findings: list[Finding]) -> None:
@@ -259,8 +274,9 @@ def main() -> int:
         )
         return 2
 
-    violations, warnings = evaluate(root, args.base, args.staged)
+    violations, warnings, notes = evaluate(root, args.base, args.staged)
     print_findings("Warnings:", warnings)
+    print_findings("Notes:", notes)
 
     if violations:
         print_findings("Agent edit mode violations:", violations)

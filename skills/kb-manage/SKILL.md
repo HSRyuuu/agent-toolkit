@@ -32,7 +32,7 @@ Use local KB rules if present. Otherwise use these defaults:
 - Record facts, context, decisions, procedures, system knowledge, collaboration norms, and operational notes that should be found later.
 - Keep documents current. When new information conflicts with old information, update the owning document and preserve only useful historical context.
 - Retire documents by moving them to top-level `_archived/` and setting `agent_edit_mode: read_only`.
-- Do not mix confirmed facts with guesses. Mark uncertainty as `확인 필요`, `미정`, `추정`, `unknown`, or `past information`.
+- Do not mix confirmed facts with guesses. Mark uncertainty with the canonical markers `확인 필요`, `미정`, `추정`, or `과거 정보`. These four are the only uncertainty markers; keep them consistent so `kb-lint` and search can find every uncertain item.
 - Avoid duplicate ownership. Choose one source-of-truth document for each fact and link or reference it from related documents.
 - Read the existing context before changing a document.
 - Security-sensitive information is not worth preserving verbatim by default.
@@ -157,8 +157,6 @@ Use the templates as starting points, not as immutable boilerplate. Replace plac
 | [Example](./example.md) | One-line summary. | `kb` | 2026-06-30 |
 ```
 
-Normal KB documents should include `agent_edit_mode: editable` unless the owner chooses `read_only` or `append_only`.
-
 ### Directory `README.md` Files
 
 Use `README.md` for folder-level intent notes. Root `index.md` remains the KB-wide document catalog; directory `README.md` files explain how a folder should be used.
@@ -270,7 +268,7 @@ Field rules:
 - `created`: first creation date in `YYYY-MM-DD`.
 - `updated`: last meaningful update date in `YYYY-MM-DD`.
 - `source`: safe provenance such as `user-note`, `meeting`, `slack`, `docs`, a filename, or a non-sensitive URL.
-- `agent_edit_mode`: agent edit permission. Must be one of `read_only`, `append_only`, or `editable`.
+- `agent_edit_mode`: agent edit permission. Must be one of `read_only`, `append_only`, or `editable`. Normal KB documents should use `editable` unless the owner chooses `read_only` or `append_only`.
 
 Writing rules:
 
@@ -315,10 +313,11 @@ For staged-only checks, such as a pre-commit hook:
 python3 /path/to/agent-toolkit/skills/kb-manage/scripts/check_agent_edit_mode.py --staged
 ```
 
-The guard compares changed Markdown files against `HEAD` by default.
+The guard compares changed Markdown files against `HEAD` by default. Protection is judged by each file's **baseline** (pre-change) `agent_edit_mode`, not its new value:
 
-- `read_only`: any tracked content change is reported.
-- `append_only`: the previous tracked file must remain an exact ordered subsequence of the new file, so additions anywhere pass but deletions, line edits, frontmatter value changes, and reordering fail.
+- `read_only` baseline: any tracked content change, rename, or deletion is reported.
+- `append_only` baseline: the previous tracked file must remain an exact ordered subsequence of the new file, so additions anywhere pass but deletions, line edits, frontmatter value changes, and reordering fail.
+- Transition into a protected mode is allowed. Creating a new `read_only`/`append_only` file, or archiving an `editable` document by setting `agent_edit_mode: read_only`, is reported as an informational `Notes:` line, not a violation.
 - Exit code `0`: no guarded violations found.
 - Exit code `1`: guarded violation found. Stop and ask the user whether the change is intentional before proceeding.
 - Exit code `2`: no usable git baseline, such as a non-git directory or missing base ref.
