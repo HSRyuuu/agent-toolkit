@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone, tzinfo
 from pathlib import Path
 from typing import Any
 
@@ -42,6 +42,8 @@ COMMAND_RE = re.compile(
     re.I,
 )
 COMMIT_RE = re.compile(r"\b[0-9a-f]{7,40}\b")
+SYSTEM_REMINDER_OPEN = "<system-reminder>"
+SYSTEM_REMINDER_CLOSE = "</system-reminder>"
 
 
 def load_jsonl(path: Path, limit: int | None = None) -> list[dict[str, Any]]:
@@ -72,7 +74,33 @@ def compact(text: str, limit: int = 240) -> str:
     return text[: limit - 1].rstrip() + "..."
 
 
+def strip_injected_blocks(text: str) -> str:
+    while SYSTEM_REMINDER_OPEN in text:
+        start = text.find(SYSTEM_REMINDER_OPEN)
+        end = text.find(SYSTEM_REMINDER_CLOSE, start + len(SYSTEM_REMINDER_OPEN))
+        if end == -1:
+            return text[:start]
+        text = text[:start] + text[end + len(SYSTEM_REMINDER_CLOSE) :]
+    return text
+
+
+def to_local_date(value: Any, tz: tzinfo | None = None) -> date | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    raw = value.strip()
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(tz).date()
+
+
 def clean_user_text(text: str, limit: int = 260) -> str:
+    text = strip_injected_blocks(text)
     text = re.sub(r"^\[[^\]]+\]\([^)]*SKILL\.md\)\s*", "", text.strip())
     leading = text.lstrip()
     if leading.startswith(
@@ -374,14 +402,19 @@ def default_output_path(source: str, target_date: str, state_root: Path = DEFAUL
     return state_root / year / target_date / f"{source}-candidates.json"
 
 
-def write_or_print(result: dict[str, Any], output: str | None, stdout: bool) -> Path | None:
+def write_or_print(
+    result: dict[str, Any],
+    output: str | None,
+    stdout: bool,
+    state_root: Path = DEFAULT_STATE_ROOT,
+) -> Path | None:
     if stdout:
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return None
     if output:
         path = Path(output).expanduser()
     else:
-        path = default_output_path(str(result["source"]), str(result["date"]))
+        path = default_output_path(str(result["source"]), str(result["date"]), state_root)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(path)
