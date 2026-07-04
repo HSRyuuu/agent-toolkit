@@ -49,6 +49,7 @@ agent-toolkit/
 | `main()` | Python CLI | `skills/excel-doc-updater/scripts/profile_excel.py` | Form workbook profiler. |
 | `main()` | Python CLI | `skills/excel-doc-updater/scripts/compare_excel.py` | Before/after workbook diff. |
 | `main()` | JS CLI | `skills/writing-skills/render-graphs.js` | Render Graphviz blocks from skill docs. |
+| `main()` | Python CLI | `skills/slack-helper/scripts/slack_api.py` | Slack Web API OAuth and read helper using curl. |
 | `parse_docx()` / `parse_pdf()` | Python helpers | `skills/ui-feature-spec-docs/scripts/parse_design_doc.py` | Screen-doc parser. |
 
 ## CONVENTIONS
