@@ -38,12 +38,20 @@ for KB root resolution, frontmatter fields, uncertainty markers, `index.md` /
 
 ## Useful Commands
 
+Resolve the KB root once, then pass it explicitly:
+
+```bash
+KB_ROOT="$(python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/resolve_kb_root.py")"
+```
+
 Structured frontmatter search using `python-frontmatter`:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_meta_search.py" /path/to/kb --updated 2026-07-01
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_meta_search.py" /path/to/kb --created 2026-07-01 --tag kafka
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_recent_activity.py" /path/to/kb --date 2026-07-01
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_meta_search.py" "$KB_ROOT" --updated 2026-07-01
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_meta_search.py" "$KB_ROOT" --created 2026-07-01 --tag kafka
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_meta_search.py" "$KB_ROOT" --updated-since 2026-06-01 --updated-until 2026-06-30
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_recent_activity.py" "$KB_ROOT" --date 2026-07-01
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_recent_activity.py" "$KB_ROOT" --since 2026-06-28
 ```
 
 Use these scripts before `rg` when the query is about structured frontmatter fields such as `title`, `summary`, `tags`, `aliases`, `source`, `created`, `updated`, or `agent_edit_mode`. They require `python-frontmatter`; if it is absent, install the dependency listed in `scripts/requirements.txt` or fall back to `rg`.
@@ -51,23 +59,30 @@ Use these scripts before `rg` when the query is about structured frontmatter fie
 Inventory:
 
 ```bash
-find . -path './.git' -prune -o -path './.obsidian' -prune -o -name '*.md' -print
+find "$KB_ROOT" -path '*/.git' -prune -o -path '*/.obsidian' -prune -o -name '*.md' -print
 ```
 
-Frontmatter/headings/body:
+Structure fields and headings:
 
 ```bash
 rg -n --glob '*.md' --glob '!**/.git/**' --glob '!**/.obsidian/**' \
-  "title:|summary:|tags:|aliases:|^#{1,6} |검색어|synonym" .
+  "title:|summary:|tags:|aliases:|^#{1,6} " "$KB_ROOT"
+```
+
+Body keyword search (replace `<검색어>` and `<synonym>`):
+
+```bash
+rg -n --glob '*.md' --glob '!**/.git/**' --glob '!**/.obsidian/**' \
+  "<검색어>|<synonym>" "$KB_ROOT"
 ```
 
 Recent KB activity — check `log.jsonl` first; it is the primary work-history
 trail and works without git:
 
 ```bash
-tail -100 log.jsonl
-rg -n '"files":|"summary":|"datetime":|"type":|"source":|검색어|synonym' log.jsonl
-jq -c . log.jsonl >/dev/null
+test -f "$KB_ROOT/log.jsonl" && tail -100 "$KB_ROOT/log.jsonl"
+test -f "$KB_ROOT/log.jsonl" && rg -n '"files":|"summary":|"datetime":|"type":|"source":|<검색어>|<synonym>' "$KB_ROOT/log.jsonl"
+test -f "$KB_ROOT/log.jsonl" && jq -c . "$KB_ROOT/log.jsonl" >/dev/null
 ```
 
 If `log.jsonl` is absent, note the gap only when the user asked about KB

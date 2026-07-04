@@ -22,6 +22,7 @@ import argparse
 import sys
 from pathlib import Path
 
+# Import contract: see kb-manage/references/conventions.md (Script Paths).
 SEARCH_SCRIPTS = Path(__file__).resolve().parents[2] / "kb-search" / "scripts"
 sys.path.insert(0, str(SEARCH_SCRIPTS))
 

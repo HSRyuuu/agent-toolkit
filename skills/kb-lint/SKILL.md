@@ -41,8 +41,9 @@ Never auto-fix sensitive content. Report it and ask.
 
 `kb_lint.py` reports frontmatter completeness, invalid `agent_edit_mode`, date
 format, title/H1 mismatch, `_archived/` depth and read_only rules, `index.md`
-link targets and coverage, broken relative Markdown links, `log.jsonl` JSON
-validity, and high-confidence secret candidates.
+link targets and coverage (`_inbox/` and `_archived/` coverage is optional),
+broken relative Markdown links, absolute Markdown path warnings, `log.jsonl`
+JSON validity, and high-confidence secret candidates.
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-lint/scripts/kb_lint.py" /path/to/kb
@@ -56,50 +57,56 @@ findings below.
 
 ## Checks
 
+If a machine can decide a check reliably, keep it in `[script]`; leave only
+judgement-heavy review in `[LLM]`.
+
 ### Metadata
 
-- missing YAML frontmatter where the KB requires it
-- missing `title`, `summary`, `tags`, `aliases`, `created`, `updated`, `agent_edit_mode`
-- invalid `agent_edit_mode`; expected `read_only`, `append_only`, or `editable`
-- files under `_archived/` that are nested deeper than one level or do not use `agent_edit_mode: read_only`
-- title/H1 mismatch
-- invalid or inconsistent date format
-- weak `summary`, sparse `tags`, missing likely aliases
-- `updated` older than a meaningful body change suggested by git history as a supplementary signal; skip this for `append_only` documents, whose `updated` field is intentionally frozen (add a body-level dated note instead)
-- `read_only` or `append_only` files with git changes that need confirmation
+- `[script]` missing YAML frontmatter where the KB requires it
+- `[script]` missing `title`, `summary`, `tags`, `aliases`, `created`, `updated`, `agent_edit_mode`
+- `[script]` invalid `agent_edit_mode`; expected `read_only`, `append_only`, or `editable`
+- `[script]` files under `_archived/` that are nested deeper than one level or do not use `agent_edit_mode: read_only`
+- `[script]` title/H1 mismatch
+- `[script]` invalid or inconsistent date format
+- `[LLM]` weak `summary`, sparse `tags`, missing likely aliases
+- `[LLM]` `updated` older than a meaningful body change suggested by git history as a supplementary signal; skip this for `append_only` documents, whose `updated` field is intentionally frozen (add a body-level dated note instead)
+- `[script:guard]` `read_only` or `append_only` files with git changes that need confirmation
 
 ### Index
 
-- `index.md` missing when the KB expects it
-- documents absent from `index.md`
-- index entries pointing to missing files
-- stale summaries or categories
-- duplicate or near-duplicate entries
+- `[LLM]` `index.md` missing when the KB expects it
+- `[script]` documents absent from `index.md` (`_inbox/` and `_archived/` are optional;
+  the build script can still include them when desired)
+- `[script]` index entries pointing to missing files
+- `[LLM]` stale summaries or categories
+- `[LLM]` duplicate or near-duplicate entries
 
 ### Log
 
-- `log.jsonl` missing — it is the primary work-history trail and is expected by default, unless local KB rules opt out
-- malformed `log.jsonl`, when present
-- recent changed documents with no approximate log entry
-- log entries pointing to missing files, when present
-- log entries containing sensitive raw values, when present
+- `[script]` `log.jsonl` missing — it is the primary work-history trail and is expected by default, unless local KB rules opt out
+- `[script]` malformed `log.jsonl`, when present
+- `[LLM]` recent changed documents with no approximate log entry
+- `[LLM]` log entries pointing to missing files, when present
+- `[script]` log entries containing sensitive raw values, when present
 
 `log.jsonl` is the primary work-history trail (it must work without git); git history is a supplementary reference. Neither is a source of truth for facts.
 
 ### Content Health
 
-- `확인 필요`, `미정`, `추정`, `과거 정보` items that may need follow-up
-- duplicate facts across documents where one source-of-truth document should own the topic
-- conflicting claims between documents
-- overly broad documents that should be split
-- thin documents that need a clearer summary, current-state section, or related links
+- `[LLM]` `확인 필요`, `미정`, `추정`, `과거 정보` items that may need follow-up
+- `[LLM]` duplicate facts across documents where one source-of-truth document should own the topic
+- `[LLM]` conflicting claims between documents
+- `[LLM]` overly broad documents that should be split
+- `[LLM]` thin documents that need a clearer summary, current-state section, or related links
 
 ### Link Health
 
-- broken Markdown links
-- broken Obsidian wikilinks, if the KB uses them
-- obvious missing related-document links
-- excessive wikilinks that reduce readability
+- `[script]` broken Markdown links
+- `[script]` absolute filesystem Markdown links reported as `absolute-path-link` warnings
+  without checking whether the target exists
+- `[LLM]` broken Obsidian wikilinks, if the KB uses them
+- `[LLM]` obvious missing related-document links
+- `[LLM]` excessive wikilinks that reduce readability
 
 Missing related-document links are suggestions, not hard failures. Prefer focused pairs such as concept/system documents linked to usage/procedure documents.
 
@@ -108,11 +115,11 @@ Missing related-document links are suggestions, not hard failures. Prefer focuse
 Flag candidates without repeating the raw value, in two tiers so the report does
 not drown in false positives:
 
-**High-confidence (auto-flagged by `kb_lint.py`)** — value-shaped matches:
+**[script] High-confidence (auto-flagged by `kb_lint.py`)** — value-shaped matches:
 AWS access key IDs, private-key blocks, GitHub/Slack tokens, JWTs, bearer tokens,
 `password: <value>` assignments. These are near-certain and lead the report.
 
-**Contextual (LLM judgement)** — keyword-adjacent candidates the linter cannot
+**[LLM] Contextual (LLM judgement)** — keyword-adjacent candidates the linter cannot
 confirm from shape alone, reported only after you judge them likely sensitive:
 
 - cookies, sessions, OAuth/JWT, auth headers
@@ -125,30 +132,45 @@ The grep below over-matches on purpose; use it as a candidate list, not a verdic
 
 ## Suggested Commands
 
+Resolve the KB root once, then pass it explicitly:
+
+```bash
+KB_ROOT="$(python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/resolve_kb_root.py")"
+```
+
 Inventory:
 
 ```bash
-find . -path './.git' -prune -o -path './.obsidian' -prune -o -name '*.md' -print
+find "$KB_ROOT" -path '*/.git' -prune -o -path '*/.obsidian' -prune -o -name '*.md' -print
 ```
 
 Frontmatter and uncertainty:
 
 ```bash
-rg -n --glob '*.md' "^---$|^title:|^summary:|^tags:|^aliases:|^created:|^updated:|확인 필요|미정|추정|과거 정보" .
+rg -n --glob '*.md' "^---$|^title:|^summary:|^tags:|^aliases:|^created:|^updated:|확인 필요|미정|추정|과거 정보" "$KB_ROOT"
 ```
 
-Security candidate scan:
+Security candidate scans (candidate only — review before reporting):
 
 ```bash
+# Credentials and token-shaped context candidates.
 rg -n -i --glob '*.md' --glob '*.jsonl' \
-  "password|passwd|token|secret|api[_-]?key|private key|cookie|session|jwt|bearer|ssh|vpn|host|internal|prod|staging|운영|비밀번호|토큰|시크릿|계정" .
+  "password|passwd|token|secret|api[_-]?key|private key|cookie|session|jwt|bearer" "$KB_ROOT"
+
+# Infrastructure, endpoints, and access-path candidates.
+rg -n -i --glob '*.md' --glob '*.jsonl' \
+  "ssh|vpn|rdp|host|endpoint|internal|prod|staging|database|db[_-]?url|jdbc|redis|kafka" "$KB_ROOT"
+
+# Korean security/access wording candidates.
+rg -n -i --glob '*.md' --glob '*.jsonl' \
+  "운영|비밀번호|토큰|시크릿|계정|내부|접속|인증|권한" "$KB_ROOT"
 ```
 
 Index/log drift:
 
 ```bash
-test -f index.md && rg -n "\\.md\\)|\\.md" index.md
-test -f log.jsonl && tail -100 log.jsonl
+test -f "$KB_ROOT/index.md" && rg -n "\\.md\\)|\\.md" "$KB_ROOT/index.md"
+test -f "$KB_ROOT/log.jsonl" && tail -100 "$KB_ROOT/log.jsonl"
 ```
 
 Agent edit-mode guard in git repositories:

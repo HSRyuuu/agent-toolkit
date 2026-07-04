@@ -34,9 +34,8 @@ Most writes are small. Do not run the full ritual for a one-line note.
 - Preserve facts, numbers, dates, names, conditions, uncertainty, and user intent.
 - Do not mix confirmed facts with guesses. Use the canonical uncertainty markers
   (`확인 필요`, `미정`, `추정`, `과거 정보`) from conventions.
-- Do not store secrets, tokens, passwords, private keys, session/cookie values,
-  internal hosts/IPs, sensitive access steps, or unnecessary personal data
-  without explicit user approval (see Security Gate).
+- Follow the conventions Security Principles storage restrictions; do not store
+  sensitive values without explicit user approval (see Security Gate).
 - Prefer one focused document per topic, system, procedure, decision, or working
   context.
 - Update existing documents when the input changes or extends an existing topic;
@@ -130,13 +129,8 @@ Do not scatter facts across documents by guessing. Preserve the original input u
 
 ## Security Gate
 
-Pause and ask before writing if the input or target document contains:
-
-- passwords, tokens, API keys, private keys, credentials, OAuth/JWT, cookies, sessions
-- internal IPs, hosts, DB URLs, VPN/SSH/RDP details, production/staging endpoints
-- detailed access procedures, privilege workarounds, security exceptions
-- personal information, account identifiers, customer/partner identifiers
-- vulnerability reproduction steps or exploit-like payloads
+Pause and ask before writing when the input or target document matches the
+conventions Security Principles storage-restriction list.
 
 Ask with value-free wording:
 

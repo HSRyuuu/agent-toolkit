@@ -21,6 +21,11 @@ python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/resolve_kb_root.py"
 If `${CLAUDE_PLUGIN_ROOT}` is unset (for example under Codex), resolve the path
 relative to the invoking `SKILL.md`'s location instead.
 
+`kb-search/scripts/` is the shared Python helper home for KB frontmatter code.
+`kb-lint/scripts/kb_lint.py` and `kb-manage/scripts/kb_build_index.py` import
+from it by inserting that relative path into `sys.path`; if these directories
+move, update all three files together.
+
 ## KB Identity
 
 The KB is a curated Markdown repository where maintained documents are the
@@ -221,8 +226,9 @@ Default shape:
 | [Example](./example.md) | One-line summary. | `kb` | 2026-06-30 |
 ```
 
-List `_inbox/` and `_archived/` documents, when included, under clearly labeled
-sections so readers do not mistake them for maintained documents.
+Listing `_inbox/` and `_archived/` documents is optional. When included, keep
+them under clearly labeled sections so readers do not mistake them for
+maintained documents.
 
 ## Work History
 

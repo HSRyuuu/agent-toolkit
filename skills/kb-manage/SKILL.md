@@ -47,8 +47,7 @@ Documents should be easy for humans to scan and maintain.
 - Use tables only when comparison or repeated attributes are easier to scan.
 - Do not add unstated background knowledge or stronger conclusions while cleaning.
 - Make the next action or main conclusion easy to find.
-- Add a small related-documents section when two maintained documents naturally
-  complement each other (concept/system ↔ usage/procedure). Keep it selective.
+- Follow `kb-write` Related Document Links for selective related-document links.
 
 ## Maintenance Defaults
 
@@ -97,7 +96,11 @@ When initializing a KB:
    work-history trail and must work without git (see conventions). Replace
    placeholders with the setup datetime and a root-specific summary. Skip it
    only when the user explicitly opts out of a work-history file.
-6. Optionally write `~/.config/kb/kb-config.json` after user approval.
+6. Register this KB in `~/.config/kb/kb-config.json` after user approval
+   (create the file or add/update the `kbs` entry). Registration lets other
+   directories resolve the KB root automatically. If the user explicitly
+   declines, skip registration and tell them they will need to provide the
+   absolute KB path in each session.
 7. Do not create `_raw/`.
 8. Create `_inbox/` only if the user explicitly wants a staging area.
 
