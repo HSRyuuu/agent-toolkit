@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,6 +17,7 @@ except ModuleNotFoundError:  # pragma: no cover - exercised by CLI usage.
 
 
 IGNORED_DIRS = {".git", ".obsidian", ".venv", "node_modules"}
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 @dataclass(frozen=True)
@@ -75,6 +77,17 @@ def normalize_date(value: Any) -> str | None:
     return text[:10]
 
 
+def date_in_range(value: Any, since: str | None, until: str | None) -> bool | None:
+    normalized = normalize_date(value)
+    if normalized is None or not DATE_RE.match(normalized):
+        return None
+    if since is not None and normalized < since:
+        return False
+    if until is not None and normalized > until:
+        return False
+    return True
+
+
 def coerce_list(value: Any) -> list[str]:
     if value is None:
         return []
@@ -83,7 +96,8 @@ def coerce_list(value: Any) -> list[str]:
     return [str(value)]
 
 
-def contains_any(haystack: Iterable[str], needles: list[str]) -> bool:
+def matches_all_needles(haystack: Iterable[str], needles: list[str]) -> bool:
+    """AND semantics: every needle must substring-match at least one value."""
     values = [value.casefold() for value in haystack]
     return all(any(needle.casefold() in value for value in values) for needle in needles)
 
