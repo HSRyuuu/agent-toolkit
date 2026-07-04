@@ -1,21 +1,24 @@
 ---
 name: kb-lint
-description: Use when checking a Markdown Knowledge Base for metadata gaps, stale uncertainty, duplicate topics, index/log drift, broken links, or security-sensitive content.
+description: Use when health-checking the user's personal Markdown Knowledge Base (KB) for metadata gaps, stale uncertainty, duplicate topics, index/log drift, broken links, or security-sensitive content. Triggers include "kb 점검/린트해줘", "지식베이스 상태 확인", "인덱스/링크 깨진 데 있나". Reports by default; fixes only on explicit request. Not for adding knowledge (use kb-write) or answering questions (use kb-search).
 ---
 
 # kb-lint
 
 ## Overview
 
-Health-check a curated Markdown KB. This lint model follows a source-of-truth document workflow: frontmatter, document clarity, `index.md`, `log.jsonl`, security hygiene, and search quality matter more than raw-source preservation or canonical/daily-log schemas.
+Health-check a curated Markdown KB. This lint model follows a source-of-truth document workflow: frontmatter, document clarity, `index.md`, `log.jsonl`, security hygiene, and search quality are what it checks.
 
-**Required orientation:** read and follow `kb-manage` for KB root, identity, repository defaults, frontmatter, `index.md`, `log.jsonl`, and shared conventions.
+**Required orientation:** read
+[`kb-manage/references/conventions.md`](../kb-manage/references/conventions.md)
+for KB root resolution, frontmatter fields, uncertainty markers, `agent_edit_mode`,
+`index.md` / `log.jsonl` rules, security principles, and script paths.
 
 ## Default Mode
 
 Read-only report. Do not edit files unless the user explicitly asks for a fix mode and approves the proposed changes.
 
-Before checking, resolve the KB root using `kb-manage` rules and read root guidance files from that resolved root, even if the current shell directory is elsewhere.
+Before checking, resolve the KB root using the conventions Root Resolution rules and read root guidance files from that resolved root, even if the current shell directory is elsewhere.
 
 Allowed fix modes:
 
@@ -115,7 +118,7 @@ test -f log.jsonl && tail -100 log.jsonl
 Agent edit-mode guard in git repositories:
 
 ```bash
-python3 /path/to/agent-toolkit/skills/kb-manage/scripts/check_agent_edit_mode.py
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/check_agent_edit_mode.py"
 ```
 
 ## Report Shape

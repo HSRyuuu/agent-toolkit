@@ -1,6 +1,6 @@
 ---
 name: kb-search
-description: Use when answering questions from a Markdown Knowledge Base, finding related documents, checking existing records, or locating source-of-truth notes without modifying files.
+description: Use when answering a question from the user's personal Markdown Knowledge Base (KB), finding related documents, checking existing records, or locating source-of-truth notes without modifying files. Triggers include "kb에서 찾아줘/검색해줘", "지식베이스에 ~ 있나", "전에 정리해둔 거 어디". Read-only. Not for adding or editing knowledge (use kb-write) or health checks (use kb-lint).
 ---
 
 # kb-search
@@ -9,7 +9,10 @@ description: Use when answering questions from a Markdown Knowledge Base, findin
 
 Search a curated Markdown KB in read-only mode. The maintained documents are the source-of-truth surface. Do not cite `log.jsonl` as evidence for a fact; use it only as a pointer to relevant files and git history. Do not rely on embeddings or general web knowledge unless the user explicitly asks for outside-KB research.
 
-**Required orientation:** read and follow `kb-manage` for KB root, identity, repository defaults, frontmatter, `index.md`, `log.jsonl`, and shared conventions.
+**Required orientation:** read
+[`kb-manage/references/conventions.md`](../kb-manage/references/conventions.md)
+for KB root resolution, frontmatter fields, uncertainty markers, `index.md` /
+`log.jsonl` rules, and script paths.
 
 ## Core Principles
 
@@ -23,7 +26,7 @@ Search a curated Markdown KB in read-only mode. The maintained documents are the
 
 ## Search Order
 
-1. Resolve the KB root using `kb-manage` rules.
+1. Resolve the KB root using the conventions Root Resolution rules.
 2. Read root guidance files from the resolved KB root, even if the current shell directory is elsewhere.
 3. Read `index.md` first if it exists.
 4. Read relevant directory `README.md` files when folder intent helps narrow the search.
@@ -38,9 +41,9 @@ Search a curated Markdown KB in read-only mode. The maintained documents are the
 Structured frontmatter search using `python-frontmatter`:
 
 ```bash
-python3 /path/to/agent-toolkit/skills/kb-search/scripts/kb_meta_search.py /path/to/kb --updated 2026-07-01
-python3 /path/to/agent-toolkit/skills/kb-search/scripts/kb_meta_search.py /path/to/kb --created 2026-07-01 --tag kafka
-python3 /path/to/agent-toolkit/skills/kb-search/scripts/kb_recent_activity.py /path/to/kb --date 2026-07-01
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_meta_search.py" /path/to/kb --updated 2026-07-01
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_meta_search.py" /path/to/kb --created 2026-07-01 --tag kafka
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_recent_activity.py" /path/to/kb --date 2026-07-01
 ```
 
 Use these scripts before `rg` when the query is about structured frontmatter fields such as `title`, `summary`, `tags`, `aliases`, `source`, `created`, `updated`, or `agent_edit_mode`. They require `python-frontmatter`; if it is absent, install the dependency listed in `scripts/requirements.txt` or fall back to `rg`.
