@@ -27,7 +27,7 @@ TOPIC_RULES: list[tuple[str, str, str]] = [
     (
         "config-server-profile",
         "Config Server / Spring profile 구조 조사",
-        r"config(?:\s|-)server|config\.tbz|aws-valkey|spring\.config\.import|spring profile|resources-\{?profile\}?|classpath",
+        r"config(?:\s|-)server|config\.example|aws-valkey|spring\.config\.import|spring profile|resources-\{?profile\}?|classpath",
     ),
     (
         "checkout-custom-remarks",

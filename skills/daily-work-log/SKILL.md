@@ -119,7 +119,7 @@ frontmatter 바로 아래에는 `# YYYY-MM-DD 업무 기록` 제목을 둔다.
   - `metatrip-api` git repository
 - 관련 파일
   - `metatrip-api` `application.yml`, `RedisConfigurer.java`
-  - /Users/hsryuuu/dev/personal/tbz-hsryuuu/_inbox/aws-secrets-manager-config-plan.md
+  - /Users/hsryuuu/dev/personal/example-project/_inbox/aws-secrets-manager-config-plan.md
 - 관련 링크
   - Spring Cloud Config 공식 문서: https://docs.spring.io/spring-cloud-config/
 ```

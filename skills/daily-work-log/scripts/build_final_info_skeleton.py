@@ -18,7 +18,7 @@ TECH_PATTERNS: list[tuple[str, str]] = [
     ("spring.config.import", "Spring Boot"),
     ("spring profile", "Spring profiles"),
     ("config server", "Spring Cloud Config"),
-    ("config.tbz", "Spring Cloud Config"),
+    ("config.example", "Spring Cloud Config"),
     ("aws-valkey", "AWS Valkey"),
     ("secrets manager", "AWS Secrets Manager"),
     ("parameter store", "AWS Systems Manager Parameter Store"),
