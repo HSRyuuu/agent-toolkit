@@ -18,23 +18,6 @@ NOISE_RE = re.compile(
     r"(<turn_aborted>|<local-command|local-command-|continue from where you left off|please run /login|login successful)",
     re.I,
 )
-TOPIC_RULES: list[tuple[str, str, str]] = [
-    (
-        "secret-config-transition",
-        "AWS secret/config 전환 검토",
-        r"secret manager|secretsmanager|parameter store|parameterstore|securestring|aws sso|iam|credential|access key|spring cloud aws",
-    ),
-    (
-        "config-server-profile",
-        "Config Server / Spring profile 구조 조사",
-        r"config(?:\s|-)server|config\.example|aws-valkey|spring\.config\.import|spring profile|resources-\{?profile\}?|classpath",
-    ),
-    (
-        "checkout-custom-remarks",
-        "checkout custom_remarks 오류 조사",
-        r"custom_remarks|multiplerooms|roomguest|data truncation|confirmcheckout|checkout|판매 기간",
-    ),
-]
 
 
 def load_json(path: Path) -> dict[str, Any] | None:
@@ -53,29 +36,13 @@ def candidate_paths(target_date: str, state_root: Path) -> list[Path]:
     ]
 
 
-def text_blob(candidate: dict[str, Any], unit: dict[str, Any]) -> str:
-    parts = [
-        candidate.get("title_hint"),
-        candidate.get("first_pass_summary"),
-        unit.get("title"),
-        unit.get("user_request"),
-        unit.get("outcome"),
-        " ".join(str(item) for item in unit.get("mentioned_paths") or []),
-    ]
-    return " ".join(str(part) for part in parts if part)
-
-
 def topic_for(candidate: dict[str, Any], unit: dict[str, Any]) -> tuple[str, str]:
-    blob = text_blob(candidate, unit)
-    project = project_name(candidate.get("cwd"))
-    for key, label, pattern in TOPIC_RULES:
-        if re.search(pattern, blob, re.I):
-            return f"{project}:{key}", f"{project} - {label}"
     if candidate.get("source") == "kb":
-        title = unit.get("title") or candidate.get("title_hint") or "KB 후보"
+        title = candidate.get("title_hint") or unit.get("title") or Path(str(candidate.get("file") or "")).stem or "KB 후보"
         return f"kb:{title}", str(title)
     session_id = candidate.get("session_id") or candidate.get("file") or "unknown"
-    return f"{project}:session:{session_id}", str(candidate.get("title_hint") or unit.get("title") or project)
+    title = candidate.get("title_hint") or unit.get("title") or project_name(candidate.get("cwd"))
+    return f"{candidate.get('source')}:{session_id}", str(title)
 
 
 def is_noise(unit: dict[str, Any]) -> bool:
@@ -176,7 +143,7 @@ def build_result(target_date: str, state_root: Path, top_limit: int, other_limit
     }
 
 
-def write_result(result: dict[str, Any], output: str | None, stdout: bool) -> None:
+def write_result(result: dict[str, Any], output: str | None, stdout: bool, state_root: Path) -> None:
     if stdout:
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return
@@ -184,7 +151,7 @@ def write_result(result: dict[str, Any], output: str | None, stdout: bool) -> No
         path = Path(output).expanduser()
     else:
         date = str(result["date"])
-        path = DEFAULT_STATE_ROOT / date[:4] / date / "numbered-candidates.json"
+        path = state_root / date[:4] / date / "numbered-candidates.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(path)
@@ -202,7 +169,7 @@ def main() -> int:
     args = parser.parse_args()
 
     result = build_result(args.date, Path(args.state_root).expanduser(), args.top_limit, args.other_limit, args.include_supporting)
-    write_result(result, args.output, args.stdout)
+    write_result(result, args.output, args.stdout, Path(args.state_root).expanduser())
     return 0
 
 
