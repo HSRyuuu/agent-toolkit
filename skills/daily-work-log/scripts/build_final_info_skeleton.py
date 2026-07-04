@@ -14,24 +14,6 @@ from first_pass_candidate_utils import DEFAULT_STATE_ROOT, compact, now_iso, pro
 
 SCHEMA_VERSION = "daily-work-log.final-info.v1"
 
-TECH_PATTERNS: list[tuple[str, str]] = [
-    ("spring.config.import", "Spring Boot"),
-    ("spring profile", "Spring profiles"),
-    ("config server", "Spring Cloud Config"),
-    ("config.example", "Spring Cloud Config"),
-    ("aws-valkey", "AWS Valkey"),
-    ("secrets manager", "AWS Secrets Manager"),
-    ("parameter store", "AWS Systems Manager Parameter Store"),
-    ("securestring", "AWS Systems Manager Parameter Store"),
-    ("aws sso", "AWS SSO"),
-    ("iam", "AWS IAM"),
-    ("custom_remarks", "MySQL"),
-    ("data truncation", "MySQL"),
-    ("confirmcheckout", "checkout"),
-    ("multiplerooms", "checkout"),
-    ("roomguest", "checkout"),
-]
-
 
 def load_json(path: Path) -> dict[str, Any]:
     try:
@@ -53,61 +35,10 @@ def default_final_info_path(target_date: str, state_root: Path) -> Path:
     return state_root / target_date[:4] / target_date / "final-info.json"
 
 
-def add_unique(values: list[Any], new_values: list[Any], limit: int | None = None) -> None:
-    seen = {json.dumps(value, ensure_ascii=False, sort_keys=True) for value in values}
-    for value in new_values:
-        if value in (None, "", []):
-            continue
-        marker = json.dumps(value, ensure_ascii=False, sort_keys=True)
-        if marker in seen:
-            continue
-        seen.add(marker)
-        values.append(value)
-        if limit is not None and len(values) >= limit:
-            return
-
-
 def slugify(text: str, fallback: str) -> str:
     value = text.lower()
     value = re.sub(r"[^a-z0-9가-힣]+", "-", value).strip("-")
     return value[:80] or fallback
-
-
-def infer_category(detail: dict[str, Any]) -> str:
-    title = str(detail.get("title") or "").lower()
-    blob = json.dumps(detail, ensure_ascii=False).lower()
-    if any(word in blob for word in ("data truncation", "error", "exception", "판매 기간", "트러블슈팅", "원인")):
-        return "troubleshooting"
-    if any(word in title for word in ("구조", "개념", "profile", "config server", "문서화", "learning")):
-        return "learning"
-    if any(word in blob for word in ("전환", "검토", "iam", "sso", "parameter store", "secrets manager", "결정", "decision")):
-        return "decision"
-    if any(word in blob for word in ("구조", "개념", "profile", "config server", "문서화", "learning")):
-        return "learning"
-    return "work-item"
-
-
-def infer_tech_stack(text: str) -> list[str]:
-    values: list[str] = []
-    lowered = text.lower()
-    for pattern, label in TECH_PATTERNS:
-        if pattern in lowered and label not in values:
-            values.append(label)
-    return values
-
-
-def infer_modules(paths: list[str], title: str) -> list[str]:
-    modules: list[str] = []
-    title_parts = re.split(r"\s+-\s+|\s+", title)
-    if title_parts:
-        first = title_parts[0].strip()
-        if first and first not in modules:
-            modules.append(first)
-    lowered_title = title.lower()
-    for keyword in ("config-server", "spring-profile", "secret-manager", "checkout", "custom_remarks"):
-        if keyword.replace("-", " ") in lowered_title or keyword in lowered_title:
-            modules.append(keyword)
-    return modules
 
 
 def selected_candidate_by_group(digest: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -123,11 +54,6 @@ def build_item(detail: dict[str, Any], selected_candidate: dict[str, Any]) -> di
     source_projects = [path for path in detail.get("source_projects") or [] if isinstance(path, str)]
     repo_names = [project_name(path) for path in source_projects]
 
-    text_blob = json.dumps({"title": title, "work_units": work_units, "detail": detail}, ensure_ascii=False)
-    tech_stack = infer_tech_stack(text_blob)
-    modules = infer_modules(project_files, title)
-    include_keywords: list[str] = []
-    add_unique(include_keywords, tech_stack + modules[:4], limit=12)
     what_i_did = []
     for unit in work_units[:5]:
         summary = unit.get("outcome") or unit.get("user_request") or unit.get("title")
@@ -140,7 +66,7 @@ def build_item(detail: dict[str, Any], selected_candidate: dict[str, Any]) -> di
         "item_id": slugify(title, f"selected-{group_id}"),
         "selected_group_id": group_id,
         "title": title,
-        "category": infer_category(detail),
+        "category": "work-item",
         "summary": compact(str(detail.get("digest_summary") or title), 280),
         "memory_cue": compact(f"{title}: {detail.get('digest_summary') or ''}", 240),
         "what_i_did": what_i_did,
@@ -148,9 +74,9 @@ def build_item(detail: dict[str, Any], selected_candidate: dict[str, Any]) -> di
         "technical_context": {
             "repo_names": repo_names,
             "codebase_paths": source_projects,
-            "modules": modules,
+            "modules": [],
             "systems": [],
-            "tech_stack": tech_stack,
+            "tech_stack": [],
             "context_links": [],
         },
         "decisions": [],
@@ -160,7 +86,7 @@ def build_item(detail: dict[str, Any], selected_candidate: dict[str, Any]) -> di
         "uncertainties": [],
         "markdown_hints": {
             "detail_level": "normal",
-            "include_keywords": include_keywords,
+            "include_keywords": [],
             "avoid_details": ["회사 소스코드 원문", "원시 로그 전문", "secret 또는 credential", "고객 식별자"],
         },
         "evidence_paths": {
