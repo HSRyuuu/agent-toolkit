@@ -49,7 +49,8 @@ python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-lint/scripts/kb_lint.py" /path/to/kb
 ```
 
 Exit `0` clean, `1` findings present, `2` high-confidence secret candidates
-present. It needs `python-frontmatter` (see `../kb-search/scripts/requirements.txt`).
+present, `3` cannot run because `python-frontmatter` is missing. It needs
+`python-frontmatter` (see `../kb-search/scripts/requirements.txt`).
 Treat its output as the factual base for the report, then add the judgement-only
 findings below.
 

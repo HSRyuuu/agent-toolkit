@@ -11,6 +11,7 @@ Exit codes:
     0  no findings
     1  findings present (any level)
     2  high-risk secret candidates present (implies findings)
+    3  cannot run (python-frontmatter missing)
 
 Reuses the shared frontmatter loader from the kb-search scripts.
 """
@@ -21,8 +22,10 @@ import argparse
 import json
 import re
 import sys
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import unquote
 
 SEARCH_SCRIPTS = Path(__file__).resolve().parents[2] / "kb-search" / "scripts"
 sys.path.insert(0, str(SEARCH_SCRIPTS))
@@ -46,7 +49,7 @@ SECRET_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("slack-token", re.compile(r"xox[bpoa]-[A-Za-z0-9-]{10,}")),
     ("jwt", re.compile(r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{6,}")),
     ("bearer-token", re.compile(r"[Bb]earer\s+[A-Za-z0-9._~+/=-]{20,}")),
-    ("password-assignment", re.compile(r"(?i)password\s*[:=]\s*['\"]?\S{4,}")),
+    ("password-assignment", re.compile(r"(?i)(?:password|passwd|pwd|비밀번호)\s*[:=]\s*['\"]?(?!\$\{|[\[<*])[\x21-\x7e]{8,}")),
 ]
 
 
@@ -104,19 +107,85 @@ def check_archived(doc: KbDoc) -> list[Finding]:
     return out
 
 
+def normalize_link_target(target: str, allowed_exts: tuple[str, ...]) -> str | None:
+    target = target.strip()
+    if target.startswith("<") and target.endswith(">"):
+        target = target[1:-1].strip()
+    if not target or target.startswith(("http://", "https://", "#", "mailto:")):
+        return None
+
+    path_part = target.split("#", 1)[0].strip()
+    if not path_part:
+        return None
+
+    path_part = unicodedata.normalize("NFC", unquote(path_part))
+    if not path_part.endswith(allowed_exts):
+        return None
+    return path_part
+
+
+def existing_path(base: Path, path_part: str) -> Path | None:
+    direct = (base / path_part).resolve()
+    if direct.exists():
+        return direct
+
+    path = Path(path_part)
+    if path.is_absolute():
+        current = Path(path.anchor)
+        parts = path.parts[1:]
+    else:
+        current = base.resolve()
+        parts = path.parts
+
+    for part in parts:
+        if part in {"", "."}:
+            continue
+        if part == "..":
+            current = current.parent
+            continue
+        wanted = unicodedata.normalize("NFC", part)
+        try:
+            matches = [child for child in current.iterdir() if unicodedata.normalize("NFC", child.name) == wanted]
+        except OSError:
+            return None
+        if not matches:
+            return None
+        current = matches[0]
+    return current.resolve() if current.exists() else None
+
+
+def normalize_relpath(root: Path, path: Path) -> str:
+    return unicodedata.normalize("NFC", path.relative_to(root).as_posix())
+
+
+def index_link_targets(root: Path, text: str) -> tuple[set[str], list[Finding]]:
+    targets: set[str] = set()
+    findings: list[Finding] = []
+    for lineno, line in enumerate(text.splitlines(), 1):
+        for raw_target in LINK_RE.findall(line):
+            path_part = normalize_link_target(raw_target, (".md", ".markdown", ".jsonl"))
+            if path_part is None:
+                continue
+            found = existing_path(root, path_part)
+            if found is None:
+                findings.append(Finding("error", "index-broken-link", "index.md", lineno, f"missing target: {path_part}"))
+                continue
+            try:
+                targets.add(normalize_relpath(root, found))
+            except ValueError:
+                continue
+    return targets, findings
+
+
 def check_links(root: Path, doc: KbDoc) -> list[Finding]:
     out: list[Finding] = []
     base = (root / doc.relpath).parent
     for lineno, line in enumerate(doc.content.splitlines(), 1):
-        for target in LINK_RE.findall(line):
-            target = target.strip()
-            if not target or target.startswith(("http://", "https://", "#", "mailto:")):
+        for raw_target in LINK_RE.findall(line):
+            path_part = normalize_link_target(raw_target, (".md", ".markdown"))
+            if path_part is None:
                 continue
-            path_part = target.split("#", 1)[0]
-            if not path_part or not path_part.endswith((".md", ".markdown")):
-                continue
-            resolved = (base / path_part).resolve()
-            if not resolved.exists():
+            if existing_path(base, path_part) is None:
                 out.append(Finding("error", "broken-link", doc.relpath, lineno, f"link target missing: {path_part}"))
     return out
 
@@ -158,18 +227,9 @@ def check_index(root: Path) -> list[Finding]:
     index_path = root / "index.md"
     if not index_path.exists():
         return []
-    out: list[Finding] = []
     text = index_path.read_text(encoding="utf-8")
-    for lineno, line in enumerate(text.splitlines(), 1):
-        for target in LINK_RE.findall(line):
-            path_part = target.strip().split("#", 1)[0]
-            if not path_part or path_part.startswith(("http://", "https://")):
-                continue
-            if not path_part.endswith((".md", ".markdown", ".jsonl")):
-                continue
-            if not (root / path_part).resolve().exists():
-                out.append(Finding("error", "index-broken-link", "index.md", lineno, f"missing target: {path_part}"))
-    return out
+    _, findings = index_link_targets(root, text)
+    return findings
 
 
 def collect(root: Path) -> list[Finding]:
@@ -194,11 +254,12 @@ def collect(root: Path) -> list[Finding]:
     index_path = root / "index.md"
     if index_path.exists():
         index_text = index_path.read_text(encoding="utf-8")
+        indexed, _ = index_link_targets(root, index_text)
         for doc in docs:
             top = doc.relpath.split("/", 1)[0]
             if top in {"_inbox"} or doc.path.name.lower() in {"index.md", "readme.md", "agents.md", "claude.md"}:
                 continue
-            if doc.relpath not in index_text:
+            if unicodedata.normalize("NFC", doc.relpath) not in indexed:
                 findings.append(Finding("warn", "index-missing-entry", doc.relpath, None, "not listed in index.md"))
     return findings
 

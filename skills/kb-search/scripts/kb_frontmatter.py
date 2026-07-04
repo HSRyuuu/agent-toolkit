@@ -34,7 +34,7 @@ def require_frontmatter() -> None:
         "python3 -m pip install python-frontmatter",
         file=sys.stderr,
     )
-    raise SystemExit(2)
+    raise SystemExit(3)
 
 
 def iter_markdown_files(root: Path) -> Iterable[Path]:
