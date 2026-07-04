@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import date
+from datetime import date, timedelta, tzinfo
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +24,7 @@ from first_pass_candidate_utils import (
     score_candidate,
     signal_flags,
     split_candidates,
+    to_local_date,
     write_or_print,
 )
 
@@ -48,10 +49,17 @@ def text_blocks(content: Any) -> list[str]:
 
 
 def session_files_for_date(root: Path, target_date: date) -> list[Path]:
-    day_dir = root / f"{target_date:%Y}" / f"{target_date:%m}" / f"{target_date:%d}"
-    if not day_dir.is_dir():
-        return []
-    return sorted(day_dir.glob("*.jsonl"))
+    paths: list[Path] = []
+    for offset in (-1, 0, 1):
+        day = target_date + timedelta(days=offset)
+        day_dir = root / f"{day:%Y}" / f"{day:%m}" / f"{day:%d}"
+        if day_dir.is_dir():
+            paths.extend(sorted(day_dir.glob("*.jsonl")))
+    return paths
+
+
+def rows_match_date(rows: list[dict[str, Any]], target_date: date, tz: tzinfo | None = None) -> bool:
+    return any(to_local_date(row.get("timestamp"), tz) == target_date for row in rows)
 
 
 def first_session_meta(rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -63,8 +71,10 @@ def first_session_meta(rows: list[dict[str, Any]]) -> dict[str, Any]:
     return {}
 
 
-def candidate_from_file(path: Path) -> dict[str, Any]:
+def candidate_from_file(path: Path, target_date: date | None = None, tz: tzinfo | None = None) -> dict[str, Any] | None:
     rows = load_jsonl(path)
+    if target_date is not None and not rows_match_date(rows, target_date, tz):
+        return None
     meta = first_session_meta(rows)
     user_snippets: list[str] = []
     result_snippets: list[str] = []
@@ -73,6 +83,7 @@ def candidate_from_file(path: Path) -> dict[str, Any]:
     timestamps: list[str] = []
     work_units: list[dict[str, Any]] = []
     current_unit: dict[str, Any] | None = None
+    ignored_user_message = False
     interrupted = False
 
     def ensure_unit() -> dict[str, Any]:
@@ -83,6 +94,8 @@ def candidate_from_file(path: Path) -> dict[str, Any]:
                 "result_snippets": [],
                 "tool_names": [],
                 "signal_chunks": [],
+                "first_timestamp": None,
+                "unit_date": None,
             }
         return current_unit
 
@@ -94,19 +107,21 @@ def candidate_from_file(path: Path) -> dict[str, Any]:
         results = list(current_unit.get("result_snippets") or [])
         unit_tools = list(current_unit.get("tool_names") or [])
         unit_signal = "\n".join(str(chunk) for chunk in current_unit.get("signal_chunks") or [])
+        unit_date = current_unit.get("unit_date") or to_local_date(current_unit.get("first_timestamp"), tz)
         if user_request or results or unit_tools:
-            work_units.append(
-                build_work_unit(
-                    source="codex",
-                    session_id=meta.get("id") or meta.get("session_id") or path.stem,
-                    cwd=meta.get("cwd"),
-                    index=len(work_units) + 1,
-                    user_request=user_request,
-                    result_snippets=results,
-                    tool_names=unit_tools,
-                    signal_text=unit_signal,
+            if target_date is None or unit_date is None or unit_date == target_date:
+                work_units.append(
+                    build_work_unit(
+                        source="codex",
+                        session_id=meta.get("id") or meta.get("session_id") or path.stem,
+                        cwd=meta.get("cwd"),
+                        index=len(work_units) + 1,
+                        user_request=user_request,
+                        result_snippets=results,
+                        tool_names=unit_tools,
+                        signal_text=unit_signal,
+                    )
                 )
-            )
         current_unit = None
 
     for row in rows:
@@ -136,6 +151,7 @@ def candidate_from_file(path: Path) -> dict[str, Any]:
                 for text in texts:
                     cleaned = clean_user_text(text)
                     if cleaned:
+                        ignored_user_message = False
                         user_snippets.append(cleaned)
                         if current_unit and current_unit.get("user_request") == cleaned:
                             current_unit["signal_chunks"].append(cleaned)
@@ -146,31 +162,54 @@ def candidate_from_file(path: Path) -> dict[str, Any]:
                             "result_snippets": [],
                             "tool_names": [],
                             "signal_chunks": [cleaned],
+                            "first_timestamp": timestamp,
+                            "unit_date": to_local_date(timestamp, tz),
                         }
+                    else:
+                        ignored_user_message = True
             elif role == "assistant":
+                if current_unit is None and ignored_user_message:
+                    continue
                 snippets = [compact(text, 260) for text in texts]
                 result_snippets.extend(snippets)
                 signal_chunks.extend(texts)
                 unit = ensure_unit()
+                if timestamp and unit.get("first_timestamp") is None:
+                    unit["first_timestamp"] = timestamp
                 unit["result_snippets"].extend(snippets)
                 unit["signal_chunks"].extend(texts)
         elif payload_type == "function_call":
+            if current_unit is None and ignored_user_message:
+                continue
             name = payload.get("name")
             if isinstance(name, str):
                 tool_names.append(name)
                 unit = ensure_unit()
+                if timestamp and unit.get("first_timestamp") is None:
+                    unit["first_timestamp"] = timestamp
                 unit["tool_names"].append(name)
             payload_text = json.dumps(payload, ensure_ascii=False)[:4000]
             signal_chunks.append(payload_text)
-            ensure_unit()["signal_chunks"].append(payload_text)
+            unit = ensure_unit()
+            if timestamp and unit.get("first_timestamp") is None:
+                unit["first_timestamp"] = timestamp
+            unit["signal_chunks"].append(payload_text)
         elif payload_type == "function_call_output":
+            if current_unit is None and ignored_user_message:
+                continue
             payload_text = json.dumps(payload, ensure_ascii=False)[:4000]
             signal_chunks.append(payload_text)
-            ensure_unit()["signal_chunks"].append(payload_text)
+            unit = ensure_unit()
+            if timestamp and unit.get("first_timestamp") is None:
+                unit["first_timestamp"] = timestamp
+            unit["signal_chunks"].append(payload_text)
 
     flush_unit()
 
-    clean_requests = user_snippets[:5]
+    if target_date is not None:
+        clean_requests = [str(unit.get("user_request")) for unit in work_units if unit.get("user_request")][:5]
+    else:
+        clean_requests = user_snippets[:5]
     assistant_results = result_snippets[-3:]
     unique_tools = sorted(set(tool_names))
     signal_text = "\n".join(signal_chunks)
@@ -216,6 +255,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Codex 1차 후보 카드를 수집한다.")
     parser.add_argument("--date", required=True, help="대상 날짜 YYYY-MM-DD")
     parser.add_argument("--sessions-root", default=str(DEFAULT_SESSIONS_ROOT))
+    parser.add_argument("--state-root", default=str(Path.home() / ".daily-work-log"), help="기본값: ~/.daily-work-log")
     parser.add_argument("--include-supporting", action="store_true", help="subagent/supporting 후보도 primary 판단에 포함")
     parser.add_argument("--output", help="출력 JSON 경로. 기본값은 ~/.daily-work-log/YYYY/YYYY-MM-DD/codex-candidates.json")
     parser.add_argument("--stdout", action="store_true", help="파일에 쓰지 않고 stdout으로 출력")
@@ -223,7 +263,7 @@ def main() -> int:
 
     target_date = date.fromisoformat(args.date)
     root = Path(args.sessions_root).expanduser()
-    collected = [candidate_from_file(path) for path in session_files_for_date(root, target_date)]
+    collected = [item for path in session_files_for_date(root, target_date) if (item := candidate_from_file(path, target_date))]
     if not args.include_supporting:
         collected = [item for item in collected if item.get("thread_source") in {"", "user"}]
 
@@ -238,7 +278,7 @@ def main() -> int:
         "supporting": supporting,
         "rejected": rejected,
     }
-    write_or_print(result, args.output, args.stdout)
+    write_or_print(result, args.output, args.stdout, Path(args.state_root).expanduser())
     return 0
 
 

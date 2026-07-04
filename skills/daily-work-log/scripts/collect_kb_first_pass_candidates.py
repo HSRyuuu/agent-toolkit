@@ -20,6 +20,7 @@ from first_pass_candidate_utils import (
     extract_paths,
     now_iso,
     split_candidates,
+    to_local_date,
 )
 
 
@@ -175,10 +176,14 @@ def read_doc_item(root: Path, path: Path, target_date: str) -> dict[str, Any] | 
 
 
 def row_date(row: dict[str, Any]) -> str | None:
-    for key in ("timestamp", "created_at", "createdAt", "updated_at", "updatedAt", "date"):
-        parsed = normalize_date(row.get(key))
+    for key in ("timestamp", "created_at", "createdAt", "updated_at", "updatedAt"):
+        parsed_date = to_local_date(row.get(key))
+        parsed = parsed_date.isoformat() if parsed_date else None
         if parsed:
             return parsed
+    parsed = normalize_date(row.get("date"))
+    if parsed:
+        return parsed
     return None
 
 
@@ -375,14 +380,14 @@ def empty_result(target_date: str) -> dict[str, Any]:
     }
 
 
-def emit(result: dict[str, Any], output: str | None, stdout: bool, emit_empty: bool) -> None:
+def emit(result: dict[str, Any], output: str | None, stdout: bool, emit_empty: bool, state_root: Path) -> None:
     has_any = any(result.get(key) for key in ("candidates", "supporting", "rejected"))
     if not has_any and not emit_empty:
         return
     if stdout:
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return
-    path = Path(output).expanduser() if output else default_output_path("kb", str(result["date"]))
+    path = Path(output).expanduser() if output else default_output_path("kb", str(result["date"]), state_root)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(path)
@@ -392,6 +397,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="KB 1차 후보 카드를 선택적으로 수집한다.")
     parser.add_argument("--date", required=True, help="대상 날짜 YYYY-MM-DD")
     parser.add_argument("--kb-root", help="KB root 절대 경로. 없으면 ~/.config/kb 설정을 사용")
+    parser.add_argument("--state-root", default=str(Path.home() / ".daily-work-log"), help="기본값: ~/.daily-work-log")
     parser.add_argument("--output", help="출력 JSON 경로. 기본값은 ~/.daily-work-log/YYYY/YYYY-MM-DD/kb-candidates.json")
     parser.add_argument("--stdout", action="store_true", help="파일에 쓰지 않고 stdout으로 출력")
     parser.add_argument("--emit-empty", action="store_true", help="KB가 없거나 후보가 없어도 빈 JSON을 출력")
@@ -400,7 +406,7 @@ def main() -> int:
     date.fromisoformat(args.date)
     root = resolve_kb_root(args.kb_root)
     if not root:
-        emit(empty_result(args.date), args.output, args.stdout, args.emit_empty)
+        emit(empty_result(args.date), args.output, args.stdout, args.emit_empty, Path(args.state_root).expanduser())
         return 0
 
     candidates, supporting, rejected = split_candidates(
@@ -416,7 +422,7 @@ def main() -> int:
         "supporting": supporting,
         "rejected": rejected,
     }
-    emit(result, args.output, args.stdout, args.emit_empty)
+    emit(result, args.output, args.stdout, args.emit_empty, Path(args.state_root).expanduser())
     return 0
 
 
