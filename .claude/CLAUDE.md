@@ -17,8 +17,12 @@ agent-toolkit/
 ├── .claude-plugin/
 │   ├── plugin.json         # Claude Code plugin 메타
 │   └── marketplace.json    # 로컬 marketplace 메타
+├── .claude/skills/
+│   └── verify-secrets/     # 이 저장소 전용 로컬 검증 스킬
 ├── .codex-plugin/
 │   └── plugin.json         # Codex plugin 메타
+├── .codex/skills/
+│   └── verify-secrets/     # 이 저장소 전용 로컬 검증 스킬
 ├── .agents/plugins/
 │   └── marketplace.json    # Codex 로컬 marketplace 메타
 ├── skills/                 # 단일 활성 plugin skill root
@@ -34,6 +38,14 @@ agent-toolkit/
 새 스킬을 추가할 때는 `skills/<name>/SKILL.md`에 둔다. 스킬이 워크플로우형인지, 스캐폴딩형인지, 디자인형인지는 문서와 frontmatter 설명으로 표현한다. 디렉토리는 플러그인 로딩 경계가 아니라 개별 스킬의 물리 위치다.
 
 `SKILL.md`가 없는 디렉토리는 공유 자산으로만 취급한다. 카탈로그와 inventory에는 넣지 않는다.
+
+## 필수 로컬 검증
+
+- 커밋, push, PR, release 전에는 반드시 프로젝트 로컬 `verify-secrets` 스킬을 실행한다.
+- Claude Code는 `.claude/skills/verify-secrets/`, Codex는 `.codex/skills/verify-secrets/`를 사용한다.
+- 이 스킬은 회사 식별자, secret, token, API key, private value, few-shot 예시의 민감값 유입을 막는 최종 게이트다.
+- `verify-secrets`가 하나라도 이슈를 보고하면 커밋하지 않는다. 수정하거나 사용자의 명시적 예외 승인을 받은 뒤 재검증한다.
+- 이 로컬 검증 스킬은 플러그인 배포용 `skills/`로 옮기지 않는다. 로컬 검증 스킬의 회사/secret 예시는 `skills/` 아래 어떤 파일에도 복사하지 않는다.
 
 필수 frontmatter:
 

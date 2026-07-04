@@ -18,7 +18,9 @@ Claude Code and Codex use the same active plugin skill root: `skills/`.
 ```text
 agent-toolkit/
 ├── .claude-plugin/          # Claude Code plugin manifest + local marketplace
+├── .claude/skills/          # project-local Claude Code verification skills, not plugin inventory
 ├── .codex-plugin/           # Codex plugin manifest
+├── .codex/skills/           # project-local Codex verification skills, not plugin inventory
 ├── .agents/plugins/         # Codex local marketplace metadata
 ├── plugins/agent-toolkit    # local marketplace source entry
 ├── skills/                  # single active plugin skill root
@@ -34,6 +36,7 @@ agent-toolkit/
 | Categorize a skill | `docs/catalog.md` or the skill body | Categories are metadata, not loader directories. |
 | Update Claude plugin surface | `.claude-plugin/plugin.json` | Keep the skill root aligned with `skills/`. |
 | Update Codex plugin surface | `.codex-plugin/plugin.json` | Keep the skill root aligned with `skills/`. |
+| Update local pre-commit verification | `.claude/skills/verify-secrets/`, `.codex/skills/verify-secrets/` | Keep this outside `skills/`; it is not part of the plugin catalog. |
 | Refresh catalog/docs | `README.md`, `docs/catalog.md`, `AGENTS.md`, `.claude/CLAUDE.md` | Use `update-project-docs` after adding/moving/removing skills. |
 | Edit project setup templates | `templates/project-setup/` | These are placeholder skeletons, not facts about this repo. |
 
@@ -60,6 +63,8 @@ agent-toolkit/
 - Claude Code loads `.claude-plugin/plugin.json`; Codex loads `.codex-plugin/plugin.json`. Both must point at the same `skills/` plugin skill root.
 - Treat `docs/catalog.md` as a generated human index. The source of truth is live `SKILL.md` frontmatter plus the plugin manifests.
 - Keep category labels as metadata. Do not create loader topology by category.
+- **Mandatory before commit:** run the project-local `verify-secrets` skill from `.claude/skills/verify-secrets/` or `.codex/skills/verify-secrets/` before any commit, push, PR, or release. If it reports a hit, stop and resolve it or ask the user for an explicit exemption before continuing.
+- The local `verify-secrets` skill is intentionally outside the plugin skill root. Do not move it into `skills/`, do not add it to `docs/catalog.md`, and do not copy its company/secret examples into any file under `skills/`.
 
 ## ANTI-PATTERNS
 
@@ -92,6 +97,9 @@ jq empty .agents/plugins/marketplace.json
 # Git scope before commits
 git status --short
 git diff --stat
+
+# Mandatory pre-commit secret/company scan
+# Run the project-local verify-secrets skill before staging or committing.
 ```
 
 ## NOTES
