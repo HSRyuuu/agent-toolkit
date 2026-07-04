@@ -7,7 +7,7 @@ description: Use when answering a question from the user's personal Markdown Kno
 
 ## Overview
 
-Search a curated Markdown KB in read-only mode. The maintained documents are the source-of-truth surface. Do not cite `log.jsonl` as evidence for a fact; use it only as a pointer to relevant files and git history. Do not rely on embeddings or general web knowledge unless the user explicitly asks for outside-KB research.
+Search a curated Markdown KB in read-only mode. The maintained documents are the source-of-truth surface. Do not cite `log.jsonl` as evidence for a fact; it is the primary work-history pointer for locating relevant files and past work, while the documents themselves hold the facts. Do not rely on embeddings or general web knowledge unless the user explicitly asks for outside-KB research.
 
 **Required orientation:** read
 [`kb-manage/references/conventions.md`](../kb-manage/references/conventions.md)
@@ -61,7 +61,8 @@ rg -n --glob '*.md' --glob '!**/.git/**' --glob '!**/.obsidian/**' \
   "title:|summary:|tags:|aliases:|^#{1,6} |검색어|synonym" .
 ```
 
-Recent KB activity when `log.jsonl` exists:
+Recent KB activity — check `log.jsonl` first; it is the primary work-history
+trail and works without git:
 
 ```bash
 tail -100 log.jsonl
@@ -69,11 +70,13 @@ rg -n '"files":|"summary":|"datetime":|"type":|"source":|검색어|synonym' log.
 jq -c . log.jsonl >/dev/null
 ```
 
-If `log.jsonl` is absent, skip these commands without warning unless the user asked to audit KB maintenance files.
+If `log.jsonl` is absent, note the gap only when the user asked about KB
+maintenance; for a normal search, fall back to git history when available and
+otherwise rely on frontmatter dates.
 
-Git history — the primary work-history trail in a git-backed KB (it replaces
-`log.jsonl`). Commits follow the `kb: add|update|merge|append <doc> — <summary>`
-convention, so search the log directly:
+Git history — a supplementary reference in a git-backed KB (it never replaces
+`log.jsonl`). Use it for diffs, blame, and change archaeology. Commits may
+follow the `kb: add|update|merge|append <doc> — <summary>` convention:
 
 ```bash
 git log --oneline -- path/to/doc.md          # history of one document
@@ -122,5 +125,5 @@ Example:
 
 - Do not update `index.md` or `log.jsonl` during search.
 - Do not infer missing company/project facts from general knowledge.
-- Do not treat `log.jsonl` as a source of truth; use it only to find relevant files or git history, and ignore it when it is absent.
+- Do not treat `log.jsonl` as a source of truth for facts; it is the primary work-history pointer for finding relevant files and past work, and maintained documents remain the truth surface.
 - Do not add bulk Obsidian wikilinks while answering a search question.

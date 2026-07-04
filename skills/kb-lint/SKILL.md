@@ -64,7 +64,7 @@ findings below.
 - title/H1 mismatch
 - invalid or inconsistent date format
 - weak `summary`, sparse `tags`, missing likely aliases
-- `updated` older than a meaningful body change indicated by git history; skip this for `append_only` documents, whose `updated` field is intentionally frozen (add a body-level dated note instead)
+- `updated` older than a meaningful body change suggested by git history as a supplementary signal; skip this for `append_only` documents, whose `updated` field is intentionally frozen (add a body-level dated note instead)
 - `read_only` or `append_only` files with git changes that need confirmation
 
 ### Index
@@ -77,12 +77,13 @@ findings below.
 
 ### Log
 
+- `log.jsonl` missing — it is the primary work-history trail and is expected by default, unless local KB rules opt out
 - malformed `log.jsonl`, when present
-- recent changed documents with no approximate log entry, when the KB maintains `log.jsonl`
+- recent changed documents with no approximate log entry
 - log entries pointing to missing files, when present
 - log entries containing sensitive raw values, when present
 
-`log.jsonl` is an aid for finding work and git history. It is not a source of truth.
+`log.jsonl` is the primary work-history trail (it must work without git); git history is a supplementary reference. Neither is a source of truth for facts.
 
 ### Content Health
 

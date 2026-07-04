@@ -29,9 +29,9 @@ single source of truth.
 - Human-readable documents are primary.
 - LLMs help add, search, lint, and reorganize.
 - `index.md` is the content catalog.
-- `log.jsonl`, when present, is a small work-history pointer for finding files
-  and git history, not a source of truth.
-- Git history is the durable audit trail.
+- `log.jsonl` is the primary work-history trail; it works with or without git
+  and is a navigation pointer, not a source of truth.
+- Git history, when the KB is git-backed, is a supplementary audit trail.
 - Provenance is recorded safely in frontmatter or body notes, never by storing
   raw source copies.
 - Security and privacy override source preservation.
@@ -226,33 +226,14 @@ sections so readers do not mistake them for maintained documents.
 
 ## Work History
 
-### Git-backed KB (default): commit messages
+### log.jsonl (default): the primary work-history trail
 
-Git history is the work-history trail. Use a searchable commit message convention
-so the log stays navigable without a separate file:
+The KB must work without git. `log.jsonl` at the KB root is the primary
+work-history trail: create it at setup and append to it on every meaningful
+write. It is a navigation pointer for finding files and past work, not a source
+of truth.
 
-```text
-kb: add|update|merge|append <doc> — <short summary>
-```
-
-Then the same information a log file would hold is available directly from git:
-
-```bash
-git log --oneline --grep='^kb:'         # all KB work, newest first
-git log --oneline -- path/to/doc.md     # history of one document
-git log --oneline --name-only -n 20     # recent changes with touched files
-```
-
-Do not create `log.jsonl` for a git-backed KB by default.
-
-### log.jsonl (fallback): non-git KB or on request
-
-`log.jsonl` is the work-history trail only when git is unavailable, or when the
-user explicitly wants a maintained history file. It is a navigation pointer, not a
-source of truth. If it is absent during search or exploration, ignore it and
-continue.
-
-When the KB maintains it, each line is one JSON object:
+Each line is one JSON object:
 
 ```json
 {"datetime":"YYYY-MM-DDTHH:MM:SS+09:00","type":"setup|add|update|merge|append|lint","summary":"짧은 작업 요약","files":["index.md"],"source":"agent","commit":null}
@@ -260,7 +241,32 @@ When the KB maintains it, each line is one JSON object:
 
 Rules: one object per line, no trailing commas, no secrets, paths relative to KB
 root, `datetime` includes a timezone offset (KB/user local timezone when known),
-`commit` may be `null` until a commit exists.
+`commit` stays `null` when no related git commit exists (always `null` in a
+non-git KB).
+
+If `log.jsonl` is missing in an existing KB, that is a maintenance gap, not a
+blocker: writing may create it with the current entry unless local KB rules opt
+out of a log file.
+
+### Git history (supplementary): git-backed KB only
+
+When the KB happens to be a git repository, git history is a useful secondary
+reference — for diffs, blame, and recovering past states — but it never replaces
+`log.jsonl`. Keep commit messages searchable with this convention:
+
+```text
+kb: add|update|merge|append <doc> — <short summary>
+```
+
+Then git can supplement the log:
+
+```bash
+git log --oneline --grep='^kb:'         # all KB work, newest first
+git log --oneline -- path/to/doc.md     # history of one document
+git log --oneline --name-only -n 20     # recent changes with touched files
+```
+
+Do not skip `log.jsonl` just because the KB is git-backed.
 
 ## Security Principles
 

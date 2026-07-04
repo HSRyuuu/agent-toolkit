@@ -9,7 +9,7 @@ skills' generic conventions, this file wins. Keep it aligned with the skills'
 ## Read First
 
 - Use `index.md` as the document catalog.
-- If `log.jsonl` exists, use it as a small work-history pointer for finding files and git history; a git-backed KB may rely on commit messages instead.
+- Use `log.jsonl` as the primary work-history trail for finding files and past work; it works without git. Git history, when this KB is git-backed, is a supplementary reference only.
 - If an agent is working from a nested or different directory, it should still resolve this KB root and read this file before changing or answering from the KB.
 - Use the AgentToolkit KB skills when available:
   - `kb-manage` for setup, conventions, migration, and root management.

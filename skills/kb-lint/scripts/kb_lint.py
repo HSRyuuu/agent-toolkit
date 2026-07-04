@@ -133,7 +133,15 @@ def scan_secrets_in_text(relpath: str, text: str) -> list[Finding]:
 def check_log(root: Path) -> list[Finding]:
     log_path = root / "log.jsonl"
     if not log_path.exists():
-        return []
+        return [
+            Finding(
+                "warn",
+                "log-missing",
+                "log.jsonl",
+                None,
+                "missing primary work-history trail",
+            )
+        ]
     out: list[Finding] = []
     for lineno, line in enumerate(log_path.read_text(encoding="utf-8").splitlines(), 1):
         if not line.strip():

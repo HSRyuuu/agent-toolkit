@@ -93,11 +93,10 @@ When initializing a KB:
 3. Create or adapt `AGENTS.md` from `templates/AGENTS.md` if no agent entrypoint
    exists.
 4. Create or adapt `index.md` from `templates/index.md` if missing.
-5. Create `log.jsonl` only for a non-git KB or when the user wants a work-history
-   file. In a git-backed KB, prefer the commit-message convention (see
-   conventions) and skip `log.jsonl`. When creating it, adapt
-   `templates/log.jsonl`, replacing placeholders with the setup datetime and a
-   root-specific summary.
+5. Create `log.jsonl` from `templates/log.jsonl` — it is the primary
+   work-history trail and must work without git (see conventions). Replace
+   placeholders with the setup datetime and a root-specific summary. Skip it
+   only when the user explicitly opts out of a work-history file.
 6. Optionally write `~/.config/kb/kb-config.json` after user approval.
 7. Do not create `_raw/`.
 8. Create `_inbox/` only if the user explicitly wants a staging area.
@@ -185,7 +184,7 @@ logs, or `kind: canonical`:
    - keep dated notes only when useful as documents, not because a schema required
      them
    - build `index.md`
-   - start `log.jsonl` only if the KB is non-git or the user wants it
+   - start `log.jsonl` as the work-history trail (regardless of git)
 4. Ask before moving, deleting, or rewriting old files.
 
 ## Index Maintenance
@@ -208,9 +207,10 @@ It needs `python-frontmatter` (see `../kb-search/scripts/requirements.txt`).
 
 ## Log Maintenance
 
-`log.jsonl` is optional and only helps navigate git history (see conventions). If
-it is missing during search or exploration, ignore it; do not create it just
-because it is absent. When the KB maintains it, append entries for setup,
+`log.jsonl` is the primary work-history trail and must work without git (see
+conventions). Maintain it by default: append entries for setup,
 add/update/merge/append, lint runs with meaningful findings, index rebuilds, and
-migrations. Do not log routine read-only searches unless the user asks for a
-research trail.
+migrations. If it is missing in an existing KB, treat that as a maintenance gap
+and offer to start it. Git history, when the KB is git-backed, is a
+supplementary reference only. Do not log routine read-only searches unless the
+user asks for a research trail.

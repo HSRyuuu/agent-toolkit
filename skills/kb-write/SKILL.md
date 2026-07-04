@@ -299,7 +299,8 @@ After successful writes:
 1. Update `index.md` if present.
    - Add or adjust the document link, one-line summary, and tags/category.
    - Keep it content-oriented, not chronological.
-2. Append one JSON object to `log.jsonl` if present.
+2. Append one JSON object to `log.jsonl` — it is the primary work-history
+   trail and works without git.
    - Keep it short and parseable.
    - Do not include secrets or sensitive raw details.
 
@@ -311,7 +312,9 @@ Recommended log shape:
 
 Use timezone-aware ISO 8601 datetimes. Prefer the KB/user local timezone when known; never write a bare date or timezone-less local time.
 
-If `index.md` or `log.jsonl` does not exist, do not create them unless the user asked for KB setup/management or the local rules say they are required. A missing `log.jsonl` should not block writing; just skip the log append.
+If `index.md` does not exist, do not create it unless the user asked for KB setup/management or the local rules say it is required. If `log.jsonl` is missing, create it with this write's entry (it is the default work-history file) unless local KB rules opt out; mention the creation in the completion report. A log problem should never block the write itself.
+
+In a git-backed KB, git is a supplementary reference: when the user commits KB work, suggest the `kb: add|update|merge|append <doc> — <summary>` commit-message convention from conventions so git history stays searchable, but never treat a commit as a substitute for the `log.jsonl` entry.
 
 ## Completion Report
 
