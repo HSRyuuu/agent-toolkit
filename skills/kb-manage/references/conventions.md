@@ -224,13 +224,33 @@ Default shape:
 List `_inbox/` and `_archived/` documents, when included, under clearly labeled
 sections so readers do not mistake them for maintained documents.
 
-## log.jsonl
+## Work History
 
-`log.jsonl` is optional. It exists only to make git history easier to navigate;
-it is not a source of truth and not a replacement for git. In a git-backed KB,
-`git log --oneline --name-only` provides the same information for free, so
-`log.jsonl` is created only for a non-git KB or when the user wants a work-history
-file. If it is absent during search or exploration, ignore it and continue.
+### Git-backed KB (default): commit messages
+
+Git history is the work-history trail. Use a searchable commit message convention
+so the log stays navigable without a separate file:
+
+```text
+kb: add|update|merge|append <doc> — <short summary>
+```
+
+Then the same information a log file would hold is available directly from git:
+
+```bash
+git log --oneline --grep='^kb:'         # all KB work, newest first
+git log --oneline -- path/to/doc.md     # history of one document
+git log --oneline --name-only -n 20     # recent changes with touched files
+```
+
+Do not create `log.jsonl` for a git-backed KB by default.
+
+### log.jsonl (fallback): non-git KB or on request
+
+`log.jsonl` is the work-history trail only when git is unavailable, or when the
+user explicitly wants a maintained history file. It is a navigation pointer, not a
+source of truth. If it is absent during search or exploration, ignore it and
+continue.
 
 When the KB maintains it, each line is one JSON object:
 
@@ -241,13 +261,6 @@ When the KB maintains it, each line is one JSON object:
 Rules: one object per line, no trailing commas, no secrets, paths relative to KB
 root, `datetime` includes a timezone offset (KB/user local timezone when known),
 `commit` may be `null` until a commit exists.
-
-When a KB is git-backed, prefer a searchable commit message convention so git
-history stays navigable without `log.jsonl`:
-
-```text
-kb: add|update|merge|append <doc> — <short summary>
-```
 
 ## Security Principles
 

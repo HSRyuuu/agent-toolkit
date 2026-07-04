@@ -71,11 +71,15 @@ jq -c . log.jsonl >/dev/null
 
 If `log.jsonl` is absent, skip these commands without warning unless the user asked to audit KB maintenance files.
 
-Git history fallback:
+Git history — the primary work-history trail in a git-backed KB (it replaces
+`log.jsonl`). Commits follow the `kb: add|update|merge|append <doc> — <summary>`
+convention, so search the log directly:
 
 ```bash
-git log --oneline -- path/to/doc.md
-git log --all --grep='keyword' --oneline
+git log --oneline -- path/to/doc.md          # history of one document
+git log --oneline --grep='^kb:'              # all KB work, newest first
+git log --all --grep='keyword' --oneline     # find a change by topic keyword
+git log --oneline --name-only -n 20          # recent changes with touched files
 ```
 
 ## Candidate Selection
