@@ -10,7 +10,7 @@
 
 ## 필수 Frontmatter
 
-템플릿은 반드시 아래 네 가지 필드로 시작해야 한다. 이 필드는 필수이며 선택 사항이 아니다.
+템플릿은 반드시 아래 네 가지 필드로 시작해야 한다. 상세 규칙과 `type` 허용값은 SKILL.md의 "필수 Frontmatter"를 단일 소스로 따른다.
 
 ```yaml
 ---
@@ -24,7 +24,7 @@ tags: []
 작성 규칙:
 
 - `date`: 대상 업무 기록 일자로 `YYYY-MM-DD`를 교체한다. 해당 일자의 로그에 고정하며 ISO 형식을 사용한다.
-- `type`: 문서 종류를 제한적으로 식별한다. 허용값은 `daily-work-log`, `decision-record`, `trouble-shooting`, `learning-note` 네 가지만 사용한다. 이 스킬이 작성하는 일일 업무 기록에서는 `daily-work-log`를 사용하며, daily 템플릿에서는 이 값을 바꾸지 않는다. 일일 업무 기록을 모아보거나 필터링할 때는 `tags`가 아니라 `type: daily-work-log`를 기준으로 한다.
+- `type`: 이 스킬의 daily 템플릿에서는 항상 `daily-work-log`를 사용하며 값을 바꾸지 않는다.
 - `summary`: 로그 내용이 정해진 뒤 한 문장의 한글 요약을 작성한다. 검색하기 쉽고, 사실 기반이며, 짧게 쓴다. 자연스러운 경우 영어 기술 용어를 허용한다.
 - `tags`: 검색 키워드로 사용한다. 템플릿이나 초기 초안에는 `tags: []`를 둘 수 있지만, 최종 저장본에서는 문서 작성을 완료한 뒤 "나중에 이 문서를 검색한다면 어떤 키워드로 찾을까?"를 기준으로 에이전트가 판단해 충분히 작성한다. 태그 값은 고정 목록으로 제한하지 않으며, `daily-work-log`를 의무적으로 넣지 않는다.
 
@@ -45,18 +45,13 @@ frontmatter 바로 아래에는 `# YYYY-MM-DD 업무 기록` 제목을 둔다.
 
 각 `###` 항목은 요약이 중심이다. `###` 제목 바로 아래에 `요약:`을 **필수로** 두고, 그 아래에 `- 구분:`과 참조 목록(`코드 경로`, `관련 파일`, `관련 링크`)을 필요한 것만 둔다. 관련 없는 슬롯은 삭제해도 된다. 맥락, 진행/확인, 결론, 남은 일 같은 상세 소제목은 필수가 아니며 고정 슬롯으로 넣지 않는다.
 
-참조를 모으는 목록은 2-depth list까지 허용하며, 표기는 다음 규칙을 따른다.
-
-- git repo로 관리되는 소스코드는 full path 대신 repo 이름으로 짧게: 코드 경로는 `` `repo-name` git repository ``, 파일은 `` `repo-name` `FileName.java` ``
-- 로컬에만 있어 경로 없이는 다시 찾을 수 없는 파일만 절대 경로(full path)로 쓴다
-- 인터넷 링크는 `링크 명(요약): URL` 형태로 쓴다
-- Claude/Codex 세션 파일 경로는 캐시성 파일이므로 최종 문서에 넣지 않는다
+참조를 모으는 목록은 2-depth list까지 허용한다. 상세 표기 규칙은 SKILL.md의 "참조 표기 규칙"을 따른다.
 
 ```markdown
 - 코드 경로
-  - `payment-api` git repository
+  - `repo-name` git repository
 - 관련 파일
-  - `payment-api` `PaymentService.java`
+  - `repo-name` `ExampleService.java`
   - /Users/me/notes/_inbox/payment-plan.md
 - 관련 링크
   - 링크 명(요약): http://some-link.com

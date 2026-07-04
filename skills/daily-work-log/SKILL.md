@@ -1,9 +1,32 @@
 ---
 name: daily-work-log
-description: 개인 daily work log 템플릿을 만들거나, 직군과 무관하게 하루 업무 기록 Markdown을 작성·준비할 때 사용한다. 트리거 - "daily work log", "오늘 작업 기록", "퇴근 전 회고", "업무 일지 템플릿", "daily-work-log template".
+description: Codex/Claude 세션 로그와 선택적 KB 기록을 마이닝해 개인 daily work log Markdown을 작성·준비하거나 템플릿을 만들 때 사용한다. 트리거 - "daily work log", "오늘 한 일 정리", "어제 한 일 정리", "오늘 작업 기록", "퇴근 전 회고", "업무 일지 템플릿", "daily-work-log template".
 ---
 
 # Daily Work Log
+
+## 워크플로우 개요
+
+1. 템플릿 파일 `~/.daily-work-log/daily-work-log-template.md`가 있는지 확인한다.
+2. 대상 날짜를 결정한다. 기본값은 시스템 로컬 타임존 기준 오늘이며, 사용자가 "어제"나 특정 날짜를 말하면 그 날짜를 사용한다.
+3. Codex/Claude 세션과 선택적 KB 기록에서 1차 후보 JSON을 수집한다.
+4. `numbered-candidates.json`을 만들어 사용자에게 보여줄 번호와 그룹을 확정한다.
+5. 사용자가 포함할 후보 번호를 선택한다.
+6. 선택 후보만 기준으로 `second-pass-digest.json`을 만든다.
+7. `final-info.json` skeleton을 만든다.
+8. LLM이 digest와 필요한 최소 근거를 확인해 skeleton의 빈 슬롯을 보강한다.
+9. 사용자에게 최종 요약과 저장 위치를 확인한다.
+10. 승인된 로그 루트 아래 `YYYY/MM/YYYY-MM-DD.md`로 최종 Markdown을 저장한다.
+
+## 대상 날짜 규칙
+
+- 사용자가 날짜를 말하지 않으면 시스템 로컬 타임존 기준 오늘을 대상 날짜로 삼는다.
+- "어제", "지난 금요일", `2026-07-02`처럼 날짜를 지정하면 그 날짜를 대상 날짜로 삼는다.
+- 세션·KB log 타임스탬프는 로컬 타임존으로 변환한 뒤 대상 날짜와 비교한다. Codex 세션은 UTC 저장 디렉터리 경계를 고려해 대상 날짜의 전날, 당일, 다음날 디렉터리를 함께 검사한다.
+
+## 스크립트 실행 기준
+
+스크립트 예시는 항상 스킬 하네스가 제공하는 `Base directory for this skill` 값을 `<skill-base-dir>`로 두고 실행한다. 특정 프로젝트 CWD나 이 저장소 상대 경로를 가정하지 않는다.
 
 ## 템플릿 위치
 
@@ -50,8 +73,8 @@ KB가 설정되어 있으면 같은 1차 수집 단계에서 KB 후보도 선택
 선택 이후 기본 흐름:
 
 ```bash
-python3 skills/daily-work-log/scripts/build_second_pass_digest.py --date YYYY-MM-DD --selection 4,5,6
-python3 skills/daily-work-log/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
+python3 <skill-base-dir>/scripts/build_second_pass_digest.py --date YYYY-MM-DD --selection 4,5,6
+python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
 ```
 
 `second-pass-digest.json`은 선택 번호가 가리키는 work unit, session file, KB 문서, 관련 경로만 압축한 중간 자료다. `final-info.json`은 이 skeleton을 LLM이 검토하고 보강해서 완성한다. 스크립트 출력은 확정 문장이 아니라 토큰 절약용 구조화 근거이며, 최종 작성 전에는 LLM이 사실/추정/민감정보를 다시 확인한다.
@@ -109,19 +132,19 @@ frontmatter 바로 아래에는 `# YYYY-MM-DD 업무 기록` 제목을 둔다.
 맥락, 진행/확인, 판단/배운 점, 결론, 남은 일 같은 상세 소제목은 필수가 아니며 `###` 항목 안에 고정 슬롯으로 넣지 않는다. 상세 내용이 필요하면 초안 작성 중에는 `<!-- 이 아래는 자유 형식 -->` 마커 아래에 작성한다.
 
 ```markdown
-### Config Server / Spring profile 구조 조사
+### API 응답 정책 정리
 
 요약:
-- `metatrip-api`가 Spring Cloud Config Server와 Spring profile로 설정을 로딩하는 구조를 조사하고 개념 문서화 관점으로 정리했다.
+- `order-api`의 응답 정책과 예외 흐름을 확인하고 일지에 남길 수준으로 정리했다.
 
 - 구분: 분석
 - 코드 경로
-  - `metatrip-api` git repository
+  - `order-api` git repository
 - 관련 파일
-  - `metatrip-api` `application.yml`, `RedisConfigurer.java`
-  - /Users/hsryuuu/dev/personal/example-project/_inbox/aws-secrets-manager-config-plan.md
+  - `order-api` `OrderController.java`, `ErrorResponse.java`
+  - /Users/hsryuuu/dev/personal/example-project/_inbox/api-response-plan.md
 - 관련 링크
-  - Spring Cloud Config 공식 문서: https://docs.spring.io/spring-cloud-config/
+  - API design note(응답 정책 참고): https://example.com/api-design
 ```
 
 템플릿 맨 아래에는 반드시 아래 주석 마커를 둔다. 이 마커는 템플릿/초안 작성 단계에서 요약 영역과 자유 형식 상세 영역을 구분하기 위한 작업용 경계다. 마커 위쪽 `###` 항목들은 최대한 요약으로 유지하고, 각 항목의 상세 내용(맥락, 진행 과정, 판단 근거, 배운 점, 남은 일 등)은 에이전트가 이 마커 아래에 자유 형식으로 작성한다. 사용자가 그날의 맥락에 맞춰 직접 덧붙이는 메모도 이 아래에 둔다. 단, 최종 Markdown 저장본에서는 `<!-- 이 아래는 자유 형식 -->` 주석 라인을 제거하고, 그 아래에 작성한 상세 내용만 일반 본문으로 남긴다.
@@ -156,10 +179,19 @@ Claude/Codex 세션 파일(`~/.claude/projects/...`, `~/.codex/sessions/...`)은
 
 경로 해석 규칙:
 
+- 사용자가 이번 대화에서 로그 루트를 명시하면 그 경로를 사용하고 `~/.daily-work-log/config.json`의 `log_root`에 저장한다.
+- 사용자가 경로를 명시하지 않았고 `~/.daily-work-log/config.json`에 `log_root`가 있으면 그 값을 재사용한다. 이때 재사용한 경로를 한 줄로 알린다.
+- 사용자가 경로를 명시하지 않았고 config도 없으면 최종 Markdown을 쓰기 전에 로그 루트를 질문하고, 확정된 뒤 `config.json`에 저장한다.
 - 사용자가 `/Users/.../work-log 여기로 해줘`, `/Users/.../work-log에 저장해줘`처럼 특정 저장 폴더를 지정하면 그 폴더를 로그 루트로 본다. 예: `/Users/hsryuuu/dev/personal/work-log/2026/07/2026-07-02.md`
 - 사용자가 `/Users/.../personal 이 아래에 만들어줘`처럼 상위 폴더만 주고 그 아래에 만들라고 하면 `<지정 폴더>/daily-work-log`를 로그 루트로 만든다. 예: `/Users/hsryuuu/dev/personal/daily-work-log/2026/07/2026-07-02.md`
 - 사용자의 표현만으로 "지정 경로 자체가 로그 루트인지"와 "`daily-work-log/`를 새로 만들 상위 폴더인지"가 모호하면 최종 Markdown을 쓰기 전에 반드시 한 문장으로 확인 질문을 한다.
 - 사용자가 명시한 저장 폴더 뒤에 `daily-work-log/`를 임의로 한 번 더 붙이지 않는다.
+
+config 파일 스키마:
+
+```json
+{"log_root": "/absolute/path"}
+```
 
 도구 설정, low-level JSON, cache, template 파일은 `~/.daily-work-log/` 아래에 둔다. 최종 Markdown 로그만 위 규칙에 따라 사용자가 지정한 로그 루트 아래에 둔다.
 
@@ -168,3 +200,4 @@ Claude/Codex 세션 파일(`~/.claude/projects/...`, `~/.codex/sessions/...`)은
 - 인증 정보, 원본 private log, 고객 식별자, 회사 소스코드를 업무 기록에 그대로 복사하지 않는다.
 - 근거 자료는 사용자의 업무 기록 언어로 요약한다.
 - 현재 workspace 밖에 파일을 생성하거나 덮어쓸 때는 먼저 사용자 승인을 받는다.
+- 예외: 이 스킬의 중간 산출물, cache, template, `config.json`은 `~/.daily-work-log/` 아래 쓰기가 사전 승인된 것으로 본다. 최종 Markdown 로그는 위 출력 위치 규칙에 따라 로그 루트가 확정된 뒤에만 쓴다.
