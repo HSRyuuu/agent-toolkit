@@ -187,6 +187,38 @@ def case_index_coverage_exact_match() -> bool:
     )
 
 
+def case_archived_not_in_index_has_no_coverage_warn() -> bool:
+    root = new_kb()
+    write_doc(root, "alpha.md", title="Alpha")
+    write_doc(
+        root,
+        "_archived/old.md",
+        title="Old",
+        extra_frontmatter="agent_edit_mode: read_only\n",
+    )
+    write_index(root, ["alpha.md"])
+    result = run_lint(root)
+    return check(
+        "archived not in index has no coverage warn",
+        result.returncode == 0 and "[index-missing-entry] _archived/old.md" not in result.stdout,
+        f"exit={result.returncode}",
+    )
+
+
+def case_absolute_path_link_warns() -> bool:
+    root = new_kb()
+    write_doc(root, "alpha.md", title="Alpha", body="[abs](/etc/foo.md)")
+    write_index(root, ["alpha.md"])
+    result = run_lint(root)
+    return check(
+        "absolute path link warns",
+        result.returncode == 1
+        and "[absolute-path-link]" in result.stdout
+        and "[broken-link]" not in result.stdout,
+        f"exit={result.returncode}",
+    )
+
+
 def case_password_placeholders_not_detected() -> bool:
     root = new_kb()
     body = "\n".join(
@@ -239,6 +271,8 @@ def main() -> int:
         case_percent_encoded_missing_link_reports,
         case_nfd_filename_matches_nfc_link,
         case_index_coverage_exact_match,
+        case_archived_not_in_index_has_no_coverage_warn,
+        case_absolute_path_link_warns,
         case_password_placeholders_not_detected,
         case_password_values_detected,
     ]

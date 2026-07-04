@@ -27,6 +27,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import unquote
 
+# Import contract: see kb-manage/references/conventions.md (Script Paths).
 SEARCH_SCRIPTS = Path(__file__).resolve().parents[2] / "kb-search" / "scripts"
 sys.path.insert(0, str(SEARCH_SCRIPTS))
 
@@ -124,6 +125,18 @@ def normalize_link_target(target: str, allowed_exts: tuple[str, ...]) -> str | N
     return path_part
 
 
+def absolute_link_finding(relpath: str, lineno: int, path_part: str) -> Finding | None:
+    if not path_part.startswith("/"):
+        return None
+    return Finding(
+        "warn",
+        "absolute-path-link",
+        relpath,
+        lineno,
+        f"absolute path link is not portable: {path_part}",
+    )
+
+
 def existing_path(base: Path, path_part: str) -> Path | None:
     direct = (base / path_part).resolve()
     if direct.exists():
@@ -166,6 +179,10 @@ def index_link_targets(root: Path, text: str) -> tuple[set[str], list[Finding]]:
             path_part = normalize_link_target(raw_target, (".md", ".markdown", ".jsonl"))
             if path_part is None:
                 continue
+            absolute = absolute_link_finding("index.md", lineno, path_part)
+            if absolute is not None:
+                findings.append(absolute)
+                continue
             found = existing_path(root, path_part)
             if found is None:
                 findings.append(Finding("error", "index-broken-link", "index.md", lineno, f"missing target: {path_part}"))
@@ -184,6 +201,10 @@ def check_links(root: Path, doc: KbDoc) -> list[Finding]:
         for raw_target in LINK_RE.findall(line):
             path_part = normalize_link_target(raw_target, (".md", ".markdown"))
             if path_part is None:
+                continue
+            absolute = absolute_link_finding(doc.relpath, lineno, path_part)
+            if absolute is not None:
+                out.append(absolute)
                 continue
             if existing_path(base, path_part) is None:
                 out.append(Finding("error", "broken-link", doc.relpath, lineno, f"link target missing: {path_part}"))
@@ -257,7 +278,7 @@ def collect(root: Path) -> list[Finding]:
         indexed, _ = index_link_targets(root, index_text)
         for doc in docs:
             top = doc.relpath.split("/", 1)[0]
-            if top in {"_inbox"} or doc.path.name.lower() in {"index.md", "readme.md", "agents.md", "claude.md"}:
+            if top in {"_inbox", "_archived"} or doc.path.name.lower() in {"index.md", "readme.md", "agents.md", "claude.md"}:
                 continue
             if unicodedata.normalize("NFC", doc.relpath) not in indexed:
                 findings.append(Finding("warn", "index-missing-entry", doc.relpath, None, "not listed in index.md"))
