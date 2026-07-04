@@ -22,7 +22,7 @@
 
 `kb-candidates.json`은 optional이다. KB root가 설정되어 있지 않거나, KB를 찾을 수 없거나, 해당 날짜 후보가 없으면 파일을 만들지 않고 사용자에게도 언급하지 않는다.
 
-이 디렉터리는 도구 상태와 low-level evidence 보관 위치다. 최종 Markdown 업무 기록은 사용자의 journal root 아래 `daily-work-log/YYYY/MM/YYYY-MM-DD.md`로 작성한다. 예를 들어 journal root가 `~/personal`이면 최종 경로는 `~/personal/daily-work-log/2026/07/2026-07-02.md`이다.
+이 디렉터리는 도구 상태와 low-level evidence 보관 위치다. 최종 Markdown 업무 기록은 사용자가 지정한 로그 루트 아래 `YYYY/MM/YYYY-MM-DD.md`로 작성한다. 사용자가 `/Users/.../work-log 여기로 해줘`처럼 특정 저장 폴더를 지정하면 `/Users/.../work-log/2026/07/2026-07-02.md`가 된다. 사용자가 `/Users/.../personal 이 아래에 만들어줘`처럼 상위 폴더만 지정하면 `/Users/.../personal/daily-work-log/2026/07/2026-07-02.md`가 된다. 두 해석이 모호하면 최종 Markdown을 쓰기 전에 사용자에게 확인한다.
 
 ## Codex 1차 수집
 

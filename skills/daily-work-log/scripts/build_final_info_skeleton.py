@@ -212,7 +212,13 @@ def build_final_info(digest: dict[str, Any], digest_path: Path | None = None) ->
         "selected_candidates": digest.get("selected_candidates") or [],
         "selected_items": selected_items,
         "final_markdown_plan": {
-            "target_path_pattern": "<journal-root>/daily-work-log/YYYY/MM/YYYY-MM-DD.md",
+            "target_path_pattern": "<log-root>/YYYY/MM/YYYY-MM-DD.md",
+            "path_resolution_guidance": [
+                "사용자가 특정 저장 폴더를 '여기로' 지정하면 그 폴더를 log-root로 보고 바로 YYYY/MM/YYYY-MM-DD.md를 만든다.",
+                "사용자가 상위 폴더를 주고 '이 아래에 만들어줘'라고 하면 <지정 폴더>/daily-work-log를 log-root로 만든다.",
+                "두 해석이 모호하면 최종 Markdown을 쓰기 전에 사용자에게 확인한다.",
+                "사용자가 명시한 저장 폴더 뒤에 daily-work-log/를 임의로 한 번 더 붙이지 않는다.",
+            ],
             "frontmatter_required": {
                 "date": digest.get("date"),
                 "type": "daily-work-log",

@@ -148,19 +148,20 @@ Claude/Codex 세션 파일(`~/.claude/projects/...`, `~/.codex/sessions/...`)은
 
 ## 출력 위치
 
-사용자가 설정한 journal root를 사용한다. journal root는 최종 daily Markdown을 직접 넣는 폴더가 아니라, 그 아래에 `daily-work-log/` 폴더를 만들 상위 저장소다. 예를 들어 사용자가 `~/personal`을 journal root로 지정하면 최종 로그는 `~/personal/daily-work-log/` 아래에 저장한다.
+최종 Markdown은 사용자가 지정한 **로그 루트** 아래에 `YYYY/MM/YYYY-MM-DD.md` 형태로 저장한다. 로그 루트는 연도 폴더(`2026/`, `2027/` 등)가 바로 생기는 폴더다.
 
 ```text
-<journal-root>/daily-work-log/
+<log-root>/YYYY/MM/YYYY-MM-DD.md
 ```
 
-기본 일일 기록 경로:
+경로 해석 규칙:
 
-```text
-<journal-root>/daily-work-log/YYYY/MM/YYYY-MM-DD.md
-```
+- 사용자가 `/Users/.../work-log 여기로 해줘`, `/Users/.../work-log에 저장해줘`처럼 특정 저장 폴더를 지정하면 그 폴더를 로그 루트로 본다. 예: `/Users/hsryuuu/dev/personal/work-log/2026/07/2026-07-02.md`
+- 사용자가 `/Users/.../personal 이 아래에 만들어줘`처럼 상위 폴더만 주고 그 아래에 만들라고 하면 `<지정 폴더>/daily-work-log`를 로그 루트로 만든다. 예: `/Users/hsryuuu/dev/personal/daily-work-log/2026/07/2026-07-02.md`
+- 사용자의 표현만으로 "지정 경로 자체가 로그 루트인지"와 "`daily-work-log/`를 새로 만들 상위 폴더인지"가 모호하면 최종 Markdown을 쓰기 전에 반드시 한 문장으로 확인 질문을 한다.
+- 사용자가 명시한 저장 폴더 뒤에 `daily-work-log/`를 임의로 한 번 더 붙이지 않는다.
 
-도구 설정, low-level JSON, cache, template 파일은 `~/.daily-work-log/` 아래에 둔다. 최종 Markdown 로그는 사용자의 journal root 아래에 둔다.
+도구 설정, low-level JSON, cache, template 파일은 `~/.daily-work-log/` 아래에 둔다. 최종 Markdown 로그만 위 규칙에 따라 사용자가 지정한 로그 루트 아래에 둔다.
 
 ## 안전 규칙
 
