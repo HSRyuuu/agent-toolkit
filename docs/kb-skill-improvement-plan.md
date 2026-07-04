@@ -4,6 +4,16 @@
 >
 > 목표 대비 평가 기준: "Karpathy LLM wiki에서 영감만 받고, **사람이 지속적으로 관리**하면서 **사람이 읽기 쉽고**, **검색 가능한** 구조"
 
+## 구현 상태 (2026-07-04)
+
+이 계획의 P0~P2 전 항목을 구현 완료했다. 요약:
+
+- **P0** — guard의 아카이브/신규 read_only 오탐 수정(baseline 모드 기준 판정 + 테스트), append_only의 `updated` lint 예외, 불확실성 마커 한국어 4종 통일, kb-search log.jsonl 문구 수정, kb-manage 배치 오류 이동.
+- **P1** — `kb-manage/references/conventions.md`(단일 원본) 신설 후 4개 스킬 orientation 재지정 및 중복 블록 삭제, `${CLAUDE_PLUGIN_ROOT}` 경로 전환, 구모델 부정문 Migration 절로 일원화, 4개 description 재작성 + 카탈로그 동기화.
+- **P2** — kb-write fast/full path 분기, `kb_build_index.py`(마커 기반 index 재생성, 사람 서문 보존, idempotent), `kb_lint.py`(결정적 검사 + 보안 2단계 패턴), 다중 KB config(`{kbs, default}` + cwd 자동 선택), guard `--files` 스코프, log.jsonl opt-in 전환.
+
+검증: guard 테스트 7/7 통과, 배포 템플릿 기반 신규 KB가 `kb_lint.py` 0건, index 생성 idempotency 확인. 아래는 원본 분석이며 배경 참고용으로 보존한다.
+
 ## 1. 총평
 
 설계 방향 자체는 목표와 잘 맞는다. maintained document를 유일한 진실 표면으로 삼고, `_raw/`·canonical·daily-log 스키마를 거부한 것은 "사람이 관리 가능한 KB"라는 목표에 정확히 부합한다. `agent_edit_mode` 3단계와 git 기반 guard는 다른 KB 스킬에서 보기 힘든 독창적이고 실용적인 장치다. 보안 게이트, 불확실성 마커, Obsidian을 선택 의존성으로 격리한 것도 잘 되어 있다.
