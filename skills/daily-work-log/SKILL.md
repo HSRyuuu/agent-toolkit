@@ -1,9 +1,14 @@
 ---
 name: daily-work-log
-description: Codex/Claude 세션 로그와 선택적 KB 기록을 마이닝해 개인 daily work log Markdown을 작성·준비하거나 템플릿을 만들 때 사용한다. 트리거 - "daily work log", "오늘 한 일 정리", "어제 한 일 정리", "오늘 작업 기록", "퇴근 전 회고", "업무 일지 템플릿", "daily-work-log template".
+description: Codex/Claude 세션 로그와 선택적 KB 기록을 마이닝해 개인 daily work log Markdown을 작성·준비하거나 템플릿을 만들고, 이미 저장된 업무 기록을 날짜·태그·키워드로 검색할 때 사용한다. 트리거 - "daily work log", "오늘 한 일 정리", "어제 한 일 정리", "오늘 작업 기록", "퇴근 전 회고", "업무 일지 템플릿", "daily-work-log template", "업무 기록 검색", "지난주에 뭐 했지", "그때 그 작업 언제 했더라", "work log 찾아줘".
 ---
 
 # Daily Work Log
+
+이 스킬은 두 가지 모드를 제공한다.
+
+- **작성 모드**: 세션 로그/KB를 마이닝해 그날의 업무 기록 Markdown을 만든다. 아래 "워크플로우 개요"를 따른다.
+- **검색 모드**: 이미 저장된 업무 기록을 날짜·태그·키워드로 찾는다. "지난주에 뭐 했지", "그 작업 언제 했더라", "kafka 관련 기록 찾아줘"처럼 과거 기록을 묻는 요청이면 작성 워크플로우로 들어가지 말고 아래 "저장된 로그 검색" 섹션을 따른다.
 
 ## 워크플로우 개요
 
@@ -194,6 +199,30 @@ config 파일 스키마:
 ```
 
 도구 설정, low-level JSON, cache, template 파일은 `~/.daily-work-log/` 아래에 둔다. 최종 Markdown 로그만 위 규칙에 따라 사용자가 지정한 로그 루트 아래에 둔다.
+
+## 저장된 로그 검색
+
+로그 루트 아래 최종 Markdown을 검색할 때는 파일을 하나씩 직접 읽지 말고 먼저 `scripts/search_work_logs.py`로 후보를 좁힌다. 이 스크립트는 read-only이며, frontmatter(`date`, `type`, `summary`, `tags`)와 본문 키워드를 기준으로 필터링한다.
+
+```bash
+# 날짜 범위로 찾기 (지난주에 뭐 했지)
+python3 <skill-base-dir>/scripts/search_work_logs.py --since 2026-06-23 --until 2026-06-27
+
+# 태그 + 키워드로 찾기 (kafka 작업 언제 했더라)
+python3 <skill-base-dir>/scripts/search_work_logs.py --tag kafka --query "consumer lag"
+
+# 특정 날짜, JSON 출력
+python3 <skill-base-dir>/scripts/search_work_logs.py --date 2026-07-01 --json
+```
+
+동작 규칙:
+
+- 로그 루트는 `--log-root`를 지정하지 않으면 `~/.daily-work-log/config.json`의 `log_root`를 사용한다. config에도 없으면 스크립트가 에러를 내므로, 사용자에게 로그 루트를 물어본 뒤 `--log-root`로 전달한다.
+- `--tag`와 `--query`는 반복 지정할 수 있고 AND로 결합된다. `--query`는 `summary`, `tags`, 본문을 함께 검색하며, 매칭된 본문 라인을 최대 3개까지 스니펫으로 보여준다.
+- 결과는 날짜 내림차순이며 기본 20건으로 제한된다(`--limit 0`이면 전체).
+- 사용자가 말한 키워드로 결과가 없으면 동의어·영문/한글 표기 변형으로 1~2회 재시도한 뒤, 그래도 없으면 "기록 없음"을 그대로 말한다.
+- 스크립트 결과에서 유력한 파일만 골라 Read로 열어 답한다. 검색 중에는 어떤 로그 파일도 수정하지 않는다.
+- 답변에는 근거가 된 로그 파일 경로를 함께 남긴다.
 
 ## 안전 규칙
 
