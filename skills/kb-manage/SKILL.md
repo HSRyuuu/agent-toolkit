@@ -192,8 +192,19 @@ logs, or `kind: canonical`:
 
 `index.md` helps humans and LLMs choose documents quickly. See conventions for
 the shape. Keep it content-oriented, not chronological, and do not include every
-heading or long excerpts. When a build script exists, prefer regenerating the
-Documents table from frontmatter (see `kb-lint` fix modes / `scripts/`).
+heading or long excerpts.
+
+Prefer regenerating the Documents catalog from frontmatter instead of editing it
+by hand. The build script preserves the human-written preamble (everything before
+the `<!-- kb:documents:start -->` marker) and rewrites only the generated tables:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/kb_build_index.py" /path/to/kb            # preview
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/kb_build_index.py" /path/to/kb --write    # apply
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/kb_build_index.py" /path/to/kb --check    # drift check
+```
+
+It needs `python-frontmatter` (see `../kb-search/scripts/requirements.txt`).
 
 ## Log Maintenance
 

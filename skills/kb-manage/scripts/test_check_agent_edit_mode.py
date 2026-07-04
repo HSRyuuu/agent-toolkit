@@ -37,8 +37,8 @@ def new_repo() -> Path:
     return root
 
 
-def guard(root: Path) -> int:
-    return sh(["python3", str(SCRIPT)], root).returncode
+def guard(root: Path, *extra: str) -> int:
+    return sh(["python3", str(SCRIPT), *extra], root).returncode
 
 
 def check(name: str, got: int, want: int) -> bool:
@@ -91,6 +91,17 @@ def main() -> int:
     git(["commit", "-qm", "init"], root)
     (root / "acc.md").write_text(doc("append_only", body="line-a"), encoding="utf-8")
     results.append(check("delete from append_only", guard(root), 1))
+
+    # 6. --files scopes the check: a read_only violation outside the scope is ignored.
+    root = new_repo()
+    (root / "locked.md").write_text(doc("read_only"), encoding="utf-8")
+    (root / "notes.md").write_text(doc("editable"), encoding="utf-8")
+    git(["add", "."], root)
+    git(["commit", "-qm", "init"], root)
+    (root / "locked.md").write_text(doc("read_only", body="tampered"), encoding="utf-8")
+    (root / "notes.md").write_text(doc("editable", body="new note"), encoding="utf-8")
+    results.append(check("--files ignores out-of-scope read_only", guard(root, "--files", "notes.md"), 0))
+    results.append(check("--files catches in-scope read_only", guard(root, "--files", "locked.md"), 1))
 
     print(f"\n{sum(results)}/{len(results)} passed")
     return 0 if all(results) else 1

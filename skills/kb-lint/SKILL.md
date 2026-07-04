@@ -16,17 +16,42 @@ for KB root resolution, frontmatter fields, uncertainty markers, `agent_edit_mod
 
 ## Default Mode
 
-Read-only report. Do not edit files unless the user explicitly asks for a fix mode and approves the proposed changes.
+Read-only report. Do not edit files unless the user explicitly asks for a fix and approves the change.
 
 Before checking, resolve the KB root using the conventions Root Resolution rules and read root guidance files from that resolved root, even if the current shell directory is elsewhere.
 
-Allowed fix modes:
+Run the two passes in order:
 
-- `--fix-index`: update `index.md` entries from current documents.
-- `--fix-frontmatter FILE`: propose and apply frontmatter repairs for one file after approval.
-- `--boost-links FILE`: add a small related-documents section after approval.
+1. **Deterministic pass** — run `kb_lint.py` (see Deterministic Checks). It
+   decides everything a machine can decide reliably and is cheap to re-run.
+2. **Judgement pass** — read the documents `kb_lint.py` flagged, plus a sample of
+   the rest, and apply the LLM-only checks (Content Health, duplicate topics,
+   conflicting claims, split candidates, weak summaries, missing aliases).
+
+Fixes are separate and only on explicit request:
+
+- Index rebuild: run `kb_build_index.py --write` (regenerates the Documents
+  catalog from frontmatter; preserves the human-written preamble).
+- Frontmatter repair for one file: propose the change, then apply after approval.
+- Related-document links: add a small focused section after approval.
 
 Never auto-fix sensitive content. Report it and ask.
+
+## Deterministic Checks
+
+`kb_lint.py` reports frontmatter completeness, invalid `agent_edit_mode`, date
+format, title/H1 mismatch, `_archived/` depth and read_only rules, `index.md`
+link targets and coverage, broken relative Markdown links, `log.jsonl` JSON
+validity, and high-confidence secret candidates.
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-lint/scripts/kb_lint.py" /path/to/kb
+```
+
+Exit `0` clean, `1` findings present, `2` high-confidence secret candidates
+present. It needs `python-frontmatter` (see `../kb-search/scripts/requirements.txt`).
+Treat its output as the factual base for the report, then add the judgement-only
+findings below.
 
 ## Checks
 
@@ -78,14 +103,23 @@ Missing related-document links are suggestions, not hard failures. Prefer focuse
 
 ### Security Hygiene
 
-Flag candidates without repeating the raw value:
+Flag candidates without repeating the raw value, in two tiers so the report does
+not drown in false positives:
 
-- passwords, tokens, API keys, private keys, credentials
+**High-confidence (auto-flagged by `kb_lint.py`)** — value-shaped matches:
+AWS access key IDs, private-key blocks, GitHub/Slack tokens, JWTs, bearer tokens,
+`password: <value>` assignments. These are near-certain and lead the report.
+
+**Contextual (LLM judgement)** — keyword-adjacent candidates the linter cannot
+confirm from shape alone, reported only after you judge them likely sensitive:
+
 - cookies, sessions, OAuth/JWT, auth headers
 - internal IPs, hosts, DB URLs, VPN/SSH/RDP details
 - production/staging endpoints and sensitive access procedures
 - personal data, account identifiers, customer/partner identifiers
 - unresolved vulnerability details or exploit-like payloads
+
+The grep below over-matches on purpose; use it as a candidate list, not a verdict.
 
 ## Suggested Commands
 

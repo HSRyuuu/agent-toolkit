@@ -58,19 +58,30 @@ document body, never in frontmatter.
 
 Resolve the KB root from the first matching source:
 
-1. User-provided absolute path.
-2. `~/.config/kb/kb-config.json`, if it contains a valid absolute KB path.
+1. A user-provided absolute path, or a registered KB name.
+2. The current working directory, only when it is inside a **registered** KB root.
+3. The configured `default` KB.
+4. The single registered KB, when exactly one is configured.
 
-If neither resolves, ask the user for an absolute KB path. Do not infer a KB
-root from the current working directory, parent directories, `index.md`,
-`log.jsonl`, `.obsidian/`, Markdown frontmatter, or repository guidance files.
+If none resolves (nothing configured, or several KBs registered with no default
+and cwd outside all of them), ask the user which KB to use. Never infer a KB root
+from an *unregistered* directory, parent directories, `index.md`, `log.jsonl`,
+`.obsidian/`, frontmatter, or guidance files. Step 2 only ever selects a root the
+user explicitly registered.
 
-The config file is a UTF-8 JSON object. `path` is the absolute KB root; `kb_root`
-and `root` are accepted aliases.
+The config file `~/.config/kb/kb-config.json` is a UTF-8 JSON object. Single-KB
+shape (back-compatible; `kb_root` and `root` are aliases for `path`):
+
+```json
+{ "path": "/absolute/path/to/kb" }
+```
+
+Multiple-KB shape:
 
 ```json
 {
-  "path": "/absolute/path/to/kb"
+  "kbs": { "personal": "/abs/personal", "work": "/abs/work" },
+  "default": "personal"
 }
 ```
 
@@ -79,10 +90,11 @@ For the fastest deterministic check:
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/resolve_kb_root.py"
 python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/resolve_kb_root.py" /absolute/path/to/kb
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/resolve_kb_root.py" work   # by registered name
 ```
 
-The script prints the resolved root on stdout and exits nonzero when no valid
-root is configured.
+The script prints the resolved root on stdout and exits nonzero (with a reason)
+when the root is unresolved or ambiguous.
 
 After resolving the root, always read local guidance from the resolved root
 (not only the current shell directory), in this order: `AGENTS.md`, `CLAUDE.md`,
