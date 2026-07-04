@@ -4,6 +4,10 @@
 .omo/
 .as-usual/
 
+# python
+__pycache__/
+*.pyc
+
 # LazyCodex scoped project-memory files
 AGENTS.md
 !/AGENTS.md

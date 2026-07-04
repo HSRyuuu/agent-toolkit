@@ -85,7 +85,24 @@ def parse_name_status(output: str) -> list[Change]:
     return changes
 
 
-def changed_files(root: Path, base: str, staged: bool) -> list[Change]:
+def normalize_scope(root: Path, files: list[str]) -> set[str] | None:
+    if not files:
+        return None
+    scope: set[str] = set()
+    for raw in files:
+        candidate = Path(raw)
+        if candidate.is_absolute():
+            try:
+                rel = candidate.resolve().relative_to(root)
+            except ValueError:
+                rel = candidate
+            scope.add(rel.as_posix())
+        else:
+            scope.add(candidate.as_posix())
+    return scope
+
+
+def changed_files(root: Path, base: str, staged: bool, scope: set[str] | None) -> list[Change]:
     args = ["diff", "--name-status", "-M"]
     if staged:
         args.append("--cached")
@@ -97,10 +114,15 @@ def changed_files(root: Path, base: str, staged: bool) -> list[Change]:
         for path in untracked.splitlines():
             changes.append(Change(status="??", old_path=None, new_path=path, untracked=True))
 
+    def in_scope(change: Change) -> bool:
+        if scope is None:
+            return True
+        return (change.old_path in scope) or (change.new_path in scope)
+
     return [
         change
         for change in changes
-        if is_markdown(change.old_path) or is_markdown(change.new_path)
+        if (is_markdown(change.old_path) or is_markdown(change.new_path)) and in_scope(change)
     ]
 
 
@@ -172,11 +194,14 @@ def first_missing_old_line(old_text: str | None, new_text: str | None) -> int | 
     return None
 
 
-def evaluate(root: Path, base: str, staged: bool) -> tuple[list[Finding], list[Finding]]:
+def evaluate(
+    root: Path, base: str, staged: bool, scope: set[str] | None
+) -> tuple[list[Finding], list[Finding], list[Finding]]:
     violations: list[Finding] = []
     warnings: list[Finding] = []
+    notes: list[Finding] = []
 
-    for change in changed_files(root, base, staged):
+    for change in changed_files(root, base, staged, scope):
         old_text = read_base_file(root, base, change.old_path)
         new_text = read_new_file(root, change.new_path, staged)
         old_mode = parse_agent_edit_mode(old_text)
@@ -193,8 +218,22 @@ def evaluate(root: Path, base: str, staged: bool) -> tuple[list[Finding], list[F
                     )
                 )
 
-        guarded_modes = ({old_mode, new_mode} - {None}) & GUARDED_MODES
-        if "read_only" in guarded_modes:
+        # Protection is defined by the file's PRIOR (baseline) mode, not its new
+        # mode. Creating a new protected file, or moving an editable file into a
+        # protected mode (for example archiving a document as read_only), is a
+        # legitimate transition, not a change to already-protected content.
+        if old_mode not in GUARDED_MODES:
+            if new_mode in GUARDED_MODES and old_mode != new_mode:
+                notes.append(
+                    Finding(
+                        path=display_path,
+                        mode=str(new_mode),
+                        message="file entered a protected mode; future agent edits to it will be guarded",
+                    )
+                )
+            continue
+
+        if old_mode == "read_only":
             if old_text != new_text or change.old_path != change.new_path:
                 violations.append(
                     Finding(
@@ -205,7 +244,7 @@ def evaluate(root: Path, base: str, staged: bool) -> tuple[list[Finding], list[F
                 )
             continue
 
-        if "append_only" in guarded_modes and not old_content_is_preserved(old_text, new_text):
+        if old_mode == "append_only" and not old_content_is_preserved(old_text, new_text):
             missing_line = first_missing_old_line(old_text, new_text)
             line_hint = f" first non-preserved original line: {missing_line}." if missing_line else ""
             violations.append(
@@ -220,7 +259,7 @@ def evaluate(root: Path, base: str, staged: bool) -> tuple[list[Finding], list[F
                 )
             )
 
-    return violations, warnings
+    return violations, warnings, notes
 
 
 def print_findings(title: str, findings: list[Finding]) -> None:
@@ -238,6 +277,13 @@ def main() -> int:
     )
     parser.add_argument("--base", default="HEAD", help="git commit/ref to compare against (default: HEAD)")
     parser.add_argument("--staged", action="store_true", help="check staged/index changes instead of the worktree")
+    parser.add_argument(
+        "--files",
+        nargs="+",
+        default=[],
+        metavar="PATH",
+        help="limit the check to these files (KB-root-relative or absolute); default checks all changed Markdown",
+    )
     args = parser.parse_args()
 
     cwd = Path.cwd()
@@ -259,8 +305,10 @@ def main() -> int:
         )
         return 2
 
-    violations, warnings = evaluate(root, args.base, args.staged)
+    scope = normalize_scope(root, args.files)
+    violations, warnings, notes = evaluate(root, args.base, args.staged, scope)
     print_findings("Warnings:", warnings)
+    print_findings("Notes:", notes)
 
     if violations:
         print_findings("Agent edit mode violations:", violations)
