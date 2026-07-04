@@ -1,39 +1,67 @@
 ---
 name: kb-write
-description: Use when adding, merging, or reorganizing concrete knowledge in a Markdown Knowledge Base, especially from notes, files, URLs, meetings, onboarding, procedures, decisions, or project context.
+description: Use when the user wants to save, note, file, or organize knowledge into their personal Markdown Knowledge Base (KB) — from notes, files, URLs, meetings, onboarding, procedures, decisions, or project context. Triggers include "kb에 저장/추가/정리해줘", "이거 메모/기록해둬", "지식베이스에 넣어줘". Covers create/merge/append/reorganize/archive. Not for answering questions from the KB (use kb-search) or KB setup/migration (use kb-manage).
 ---
 
 # kb-write
 
 ## Overview
 
-Add knowledge to a Markdown KB as curated source-of-truth documents. The maintained document is the truth surface; raw-source preservation, `_raw/`, canonical/daily-log kinds, and `sources -> wiki -> schema` are not part of this workflow.
+Add knowledge to a Markdown KB as curated source-of-truth documents. The
+maintained document is the truth surface.
 
-**Required orientation:** read and follow `kb-manage` for KB root, identity, repository defaults, frontmatter, `index.md`, `log.jsonl`, and shared conventions.
+**Required orientation:** read
+[`kb-manage/references/conventions.md`](../kb-manage/references/conventions.md)
+for KB root resolution, frontmatter, `agent_edit_mode`, uncertainty markers,
+`index.md` / `log.jsonl`, security principles, and script paths. Read `kb-manage`
+itself for setup, folder structure, and migration.
+
+## Fast Path vs Full Path
+
+Most writes are small. Do not run the full ritual for a one-line note.
+
+- **Fast path** (default): the input is a single topic, contains no
+  security-sensitive candidate, and has an obvious owning document (or clearly
+  needs one new document). Steps: resolve root → read the target document (and
+  `index.md`) → one security scan → write → update `index.md`. Skip the routing
+  table and the washing prompt; apply their spirit inline.
+- **Full path**: use the sections below (Ambiguity Gate, Multi-document Write,
+  Security Gate, Document Washing) when the input spans multiple topics, trips a
+  security candidate, needs large restructuring, or conflicts with existing facts.
 
 ## Core Principles
 
 - Preserve facts, numbers, dates, names, conditions, uncertainty, and user intent.
-- Do not mix confirmed facts with guesses. Mark uncertain items as `확인 필요`, `미정`, `추정`, or `과거 정보`.
-- Do not store secrets, tokens, passwords, private keys, session/cookie values, internal hosts/IPs, sensitive access steps, or unnecessary personal data without explicit user approval.
-- Prefer one focused document per topic, system, procedure, decision, or working context.
-- Update existing documents when the input changes or extends an existing topic.
-- Create new documents when the input is a distinct topic that someone would naturally search for later.
-- Keep the KB readable by humans first; Obsidian links and graph health are secondary.
-- Never create `_raw/` for source preservation. If provenance matters, record a safe `source` value in frontmatter or a short source note in the body.
-- Archive retired documents only by following `kb-manage`: move them to top-level `_archived/` at one depth and set `agent_edit_mode: read_only`.
+- Do not mix confirmed facts with guesses. Use the canonical uncertainty markers
+  (`확인 필요`, `미정`, `추정`, `과거 정보`) from conventions.
+- Do not store secrets, tokens, passwords, private keys, session/cookie values,
+  internal hosts/IPs, sensitive access steps, or unnecessary personal data
+  without explicit user approval (see Security Gate).
+- Prefer one focused document per topic, system, procedure, decision, or working
+  context.
+- Update existing documents when the input changes or extends an existing topic;
+  create a new document when the input is a distinct topic someone would search
+  for later.
+- Keep the KB readable by humans first; Obsidian links and graph health are
+  secondary.
+- If provenance matters, record a safe `source` value in frontmatter or a short
+  body note rather than storing raw source copies.
+- Archive retired documents per `kb-manage`: move to top-level `_archived/` at one
+  depth and set `agent_edit_mode: read_only`.
 
 ## Required First Reads
 
 Before writing:
 
-1. Resolve the KB root using `kb-manage` rules.
-2. If no user-provided absolute path or valid `~/.config/kb/kb-config.json` exists, stop and ask the user for an absolute KB path.
-3. Read root guidance files from the resolved KB root, even if the current shell directory is elsewhere: `AGENTS.md`, `CLAUDE.md`, `.agents/rules/*.md`, or equivalent.
-4. Read `index.md` if present to find existing topics.
-5. Read relevant directory `README.md` files when choosing or using a folder. They describe folder intent, not file inventory.
-6. Read relevant existing documents before deciding create/append/merge.
-7. Check each target document's `agent_edit_mode` before drafting edits.
+1. Resolve the KB root using the conventions Root Resolution rules; if none
+   resolves, stop and ask the user for an absolute KB path.
+2. Read root guidance from the resolved root (`AGENTS.md`, `CLAUDE.md`,
+   `.agents/rules/*.md`), even if the shell directory is elsewhere.
+3. Read `index.md` if present to find existing topics.
+4. Read relevant directory `README.md` files when choosing a folder (intent, not
+   inventory).
+5. Read relevant existing documents before deciding create/append/merge.
+6. Check each target document's `agent_edit_mode` before drafting edits.
 
 If the KB has project-local add/search/security/writing rules, follow those over the generic defaults here.
 
@@ -150,23 +178,25 @@ Completion check:
 
 ## Agent Edit Mode Gate
 
-Follow `kb-manage` for the authoritative `agent_edit_mode` definition.
+Conventions holds the authoritative `agent_edit_mode` definition. As write
+behavior: `read_only` — do not edit; explain it is protected and ask before any
+change. `append_only` — keep original text exactly, add new content around it
+(prefer `>` blockquotes for commentary), never rewrite/delete/reorder or change
+existing frontmatter values. `editable` — normal writing applies.
 
-| Mode | Write behavior |
-|---|---|
-| `read_only` | Do not edit the file at all. If the user asks for a change, explain that the file is protected and ask for explicit approval before changing it. |
-| `append_only` | Keep the original file text exactly intact. You may add new content anywhere: below a relevant heading, between paragraphs, in a new section, or as a Markdown blockquote/comment near the source context. Prefer `>` blockquotes when adding commentary that should sit beside preserved original text. Do not rewrite sentences, delete text, rename headings, reorder sections, change existing frontmatter values, or clean up formatting. |
-| `editable` | Normal KB writing rules apply. Text edits, structure changes, merges, removals, and frontmatter cleanup are allowed when they preserve important facts and meaning. |
+If a target file has no `agent_edit_mode`, use local KB rules; if none, treat it
+as `editable` and add the field during the next meaningful update.
 
-If a target file has no `agent_edit_mode`, use local KB rules. If none exist, treat it as `editable` and add `agent_edit_mode: editable` during the next meaningful update.
-
-In a git-backed KB, after writing and before completion or any git action, run the guard from `kb-manage`:
+In a git-backed KB, after writing and before completion or any git action, run
+the guard, scoped to the files this task touched:
 
 ```bash
-python3 /path/to/agent-toolkit/skills/kb-manage/scripts/check_agent_edit_mode.py
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/check_agent_edit_mode.py" --files path/to/doc.md
 ```
 
-If it reports a `read_only` or `append_only` violation, stop. Tell the user which protected file changed and ask whether the change was intentional. Human edits are allowed, but agent-made protected changes require user confirmation.
+If it reports a `read_only` or `append_only` violation, stop. Name the protected
+file and ask whether the change was intentional. Human edits are allowed; agent
+protected changes require confirmation.
 
 In a non-git KB, the guard cannot compare against tracked history. Respect the field directly and ask before any protected change.
 
@@ -209,23 +239,8 @@ Use when no existing document naturally owns the topic.
 - Follow the target folder's `README.md` when present.
 - Korean business docs: `한글_파일명.md`.
 - English technical terms: `lower-kebab-case.md`.
-- Add YAML frontmatter when the KB uses it.
-- Required frontmatter default:
-
-```yaml
----
-title: "문서 제목"
-summary: "한 문장 요약"
-tags:
-  - "kb"
-aliases:
-  - "검색할 만한 다른 이름"
-created: "YYYY-MM-DD"
-updated: "YYYY-MM-DD"
-source: "user-note"
-agent_edit_mode: editable
----
-```
+- Add YAML frontmatter using the schema in conventions (Frontmatter) when the KB
+  uses it.
 
 ### Merge Into Existing Document
 

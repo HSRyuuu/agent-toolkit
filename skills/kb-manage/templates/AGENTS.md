@@ -2,10 +2,14 @@
 
 This repository is a Markdown knowledge base. Maintained documents are the source of truth.
 
+This file is the local KB rulebook. Where it conflicts with the AgentToolkit KB
+skills' generic conventions, this file wins. Keep it aligned with the skills'
+`conventions.md` unless this KB intentionally diverges.
+
 ## Read First
 
 - Use `index.md` as the document catalog.
-- Use `log.jsonl` as a small work-history pointer for finding files and git history.
+- If `log.jsonl` exists, use it as a small work-history pointer for finding files and git history; a git-backed KB may rely on commit messages instead.
 - If an agent is working from a nested or different directory, it should still resolve this KB root and read this file before changing or answering from the KB.
 - Use the AgentToolkit KB skills when available:
   - `kb-manage` for setup, conventions, migration, and root management.
@@ -25,7 +29,7 @@ This repository is a Markdown knowledge base. Maintained documents are the sourc
   - `read_only`: agents must not edit the file.
   - `append_only`: agents may add new content anywhere, including `>` blockquotes or notes, but must preserve existing text exactly.
   - `editable`: agents may edit text, structure, frontmatter, and remove content when appropriate.
-- In git repositories, run the edit-mode guard before completing Markdown changes: `python3 /path/to/agent-toolkit/skills/kb-manage/scripts/check_agent_edit_mode.py`.
+- In git repositories, run the edit-mode guard before completing Markdown changes: `python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/check_agent_edit_mode.py"` (if `${CLAUDE_PLUGIN_ROOT}` is unset, use the agent-toolkit plugin's `skills/kb-manage/scripts/` path).
 - If the guard reports a protected-file violation, ask whether the change was intentionally made by a human before proceeding.
 
 ## Document Structure
