@@ -3,9 +3,10 @@ name: slack-helper
 description: >
   Use when the user asks to search, read, summarize, or organize Slack messages,
   triage mentions or missed requests, build incident timelines, prepare weekly
-  reports, inspect project history, search by person/channel, monitor keywords,
-  or manage channel context cache. Triggers: "내 멘션 정리", "Slack 검색",
-  "장애 회고", "이번 주 내가 한 일".
+  reports, run a daily review of a specific date, inspect project history,
+  search by person/channel, monitor keywords, or manage channel context cache.
+  Triggers: "내 멘션 정리", "Slack 검색", "장애 회고", "이번 주 내가 한 일",
+  "데일리 리뷰", "그날/어제 슬랙 정리".
 ---
 
 # Slack Helper
@@ -32,6 +33,7 @@ Keep this file as the router. For any real task, read only the routed reference 
 | Mentions triage, missed requests, "내 멘션 정리" | `references/workflows/mentions-triage.md` | `slack_context.py`, `slack_search.py`, `slack_read.py` |
 | Incident/issue timeline, 장애 회고 | `references/workflows/incident-timeline.md` | `slack_search.py`, `slack_read.py`, `slack_context.py` |
 | Weekly report, 업무일지, "이번 주 내가 한 일" | `references/workflows/weekly-report.md` | `slack_context.py`, `slack_search.py`, `slack_read.py` |
+| Daily review, 특정 일자 하루 정리, "데일리 리뷰", "어제/그날 내 슬랙 정리" | `references/workflows/daily-review.md` | `slack_context.py`, `slack_search.py`, `slack_read.py` |
 | Project history, person/channel search, keyword monitoring, other combinations | `references/scripts-reference.md` | compose scripts as needed |
 | Context cache setup or channel summary cache | `references/scripts-reference.md` | `slack_context.py` |
 
