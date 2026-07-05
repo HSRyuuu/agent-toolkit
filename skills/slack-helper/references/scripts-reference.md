@@ -15,7 +15,7 @@ Use this file when a Slack request does not exactly match one of the three workf
 | --- | --- | --- |
 | `slack_setup.py` | OAuth, auth checks, identity setup | `setup-guide`, `init-oauth`, `oauth-start`, `oauth-finish`, `auth-test`, `team-info`, `read-sample`, `set-me`, `resolve-me` |
 | `slack_context.py` | local context cache | `show`, `add-channel`, `remove-channel`, `draft-summaries` |
-| `slack_read.py` | direct reads with bot token | `users`, `channels`, `channel-history`, `thread` |
+| `slack_read.py` | direct reads with bot token | `users`, `channels`, `channel-history [--on YYYY-MM-DD]`, `thread` |
 | `slack_search.py` | search with user token | `search <keywords> [--from ...] [--in ...] [--to-me] [--after ...] [--days ...]` |
 | `slack_common.py` | shared implementation | import-only; do not call as CLI |
 
