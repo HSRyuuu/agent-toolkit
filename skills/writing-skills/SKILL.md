@@ -1,6 +1,6 @@
 ---
 name: writing-skills
-description: Use when creating new skills, editing existing skills, or verifying skills work before deployment
+description: Use when creating, editing, or verifying reusable Codex/Claude skills, SKILL.md files, skill frontmatter, trigger descriptions, or skill deployment readiness. Triggers - "create a skill", "update this skill", "description trigger", "skill testing", "skill quality review". Do NOT use for one-off project docs or conventions that belong in AGENTS.md/CLAUDE.md.
 ---
 
 # Writing Skills
@@ -101,6 +101,7 @@ skills/
 - `description`: Third-person, describes ONLY when to use (NOT what it does)
   - Start with "Use when..." to focus on triggering conditions
   - Include specific symptoms, situations, and contexts
+  - Include trigger utterances and exclusion conditions when they improve discovery
   - **NEVER summarize the skill's process or workflow** (see CSO section for why)
   - Keep under 500 characters if possible
 
@@ -119,7 +120,13 @@ What is this? Core principle in 1-2 sentences.
 [Small inline flowchart IF decision non-obvious]
 
 Bullet list with SYMPTOMS and use cases
-When NOT to use
+
+## When NOT to Use
+Explicit non-triggers and near-misses
+
+## Worked Boundary Examples
+WORKED: "add a 5/min rate-limit" = CLEAR.
+COUNTER: "make auth better" = UNCLEAR.
 
 ## Core Pattern (for techniques/patterns)
 Before/after code comparison
@@ -148,6 +155,18 @@ Concrete results
 **Purpose:** Claude reads description to decide which skills to load for a given task. Make it answer: "Should I read this skill right now?"
 
 **Format:** Start with "Use when..." to focus on triggering conditions
+
+**Three-part trigger formula:**
+
+```text
+[MUST USE for | Use when] <specific trigger situations>
++ Triggers: <phrases users actually say>
++ Do NOT use for <near-miss/exclusion conditions>
+```
+
+Use `MUST USE after <completion point>` for post-task skills that must fire automatically after another workflow finishes, such as review, verification, or deployment checks.
+
+Trigger utterances are not workflow summaries. They are examples of when the skill should be discovered. The workflow still belongs in the skill body.
 
 **CRITICAL: Description = When to Use, NOT What the Skill Does**
 
@@ -259,6 +278,14 @@ You: Searching...
 - Don't repeat what's in cross-referenced skills
 - Don't explain what's obvious from command
 - Don't include multiple examples of same pattern
+
+### Progressive Disclosure
+
+Skills over 200 lines should have a 50-70 line entry point plus `references/` files. The entry point contains invariant rules and routing only.
+
+For skills with major branches, split by branch so the agent reads one relevant file instead of the whole reference set. The entry point should say which file to read for each condition.
+
+For deterministic artifacts such as scaffolds, manifest edits, or state updates, ship a script and instruct agents to run it. The script should be idempotent; rerunning it should produce no-op or deterministic updates.
 
 **Verification:**
 ```bash
@@ -629,6 +656,11 @@ Deploying untested skills = deploying untested code. It's a violation of quality
 - [ ] Common mistakes section
 - [ ] No narrative storytelling
 - [ ] Supporting files only for tools or heavy reference
+- [ ] New or edited sections do not contradict existing sections
+- [ ] Description follows the trigger situation + trigger utterances + exclusion conditions formula where useful
+- [ ] When-to-use sections include paired Do-Not-Use conditions
+- [ ] Judgment-heavy skills include worked boundary examples
+- [ ] Example-heavy skills include a priority-conflict clause
 
 **Deployment:**
 - [ ] Commit skill to git and push to your fork (if configured)
