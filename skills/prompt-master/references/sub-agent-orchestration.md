@@ -97,7 +97,7 @@ Base: architect.md - Strategic Architecture & Debugging Advisor
 
 ```markdown
 - **TASK**: 탐색해야 할 대상
-- **EXPECTED OUTCOME**: 오케스트레이터가 기대하는 반환값
+- **EXPECTED OUTCOME**: 오케스트레이터가 기대하는 반환값. 산출물이 길면 파일에 저장하고 `path + verdict (+ hash)`만 반환
 - **CONTEXT**: 배경 정보
 - **MUST DO**: 필수 수행 사항
 - **MUST NOT DO**: 제약 조건
@@ -119,6 +119,71 @@ Base: architect.md - Strategic Architecture & Debugging Advisor
 
 ---
 
+## 6. Receipt-only 반환 계약
+
+서브에이전트가 긴 분석문, 테스트 결과, 리뷰 보고서를 그대로 부모에게 붙여넣으면 부모 컨텍스트가 빠르게 오염된다. 산출물은 디스크에 지속화하고, 반환은 영수증만 남긴다.
+
+```markdown
+Return format:
+- ARTIFACT: <path>
+- VERDICT: OKAY|ITERATE|REJECT
+- HASH: <sha256 or omitted if unavailable>
+
+Never paste the full body back into your response.
+```
+
+**역할 프롬프트에 넣을 문장:**
+
+```markdown
+Persist your full output to a file. Return only `ARTIFACT`, `VERDICT`, and optional `HASH`.
+```
+
+영수증은 부모가 다음 결정을 내리는 데 필요한 최소 정보다. 전문이 필요하면 부모가 파일을 선택적으로 읽는다.
+
+---
+
+## 7. 재위임 금지 + CLAIM 원칙
+
+서브에이전트는 기본적으로 자기 하위 에이전트를 스폰하지 않는다. 재귀 위임은 대기 방치, 완료 착시, 컨텍스트 폭증을 만든다.
+
+```markdown
+Do the work yourself. Do not spawn agents unless this prompt explicitly authorizes it.
+```
+
+또한 자식의 완료 보고는 검증 전까지 사실이 아니라 CLAIM이다.
+
+```markdown
+Treat child output as a CLAIM until independently verified.
+Do not mark the parent task complete from child self-report alone.
+```
+
+실패 사례: 중간 에이전트가 다시 하위 에이전트를 만들고 기다리기만 하면, 부모는 "작업 중"이라는 주장만 받고 실제 진행 증거를 잃는다.
+
+---
+
+## 8. Persisted/Fresh 비대칭
+
+역할에 따라 누적 맥락이 자산일 수도, 편향일 수도 있다.
+
+| 역할 | 세션 전략 | 이유 |
+|------|----------|------|
+| Planner / Implementer | 가능하면 resume | 앞선 결정, 제약, 코드 맥락이 자산 |
+| Reviewer / Critic | 가능하면 fresh spawn | 이전 결론에 앵커링되지 않아야 함 |
+| Auditor / Verifier | fresh spawn + 증거 파일만 제공 | 완료 주장 대신 독립 반증 시도 |
+
+리뷰어 프롬프트에는 발산 방지 캘리브레이션을 같이 둔다:
+
+```markdown
+You are a blocker-finder, not a perfectionist.
+Verdict must be exactly PASS, FAIL, or INCONCLUSIVE.
+Report at most 5 issues.
+Do not review style, naming, or unrelated refactors unless they can block correctness.
+```
+
+이 비대칭은 "계획자는 기억해야 하고, 리뷰어는 잊어야 한다"는 원칙으로 요약된다.
+
+---
+
 ## 적용 판단 기준
 
 | 상황 | 적용할 패턴 |
@@ -128,3 +193,6 @@ Base: architect.md - Strategic Architecture & Debugging Advisor
 | 공통 규칙이 여러 에이전트에 필요 | 템플릿 상속 |
 | 비용 최적화가 필요 | 3-Tier 모델 라우팅 |
 | 위임 후 재작업이 발생 | 위임 템플릿으로 컨텍스트 전달 |
+| 부모 컨텍스트가 자식 보고서로 비대해짐 | Receipt-only 반환 계약 |
+| 자식 에이전트가 또 다른 에이전트를 스폰함 | 재위임 금지 + CLAIM 원칙 |
+| 수정 루프에서 계획 기억과 리뷰 독립성이 동시에 필요 | Persisted/Fresh 비대칭 |
