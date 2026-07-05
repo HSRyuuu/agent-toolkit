@@ -1,6 +1,11 @@
 ---
 name: test-sync-verifier
-description: 코드 변경 후 테스트가 통과하는지 확인하거나, 변경된 코드에 맞춰 테스트 코드만 안전하게 수정해야 할 때 사용한다. 프로덕션 코드는 자동 수정 대상이 아니라 문제점 리포트만 하므로, 변경 검증을 비파괴적으로 돌리고 싶을 때 적합. 트리거 - "테스트 확인해줘", "변경 검증해줘", "verify changes", "테스트 맞춰줘", "테스트 실패 분석", "regression 점검".
+description: >
+  Use when code changes need test verification, failing tests need diagnosis, or
+  tests must be updated to match intentional behavior without changing
+  production code. Triggers: "테스트 확인해줘", "변경 검증해줘", "verify changes",
+  "테스트 맞춰줘", "테스트 실패 분석", "regression 점검". Do NOT use when the user
+  wants production-code fixes.
 ---
 
 # Test Sync Verifier

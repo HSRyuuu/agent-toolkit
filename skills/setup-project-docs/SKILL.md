@@ -1,6 +1,11 @@
 ---
 name: setup-project-docs
-description: Use when a project needs initial human-maintained documentation skeletons such as PROJECT_OVERVIEW.md, DB_SCHEMA.md, DEPLOY.md, DESIGN.md, or ADR.md, excluding SOURCE_MAP.md, CODEBASE_CONTEXT.md, LESSONS.md, and local agent skills.
+description: >
+  Use when a project needs initial human-maintained docs such as
+  PROJECT_OVERVIEW.md, DB_SCHEMA.md, DEPLOY.md, DESIGN.md, or ADR.md. Triggers:
+  "set up project docs", "create docs skeleton", "add deployment docs",
+  "document DB schema", "architecture decision log". Do NOT use for
+  SOURCE_MAP.md, CODEBASE_CONTEXT.md, LESSONS.md, AGENTS.md, or local skills.
 ---
 
 # Setup Project Docs

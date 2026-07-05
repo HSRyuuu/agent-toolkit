@@ -1,6 +1,11 @@
 ---
 name: kb-search
-description: Use when answering a question from the user's personal Markdown Knowledge Base (KB), finding related documents, checking existing records, or locating source-of-truth notes without modifying files. Triggers include "kb에서 찾아줘/검색해줘", "지식베이스에 ~ 있나", "전에 정리해둔 거 어디". Read-only. Not for adding or editing knowledge (use kb-write) or health checks (use kb-lint).
+description: >
+  Use when answering questions from a personal Markdown Knowledge Base (KB),
+  finding related documents, checking whether something is already recorded, or
+  locating source-of-truth notes without editing files. Triggers:
+  "kb에서 찾아줘/검색해줘", "지식베이스에 ~ 있나", "전에 정리해둔 거 어디". Read-only.
+  Do NOT use for KB writes or linting.
 ---
 
 # kb-search

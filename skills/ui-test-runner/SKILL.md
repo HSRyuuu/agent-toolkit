@@ -1,17 +1,12 @@
 ---
 name: ui-test-runner
 description: >
-  화면 기능 명세, 직접 작성한 테스트 시나리오(markdown/JSON), 또는 단순 URL 목록을 입력받아
-  Playwright MCP로 실제 dev 서버(예: http://localhost:5173)에 접속해 UI 테스트를 수행하고
-  구조화된 결과 JSON + 사람이 읽을 수 있는 markdown 요약을 출력한다.
-  Chromium에서 실제 JS가 돌아가는 채로 검증하며, **mutation 요청(POST/PUT/DELETE/PATCH)은
-  fetch/XHR 인터셉터 주입으로 모두 가로채서 실제 백엔드에 절대 도달하지 않게** 한다.
-  GET 등 read-only 요청은 그대로 통과해 실제 데이터를 사용한다.
-  트리거 - "UI 테스트 돌려줘", "화면 테스트 시나리오 실행", "Playwright로 검증", "smoke test",
-  "이 명세 기준으로 UI 검증", "/ui-test-runner", "E2E 돌려봐줘", "버튼 눌러보고 결과 확인",
-  "프론트 회귀 테스트", "리그레션 체크".
-  사용하지 않을 때 - 백엔드 실제 mutation까지 흘려보내고 싶은 통합 테스트, 단위 테스트(Jest 등),
-  실제 DB 변경을 동반해야 하는 시나리오, Cypress/Vitest 코드 작성.
+  Use when running browser-based UI checks against a live dev server from a
+  feature spec, test scenario, or URL list. Triggers: "UI 테스트 돌려줘",
+  "화면 테스트 시나리오 실행", "Playwright로 검증", "smoke test", "E2E 돌려봐줘",
+  "버튼 눌러보고 결과 확인", "프론트 회귀 테스트", "/ui-test-runner". Do NOT use for
+  unit tests, Cypress/Vitest code generation, or tests that must perform real
+  backend mutations.
 ---
 
 # ui-test-runner — Playwright MCP 기반 안전한 UI 테스트 러너

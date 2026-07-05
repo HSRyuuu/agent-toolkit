@@ -1,6 +1,10 @@
 ---
 name: daily-work-log
-description: Codex/Claude 세션 로그와 선택적 KB 기록을 마이닝해 개인 daily work log Markdown을 작성·준비하거나 템플릿을 만들고, 이미 저장된 업무 기록을 날짜·태그·키워드로 검색할 때 사용한다. 트리거 - "daily work log", "오늘 한 일 정리", "어제 한 일 정리", "오늘 작업 기록", "퇴근 전 회고", "업무 일지 템플릿", "daily-work-log template", "업무 기록 검색", "지난주에 뭐 했지", "그때 그 작업 언제 했더라", "work log 찾아줘".
+description: >
+  Use when the user wants to create a personal daily work log from Codex/Claude
+  sessions or KB notes, set up a work-log template, or search saved work logs by
+  date, tag, or keyword. Triggers: "daily work log", "오늘 한 일 정리",
+  "어제 한 일 정리", "퇴근 전 회고", "지난주에 뭐 했지", "work log 찾아줘".
 ---
 
 # Daily Work Log

@@ -1,6 +1,12 @@
 ---
 name: excel-ui-test-doc-creator
-description: 테스트 시나리오 또는 테스트 수행 결과(JSON/markdown)를 입력받아 단위테스트 산출물 Excel(.xlsx) 파일을 작성할 때 사용한다. 사용자가 제공한 템플릿 xlsx가 있으면 그 양식의 컬럼 구조·스타일을 우선 따르고(한↔영 컬럼명 자동 매칭), 없으면 기본 양식(단위테스트 ID/명/데이터/절차/기대 결과/화면 URL/실제 결과)으로 신규 생성한다. openpyxl로 처리하며 긴 텍스트는 자동 wrap_text, pass/fail 행 색상 차등을 적용한다. 트리거 - "테스트 결과 엑셀로 정리해줘", "단위테스트 산출물 만들어줘", "테스트 시나리오 xlsx로", "QA 테스트 결과서 엑셀", "/excel-ui-test-doc-creator". 사용하지 않을 때 - 기존 양식 xlsx 갱신(`excel-doc-updater`가 우선), PDF/docx 테스트 보고서, 코드 테스트 실행 자체.
+description: >
+  Use when the user wants test scenarios or test execution results turned into a
+  unit-test or QA deliverable Excel .xlsx, with or without a provided template.
+  Triggers: "테스트 결과 엑셀로 정리해줘", "단위테스트 산출물 만들어줘",
+  "테스트 시나리오 xlsx로", "QA 테스트 결과서 엑셀", "/excel-ui-test-doc-creator".
+  Do NOT use for running tests, PDF/docx reports, or updating an existing form
+  workbook.
 ---
 
 # excel-ui-test-doc-creator

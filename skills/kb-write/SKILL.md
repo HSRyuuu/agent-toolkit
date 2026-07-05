@@ -1,6 +1,11 @@
 ---
 name: kb-write
-description: Use when the user wants to save, note, file, or organize knowledge into their personal Markdown Knowledge Base (KB) — from notes, files, URLs, meetings, onboarding, procedures, decisions, or project context. Triggers include "kb에 저장/추가/정리해줘", "이거 메모/기록해둬", "지식베이스에 넣어줘". Covers create/merge/append/reorganize/archive. Not for answering questions from the KB (use kb-search) or KB setup/migration (use kb-manage).
+description: >
+  Use when the user wants to save, add, file, merge, or organize knowledge in a
+  personal Markdown Knowledge Base (KB), including notes, URLs, meetings,
+  onboarding, procedures, decisions, and project context. Triggers:
+  "kb에 저장/추가/정리해줘", "이거 메모/기록해둬", "지식베이스에 넣어줘". Do NOT use
+  for KB search, setup, migration, or linting.
 ---
 
 # kb-write

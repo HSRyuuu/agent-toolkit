@@ -1,16 +1,11 @@
 ---
 name: html-cheat-sheet-creator
 description: >
-  단일 자기완결형 HTML 치트 시트(cheat sheet)·학습 카드·레퍼런스 시트를
-  모바일 우선(데스크톱도 자동 대응)으로 만들 때 사용한다. 상단 고정 2~6 탭
-  (2x1·3x1·2x2·3+2·3x2 자동 레이아웃), 좌측 슬라이드 사이드바
-  (목차 + 스크롤 스파이), 카테고리·카드·펼치기(details)로 구성된다.
-  외부 CDN 의존 0, 더블클릭만 하면 어디서든 열린다.
-  트리거 - "cheat sheet 만들어줘", "치트시트 HTML", "학습 카드 HTML",
-  "단일 html 레퍼런스 시트", "모바일 HTML cheat sheet", "사이드바 + 탭 HTML",
-  "스터디 시트", "/html-cheat-sheet-creator".
-  사용하지 않을 때 - 일반 보고서/계획서/설계서 → html-docs-creator,
-  ERD 시각화 → create-mermaid-erd, PDF/docx 결과물.
+  Use when creating a single self-contained HTML cheat sheet, study card set, or
+  reference sheet from learning material, commands, API notes, interview prep,
+  or concept summaries. Triggers: "cheat sheet 만들어줘", "치트시트 HTML",
+  "학습 카드 HTML", "단일 html 레퍼런스 시트", "스터디 시트",
+  "/html-cheat-sheet-creator". Do NOT use for reports/plans, ERDs, PDF, or DOCX.
 ---
 
 # html-cheat-sheet-creator — 모바일 우선 단일 HTML 치트 시트 생성기

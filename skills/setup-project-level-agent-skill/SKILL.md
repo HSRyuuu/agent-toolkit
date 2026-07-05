@@ -1,6 +1,11 @@
 ---
 name: setup-project-level-agent-skill
-description: Use when a target project needs local .claude/skills helper skills installed from agent-toolkit templates, including manage-skills, verify-implementation, or update-project-docs.
+description: >
+  Use when a target project needs project-local .claude/skills installed from
+  agent-toolkit templates. Triggers: "install local agent skills",
+  "add manage-skills", "add verify-implementation", "add update-project-docs",
+  "project-level Claude skills". Do NOT use for global/plugin skills, docs,
+  source maps, LESSONS.md, AGENTS.md, or CLAUDE.md.
 ---
 
 # Setup Project-Level Agent Skill

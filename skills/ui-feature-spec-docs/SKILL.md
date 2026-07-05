@@ -1,6 +1,12 @@
 ---
 name: ui-feature-spec-docs
-description: 프론트엔드 소스코드(Vue/React/Svelte/Angular/Next.js/Nuxt/SvelteKit 등)와 선택적 화면정의서(docx/pdf)를 입력받아 화면별 기능 정의서를 단일 통합 markdown 파일로 작성하는 스킬. 보조 모드로 라이브 브라우저(Playwright MCP) 검증을 켤 수 있음 — 소스가 없거나 권한/feature flag/조건부 렌더링 검증이 필요한 좁은 케이스용. 시작 시점에 입력을 한 번 받고, 이후 작업 중간에는 묻지 않으며 애매한 부분은 ⚠️/🔒/(TBD) 마커로 결과물에 보존. 트리거 — "화면별 기능 정의서 만들어줘", "UI 기능 명세 정리", "프론트엔드 화면 목록 기능 정의서", "라우터 기반 기능 명세서", "화면설계서랑 소스 교차 검증", "ui feature spec", "/ui-feature-spec-docs".
+description: >
+  Use when deriving a screen-by-screen UI feature specification from frontend
+  source code and optional design docs (docx/pdf) for Vue, React, Svelte,
+  Angular, Next.js, Nuxt, or SvelteKit. Triggers: "화면별 기능 정의서 만들어줘",
+  "UI 기능 명세 정리", "라우터 기반 기능 명세서", "화면설계서랑 소스 교차 검증",
+  "ui feature spec", "/ui-feature-spec-docs". Do NOT use for component-only docs
+  or UI test execution.
 ---
 
 # ui-feature-spec-docs — 화면별 기능 정의서 작성 스킬

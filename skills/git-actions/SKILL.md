@@ -1,6 +1,11 @@
 ---
 name: git-actions
-description: git 관련 요청이나 git 작업이 필요할 때 쓰는 단일 진입 스킬. 커밋·푸시·PR/MR 생성·pull(머지)·충돌 해결·rebase/브랜치 정리·이력(history) 조회를 한 곳에서 라우팅한다. 인자/의도가 분명하면 바로 해당 작업으로, 모호하거나 인자가 없으면 메뉴로 무엇을 할지 고르게 한다. 트리거 - "커밋해줘", "atomic commit", "커밋 분리", "PR 만들어줘", "MR 생성", "이 브랜치 PR로", "푸시하고 PR", "main pull 해줘", "최신 main 가져와서 충돌 해결", "develop 머지", "브랜치 동기화", "merge conflict 해결", "rebase", "브랜치 정리", "git history", "이 변경 누가 언제 추가했어?", "git log 분석", "/git-actions", "/git-actions main pull", "/git-actions --file".
+description: >
+  Use when the user asks for git work: commit, atomic commit splitting, push,
+  PR/MR creation, pull/merge, conflict resolution, rebase, branch cleanup, or
+  history/blame analysis. Triggers: "커밋해줘", "atomic commit", "PR 만들어줘",
+  "main pull 해줘", "merge conflict 해결", "rebase", "git history",
+  "이 변경 누가 언제 추가했어?", "/git-actions".
 ---
 
 # Git Actions

@@ -1,6 +1,11 @@
 ---
 name: agent-introspection-debugging
-description: Use when an AI agent run is failing repeatedly, looping on the same tools, consuming tokens without progress, hitting tool-call limits, or drifting from the intended task. Triggers - "agent stuck", "agent looping", "max tool calls", "context overflow", "self-debug", "introspection report", "why is the agent failing".
+description: >
+  Use when an AI agent run is stuck, looping, drifting, hitting max tool calls,
+  overflowing context, retrying without progress, or failing due to
+  tool/environment mismatch. Triggers: "agent stuck", "agent looping",
+  "max tool calls", "context overflow", "self-debug", "introspection report",
+  "why is the agent failing". Do NOT use for ordinary app/runtime debugging.
 metadata:
   origin: ECC
 ---

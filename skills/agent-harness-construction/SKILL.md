@@ -1,6 +1,11 @@
 ---
 name: agent-harness-construction
-description: Use when designing or improving an AI agent's harness, including action space, tool definitions, observation format, subagent delegation, completion evidence, verification contract, error recovery, or context budgeting. Triggers - "agent design review", "receipt-only", "completion evidence", "adversarial verify", "harness construction".
+description: >
+  Use when designing or reviewing AI agent harnesses, tool contracts,
+  action/observation schemas, subagent delegation, completion evidence, error
+  recovery, adversarial verification, or context budgeting. Triggers: "agent
+  design review", "completion evidence", "adversarial verify", "receipt-only",
+  "harness construction". Do NOT use for ordinary app code review.
 metadata:
   origin: ECC
 ---

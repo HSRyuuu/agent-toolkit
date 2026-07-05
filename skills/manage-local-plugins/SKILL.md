@@ -1,6 +1,11 @@
 ---
 name: manage-local-plugins
-description: Use when turning local Claude Code or Codex plugins on, off, reloading, refreshing snapshots, checking plugin status, or troubleshooting local marketplace plugin changes that do not appear in a new session.
+description: >
+  Use when enabling, disabling, installing, removing, reloading, refreshing
+  snapshots, checking status, or troubleshooting local Claude Code/Codex plugins
+  and marketplaces. Triggers: "플러그인 켜/꺼줘", "plugin reload",
+  "marketplace refresh", "새 세션에 스킬이 안 보여", "local plugin cache". Do NOT
+  use for writing plugin skills or manifests.
 ---
 
 # Manage Local Plugins

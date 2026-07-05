@@ -1,6 +1,10 @@
 ---
 name: create-claude-plugin
-description: Scaffold a new local Claude Code plugin from scratch — directory structure, plugin.json, marketplace.json, settings.json registration, and load verification. Use whenever the user wants to create a new plugin, register a local directory as a Claude Code marketplace, set up a personal toolkit/skill-collection plugin, or troubleshoot why a newly created plugin is not loading. Trigger phrases include "플러그인 만들기", "plugin 세팅", "plugin scaffold", "local marketplace 등록", "plugin이 로드 안 됨".
+description: >
+  Use when the user wants to create, register, or troubleshoot a local Claude
+  Code plugin or single-plugin local marketplace. Triggers: "플러그인 만들기",
+  "plugin scaffold", "plugin 세팅", "local marketplace 등록", "plugin이 로드 안 됨".
+  Do NOT use for Codex-only plugin setup.
 ---
 
 # Creating a Local Claude Code Plugin

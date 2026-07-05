@@ -1,15 +1,11 @@
 ---
 name: html-docs-creator
 description: >
-  사용자가 던진 임의의 input(긴 텍스트 문서, 회의록, 구두 설명, bullet list, 메모 등)을
-  단일 자기완결형 HTML 문서로 변환할 때 사용한다. 외부 CDN 의존 없이 시스템 폰트만
-  사용하는 노션 스타일 + HP Electric Blue 테마, 상단 고정 nav + 스크롤 스파이 +
-  자동 코드 블록 lang 감지·copy 버튼이 기본 내장된다.
-  트리거 - "이 내용 HTML로 정리해줘", "보고서/계획서/설계서 HTML로", "문서 HTML 변환",
-  "회의 내용 HTML 페이지로", "단일 파일 HTML 문서", "오픈클로 계획서 같은 형식으로",
-  "노션 톤 HTML", "self-contained HTML report", "/html-docs-creator".
-  사용하지 않을 때 - PDF/docx 결과물, React/Vue 등 프레임워크 페이지,
-  Chart.js·Mermaid 같은 CDN 라이브러리가 꼭 필요한 경우.
+  Use when converting user-provided text, meeting notes, plans, specs, reports,
+  bullet lists, or spoken notes into one self-contained HTML document. Triggers:
+  "이 내용 HTML로 정리해줘", "보고서/계획서/설계서 HTML로", "문서 HTML 변환",
+  "회의 내용 HTML 페이지로", "단일 파일 HTML 문서", "self-contained HTML report",
+  "/html-docs-creator". Do NOT use for PDF/DOCX output or framework apps.
 ---
 
 # html-docs-creator — 단일 파일 HTML 문서 생성기

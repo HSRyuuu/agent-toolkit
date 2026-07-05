@@ -1,6 +1,11 @@
 ---
 name: hsryuuu-writing
-description: hsryuuu(innovation123.tistory.com)처럼 쓰는 말투·어조·언어 습관·안티패턴 가이드. 글의 레이아웃이나 섹션 구조는 지정하지 않고, "어떤 문장으로 어떤 단어를 골라 쓸지"만 다룬다. 다른 스킬·템플릿이 만들어 둔 글의 톤을 hsryuuu 톤으로 바꾸거나, 새 글을 hsryuuu 목소리로 쓸 때 사용한다. 트리거 - "hsryuuu처럼 써줘", "내 블로그 말투로", "innovation123 톤으로", "tistory 톤", "/hsryuuu-writing".
+description: >
+  Use when writing or rewriting content in hsryuuu's blog voice from
+  innovation123.tistory.com. Triggers: "hsryuuu처럼 써줘", "내 블로그 말투로",
+  "innovation123 톤으로", "tistory 톤", "/hsryuuu-writing". Covers tone,
+  wording, and sentence style only. Do NOT use for layout, section structure, or
+  file-format decisions.
 ---
 
 # hsryuuu-writing

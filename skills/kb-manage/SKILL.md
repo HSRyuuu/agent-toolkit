@@ -1,6 +1,11 @@
 ---
 name: kb-manage
-description: Use for personal Markdown Knowledge Base (KB) upkeep — setting up a new KB, resolving/locating the KB root, explaining KB conventions, migrating an old KB layout, or maintaining index.md and log.jsonl. Triggers include "kb 만들어줘/셋업", "지식베이스 정리 규칙", "kb 루트 어디", "인덱스 정리". Not for adding knowledge (use kb-write), answering questions (use kb-search), or health checks (use kb-lint).
+description: >
+  Use when setting up or maintaining a personal Markdown Knowledge Base (KB):
+  resolving the KB root, explaining conventions, migrating an old layout, or
+  maintaining index.md/log.jsonl. Triggers: "kb 만들어줘/셋업", "지식베이스 정리 규칙",
+  "kb 루트 어디", "인덱스 정리". Do NOT use for adding knowledge, search, or health
+  checks.
 ---
 
 # kb-manage

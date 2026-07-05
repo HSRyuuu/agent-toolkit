@@ -1,6 +1,11 @@
 ---
 name: update-project-docs
-description: agent-toolkit 저장소의 개발용 문서(AGENTS.md, .claude/CLAUDE.md, README.md, docs/catalog.md)를 현재 단일 skills/ 루트와 Claude/Codex 플러그인 manifest 상태에 맞게 동기화한다. 새 스킬을 추가·이동·삭제했거나, .codex-plugin/plugin.json 또는 .claude-plugin/plugin.json의 skills 설정을 바꿨거나, plugin skill 표면을 다시 정리할 때 사용한다.
+description: >
+  Use when the agent-toolkit repo's plugin docs or manifests may be out of sync
+  after adding, moving, deleting, or renaming skills, changing SKILL.md
+  frontmatter, changing .codex-plugin/.claude-plugin skill settings, or updating
+  plugin loading structure. Triggers: "catalog 갱신", "문서 동기화", "스킬 추가했어",
+  "plugin manifest 바꿨어". Do NOT use for unrelated project docs.
 ---
 
 # Update Project Docs (agent-toolkit 전용)

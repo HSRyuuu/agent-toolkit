@@ -1,6 +1,10 @@
 ---
 name: publish-agent-toolkit
-description: Use only when the user explicitly invokes `$agent-toolkit:publish-agent-toolkit`, `$publish-agent-toolkit`, says "agent-toolkit publish", or asks to run the agent-toolkit commit-push-reload sequence. Do not use for ordinary commit, push, or reload requests.
+description: >
+  Use only when the user explicitly invokes "$agent-toolkit:publish-agent-toolkit",
+  "$publish-agent-toolkit", says "agent-toolkit publish", or asks for the
+  agent-toolkit publish/release loop. Do NOT use for ordinary commit, push, PR,
+  or plugin reload requests.
 ---
 
 # Publish Agent Toolkit

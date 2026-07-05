@@ -1,6 +1,11 @@
 ---
 name: rest-api-design
-description: 새 REST API 엔드포인트를 설계하거나 기존 API 규약(URL 구조·상태 코드·응답 형식·페이지네이션·필터링·버전 관리)을 검토할 때 사용한다. 공개/파트너용 API를 설계할 때도 사용. 트리거 - "API 설계", "REST API 만들어줘", "엔드포인트 설계", "페이지네이션 패턴", "버전 관리 전략", "에러 응답 표준", "API 컨트랙트 리뷰".
+description: >
+  Use when designing or reviewing REST API contracts, endpoint URLs, methods,
+  status codes, error shapes, pagination, filtering, sorting, or versioning.
+  Triggers: "API 설계", "REST API 만들어줘", "엔드포인트 설계", "페이지네이션 패턴",
+  "버전 관리 전략", "에러 응답 표준", "API 컨트랙트 리뷰". Do NOT use for backend
+  implementation patterns alone.
 ---
 
 # API 설계 패턴 (API Design Patterns)

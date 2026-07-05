@@ -1,6 +1,11 @@
 ---
 name: setup-agent-entrypoint
-description: Use when a project needs AGENTS.md, CLAUDE.md, .claude/CLAUDE.md, or an agent entrypoint that maps project docs and local helper skills without installing those assets itself.
+description: >
+  Use when a project needs AGENTS.md, CLAUDE.md, .claude/CLAUDE.md, or an agent
+  entrypoint that points agents to existing docs, conventions, and local helper
+  skills. Triggers: "set up agent instructions", "create AGENTS.md",
+  "wire CLAUDE.md", "map project docs". Do NOT use to create docs, source maps,
+  LESSONS.md, or local skills.
 ---
 
 # Setup Agent Entrypoint

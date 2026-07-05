@@ -1,6 +1,11 @@
 ---
 name: excel-doc-updater
-description: "Use when the user explicitly asks to update or regenerate a form-based xlsx (interface spec sheet, program list, requirements form, etc.) against a separate data source (markdown, JSON/YAML, DB/API result, another xlsx). Do not trigger on regular code edits or other doc updates. If a project-specific updater skill already exists for the same form, that one takes priority."
+description: >
+  Use when the user explicitly asks to update or regenerate an existing
+  form-based .xlsx such as an interface spec, program list, or requirements form
+  from markdown, JSON/YAML, DB/API output, or another workbook. Do NOT use for
+  normal code edits, non-Excel docs, or forms with a project-specific updater
+  skill.
 ---
 
 # excel-doc-updater

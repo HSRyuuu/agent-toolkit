@@ -1,6 +1,11 @@
 ---
 name: setup-self-improvement-loop
-description: Use when a project needs a local agent self-improvement loop, .claude/LESSONS.md, or instructions for recording user feedback and preventing repeated agent mistakes.
+description: >
+  Use when a project needs a local agent self-improvement loop, .claude/LESSONS.md,
+  or instructions for recording user corrections so future agents avoid repeated
+  mistakes. Triggers: "add lessons", "self-improvement loop",
+  "remember agent feedback", "prevent repeated mistakes". Do NOT use for project
+  docs, source maps, or local helper skills.
 ---
 
 # Setup Self-Improvement Loop

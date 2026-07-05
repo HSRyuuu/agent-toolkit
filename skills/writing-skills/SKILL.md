@@ -1,6 +1,12 @@
 ---
 name: writing-skills
-description: Use when creating, editing, or verifying reusable Codex/Claude skills, SKILL.md files, skill frontmatter, trigger descriptions, or skill deployment readiness. Triggers - "create a skill", "update this skill", "description trigger", "skill testing", "skill quality review". Do NOT use for one-off project docs or conventions that belong in AGENTS.md/CLAUDE.md.
+description: >
+  Use when creating, editing, or reviewing reusable Codex/Claude skills,
+  SKILL.md files, skill frontmatter, trigger descriptions, skill tests, or
+  deployment readiness. Triggers: "create a skill", "update this skill",
+  "description trigger", "skill quality review", "skill testing". Do NOT use
+  for one-off project docs or repository conventions that belong in
+  AGENTS.md/CLAUDE.md.
 ---
 
 # Writing Skills

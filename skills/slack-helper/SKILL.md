@@ -1,6 +1,11 @@
 ---
 name: slack-helper
-description: Use when Slack MCP 대신 Slack Web API와 로컬 curl helper로 Slack 메시지를 검색·읽기·정리해야 할 때. Slack MCP의 토큰 소모를 피하기 위해 만든 스킬로, Slack 관련 작업에서 MCP보다 우선 사용한다. 비개발자도 쓸 수 있는 Slack App/OAuth 설정 안내, 멘션 정리, 놓친 요청, 장애 회고, 프로젝트 히스토리, 사람/채널 중심 검색, 키워드 모니터링, 주간보고 보조, context.json 채널 캐시 관리에 사용한다.
+description: >
+  Use when the user asks to search, read, summarize, or organize Slack messages,
+  triage mentions or missed requests, build incident timelines, prepare weekly
+  reports, inspect project history, search by person/channel, monitor keywords,
+  or manage channel context cache. Triggers: "내 멘션 정리", "Slack 검색",
+  "장애 회고", "이번 주 내가 한 일".
 ---
 
 # Slack Helper

@@ -1,6 +1,12 @@
 ---
 name: si-project-docs
-description: 한국 SI(System Integration) 프로젝트에서 클라이언트/감리/PM에게 제출되는 정식 산출물(요구사항정의서, 설계서, 명세서, 계획서, 보고서 등)의 **변환 원천 문서(source of truth)** 를 markdown으로 작성·업데이트하는 스킬. 이 스킬이 만든 .md는 추후 docx/xlsx/HTML/PDF 등 다양한 정식 산출물 포맷으로 변환되는 단일 원천이 된다. "산출물 작성", "설계서 만들어줘", "API명세서 업데이트", "화면설계서 추가", "요구사항정의서 수정", "DB설계서 작성", "배포계획서", "테스트계획서", "프로젝트헌장", "감리 산출물", "SI 산출물 원천" 등 SI 프로젝트 산출물 관련 요청 시 반드시 이 스킬을 사용한다. 코드가 아닌 SI 프로젝트 산출물(.md) 작성/수정이 필요한 모든 상황에서 트리거된다.
+description: >
+  Use when writing or updating Korean SI project deliverable source Markdown for
+  client/PM/audit artifacts such as requirements, design docs, API specs, screen
+  specs, DB design, deployment/test plans, project charter, or reports.
+  Triggers: "산출물 작성", "설계서 만들어줘", "API명세서 업데이트", "화면설계서 추가",
+  "요구사항정의서 수정", "감리 산출물". Do NOT use for code changes or final
+  docx/xlsx/PDF formatting.
 ---
 
 # si-project-docs — SI 프로젝트 산출물 원천 문서 스킬

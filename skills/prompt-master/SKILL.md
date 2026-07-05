@@ -1,6 +1,11 @@
 ---
 name: prompt-master
-description: LLM에 줄 프롬프트(시스템 프롬프트, 에이전트 프롬프트, 1회성 챗 프롬프트, API 파이프라인 프롬프트 등)를 새로 작성하거나, 기존 프롬프트를 리뷰·평가·비교해야 할 때 사용한다. 멀티에이전트 위임 구조나 서브에이전트 오케스트레이션이 필요한 프롬프트 설계에도 사용. 트리거 - "프롬프트 만들어줘", "프롬프트 작성", "prompt 개선", "시스템 프롬프트", "에이전트 프롬프트", "프롬프트 리뷰", "프롬프트 평가", "멀티에이전트 설계".
+description: >
+  Use when creating, improving, reviewing, evaluating, or comparing LLM prompts
+  for chat, API pipelines, system prompts, agent prompts, or subagent
+  orchestration. Triggers: "프롬프트 만들어줘", "prompt 개선", "시스템 프롬프트",
+  "에이전트 프롬프트", "prompt review", "prompt eval", "멀티에이전트 설계". Do
+  NOT use for general product copy or docs.
 ---
 
 # Prompt Master

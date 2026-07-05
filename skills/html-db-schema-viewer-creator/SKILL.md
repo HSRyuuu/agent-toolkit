@@ -1,6 +1,12 @@
 ---
 name: html-db-schema-viewer-creator
-description: Use when the user provides DB schema information in any form (DB MCP results, DDL/CREATE TABLE, plain-text spec, Mermaid erDiagram .mmd, or DBML) and wants a multi-page static HTML DB viewer with ERD relationship diagram, per-table detail pages, table listing, and DBML source viewer. 트리거 — "ERD 사이트 만들어줘", "DB 뷰어 정적 사이트", "테이블별 상세 페이지 포함 ERD", "DBML 기반 ERD", "멀티페이지 DB 문서", "schema.dbml viewer", "DDL to multi-page HTML", "DB 스키마 확장형 뷰어", "/html-db-schema-viewer-creator".
+description: >
+  Use when the user provides DB schema input (DDL/CREATE TABLE, DBML, Mermaid
+  erDiagram, DB MCP output, or plain-text table specs) and wants a multi-page
+  static HTML schema viewer. Triggers: "ERD 사이트 만들어줘",
+  "DB 뷰어 정적 사이트", "테이블별 상세 페이지 포함 ERD", "schema.dbml viewer",
+  "DDL to multi-page HTML", "/html-db-schema-viewer-creator". Do NOT use for a
+  single ERD image/page.
 ---
 
 # Create HTML DB Schema Viewer (Multi-page, DBML-driven)

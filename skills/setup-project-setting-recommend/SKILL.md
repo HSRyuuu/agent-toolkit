@@ -1,6 +1,11 @@
 ---
 name: setup-project-setting-recommend
-description: Use when a user wants read-only recommendations for which setup-* skills or project assets to apply, including .claude setup, project docs, source maps, self-improvement loops, and agent entrypoints.
+description: >
+  Use when the user wants a read-only recommendation for which project setup
+  assets or setup-* skills apply. Triggers: "what setup does this repo need?",
+  "recommend project settings", "audit agent setup",
+  "which setup skills should I run?". Do NOT use when the user already chose a
+  specific setup skill or wants files changed.
 ---
 
 # Setup Project Setting Recommend

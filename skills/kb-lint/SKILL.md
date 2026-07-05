@@ -1,6 +1,11 @@
 ---
 name: kb-lint
-description: Use when health-checking the user's personal Markdown Knowledge Base (KB) for metadata gaps, stale uncertainty, duplicate topics, index/log drift, broken links, or security-sensitive content. Triggers include "kb 점검/린트해줘", "지식베이스 상태 확인", "인덱스/링크 깨진 데 있나". Reports by default; fixes only on explicit request. Not for adding knowledge (use kb-write) or answering questions (use kb-search).
+description: >
+  Use when health-checking a personal Markdown Knowledge Base (KB) for metadata
+  gaps, stale uncertainty, duplicate topics, broken links, index/log drift, or
+  sensitive-content candidates. Triggers: "kb 점검/린트해줘", "지식베이스 상태 확인",
+  "인덱스/링크 깨진 데 있나". Read-only unless fixes are explicitly requested. Do
+  NOT use for KB writing or search.
 ---
 
 # kb-lint

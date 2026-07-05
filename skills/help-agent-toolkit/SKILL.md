@@ -1,6 +1,11 @@
 ---
 name: help-agent-toolkit
-description: agent-toolkit 플러그인이 제공하는 스킬을 사용자가 발견하도록 돕는다. (1) 전체 스킬 목록을 카테고리별 마크다운 테이블로 보여주거나, (2) "xxx 하고 싶어 / xxx 하려면 어떤 스킬 써?" 같은 의도 질문을 받으면 모든 SKILL.md의 frontmatter를 스캔해 매칭되는 스킬을 추천 테이블로 제시한다. 트리거 - "agent-toolkit 스킬 목록", "어떤 스킬 있어?", "툴킷에 뭐 있어?", "/help-agent-toolkit", "이거 할 때 쓸 스킬 추천", "xxx 하려면 어떤 스킬?".
+description: >
+  Use when the user asks what agent-toolkit skills exist or which agent-toolkit
+  skill fits a task. Triggers: "agent-toolkit 스킬 목록", "어떤 스킬 있어?",
+  "툴킷에 뭐 있어?", "/help-agent-toolkit", "이거 할 때 쓸 스킬 추천",
+  "xxx 하려면 어떤 스킬?". Read-only. Do NOT use for non-agent-toolkit skills
+  or performing the chosen task.
 ---
 
 # Help Agent Toolkit — 스킬 카탈로그 & 의도 매칭

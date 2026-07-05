@@ -1,13 +1,11 @@
 ---
 name: create-mermaid-erd
 description: >
-  PRD·도메인 설명·테이블 목록 등을 입력받아 ERD(Entity-Relationship Diagram)를
-  Mermaid `.mmd` 파일로 생성하고, 그 mmd를 즉시 시각화하는 단일 `viewer.html` 도
-  함께 출력한다. 개념(Conceptual)·논리(Logical)·물리(Physical) 3종 ERD 지원,
-  다크 테마 + handDrawn 스타일.
-  "ERD 만들어줘", "테이블 관계도", "DB 설계 시각화", "엔티티 관계 다이어그램",
-  "데이터 모델링", "개념 ERD", "논리 ERD", "물리 ERD", "mermaid ERD",
-  "DB 스키마 그려줘", "테이블 설계", "mmd 뷰어", "ERD HTML 미리보기" 등의 요청에 트리거한다.
+  Use when the user wants an ERD or database relationship diagram from a PRD,
+  domain description, table list, DDL, DB schema, or existing Mermaid ERD.
+  Triggers: "ERD 만들어줘", "테이블 관계도", "DB 설계 시각화", "데이터 모델링",
+  "개념 ERD", "논리 ERD", "물리 ERD", "mermaid ERD", "DB 스키마 그려줘",
+  "ERD HTML 미리보기".
 ---
 
 # ERD 생성 스킬

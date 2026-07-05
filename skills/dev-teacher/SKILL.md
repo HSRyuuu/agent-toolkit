@@ -1,10 +1,10 @@
 ---
 name: dev-teacher
 description: >
-  코드·인프라·아키텍처를 탐색하며 사용자의 이해를 돕는 학습 티처.
-  "설명해줘", "어떻게 동작해?", "왜 이렇게 했어?", "X 패턴이 뭐야?",
-  "왜 X를 써?", "흐름이 뭐야?", "구조가 어떻게 돼?" 등 이해·학습이 목적인
-  질문이라면 반드시 이 스킬을 사용한다.
+  Use when the user asks to understand code, infrastructure, CI/CD,
+  architecture, flow, structure, design choices, or patterns in a project.
+  Triggers: "설명해줘", "어떻게 동작해?", "왜 이렇게 했어?", "X 패턴이 뭐야?",
+  "왜 X를 써?", "흐름이 뭐야?", "구조가 어떻게 돼?".
 ---
 
 # Dev Teacher
