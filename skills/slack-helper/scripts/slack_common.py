@@ -12,9 +12,10 @@ import sys
 import tempfile
 import time
 import urllib.parse
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 
 DEFAULT_CONFIG_DIR = Path("~/.config/slack-helper").expanduser()
@@ -25,6 +26,7 @@ SLACK_API_BASE = "https://slack.com/api"
 SLACK_AUTHORIZE_URL = "https://slack.com/oauth/v2/authorize"
 USER_ID_RE = re.compile(r"^[UW][A-Z0-9]+$")
 CHANNEL_ID_RE = re.compile(r"^[CDG][A-Z0-9]+$")
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MAX_RETRY_AFTER_SECONDS = 60
 
 
@@ -309,6 +311,21 @@ def user_token_for(args: Any) -> str:
 def print_response(response: dict[str, Any]) -> int:
     print(json.dumps(response, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
+
+
+def day_bounds(date_str: str, tz_name: str | None = None) -> tuple[str, str]:
+    """하루(자정~다음날 자정 직전)의 Slack ts 경계를 소수 6자리 epoch 문자열로 반환한다."""
+    value = date_str.strip()
+    if not DATE_RE.match(value):
+        raise SlackHelperError(f"--on은 YYYY-MM-DD 형식이어야 합니다 (입력값: {date_str})")
+    try:
+        day = datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise SlackHelperError(f"--on 날짜가 유효하지 않습니다 (입력값: {date_str})") from exc
+    tz = ZoneInfo(tz_name) if tz_name else datetime.now().astimezone().tzinfo
+    start = datetime.combine(day, datetime.min.time(), tzinfo=tz)
+    next_start = datetime.combine(day + timedelta(days=1), datetime.min.time(), tzinfo=tz)
+    return f"{start.timestamp():.6f}", f"{next_start.timestamp() - 0.000001:.6f}"
 
 
 def format_ts_utc(ts: str | float | int) -> str:

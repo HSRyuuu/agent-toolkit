@@ -178,6 +178,27 @@ def case_common_format_ts_utc() -> bool:
     )
 
 
+def case_common_day_bounds_boundaries() -> bool:
+    day_bounds = getattr(common, "day_bounds", None)
+    if day_bounds is None:
+        return check(
+            "day_bounds returns KST day boundaries and rejects bad format",
+            False,
+            "slack_common.day_bounds missing",
+        )
+    bounds = day_bounds("2026-07-05", "Asia/Seoul")
+    invalid_raises = False
+    try:
+        day_bounds("2026-7-5")
+    except common.SlackHelperError:
+        invalid_raises = True
+    return check(
+        "day_bounds returns KST day boundaries and rejects bad format",
+        bounds == ("1783177200.000000", "1783263599.999999") and invalid_raises,
+        str(bounds),
+    )
+
+
 def case_common_truncate_text() -> bool:
     short = "a" * 120
     long = "b" * 121
@@ -540,7 +561,7 @@ def case_read_channel_history_and_thread() -> bool:
                     type(
                         "Args",
                         (),
-                        {"workspace": None, "channel": "backend", "limit": 2, "raw": False},
+                        {"workspace": None, "channel": "backend", "limit": 2, "on": None, "raw": False},
                     )()
                 )
             thread = io.StringIO()
@@ -559,6 +580,54 @@ def case_read_channel_history_and_thread() -> bool:
         "[2024-06-01 12:00] #C1 @U1: hello | https://example.test/p1" in history.getvalue()
         and calls[0] == ("conversations.history", {"channel": "C1", "limit": 2})
         and calls[1] == ("conversations.replies", {"channel": "C1", "ts": "1717243200.0", "limit": 50}),
+    )
+
+
+def case_read_channel_history_on_date_payload() -> bool:
+    read = load_module("slack_read")
+    calls: list[tuple[str, dict[str, object]]] = []
+
+    def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
+        calls.append((method, payload or {}))
+        return {"ok": True, "messages": []}
+
+    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
+        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
+        try:
+            common.write_json_secure(
+                Path(tmp) / "api-key.json",
+                {
+                    "default_workspace": "default",
+                    "workspaces": {"default": {"token": "t"}},
+                },
+            )
+            read.slack_method = fake_slack_method
+            with redirect_stdout(io.StringIO()):
+                read.command_channel_history(
+                    type(
+                        "Args",
+                        (),
+                        {"workspace": None, "channel": "C1", "limit": 100, "on": "2026-07-05", "raw": False},
+                    )()
+                )
+        finally:
+            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+    day_bounds = getattr(common, "day_bounds", None)
+    if day_bounds is None or not calls:
+        return check(
+            "channel-history --on adds oldest/latest/inclusive to payload",
+            False,
+            "day_bounds missing or no API call recorded",
+        )
+    oldest, latest = day_bounds("2026-07-05")
+    return check(
+        "channel-history --on adds oldest/latest/inclusive to payload",
+        calls[0]
+        == (
+            "conversations.history",
+            {"channel": "C1", "limit": 100, "oldest": oldest, "latest": latest, "inclusive": "true"},
+        ),
+        str(calls[0]),
     )
 
 
@@ -703,6 +772,40 @@ def case_search_days_after_conflict_and_to_me_error() -> bool:
     )
 
 
+def case_search_empty_query_with_from_allowed() -> bool:
+    search = load_module("slack_search")
+
+    def make_args(**overrides):
+        fields = {
+            "from_user": None,
+            "in_channel": None,
+            "to_me": False,
+            "after": None,
+            "before": None,
+            "on": None,
+            "days": None,
+            "user_id": None,
+        }
+        fields.update(overrides)
+        return type("Args", (), fields)()
+
+    allowed = None
+    try:
+        allowed = search.build_search_query([], make_args(from_user="me", on="2026-07-03"))
+    except common.SlackHelperError:
+        pass
+    bare_raises = False
+    try:
+        search.build_search_query([], make_args())
+    except common.SlackHelperError:
+        bare_raises = True
+    return check(
+        "empty query is allowed with --from but still rejected bare",
+        allowed == ["from:me on:2026-07-03"] and bare_raises,
+        str(allowed),
+    )
+
+
 def case_search_merge_dedups_and_sorts() -> bool:
     search = load_module("slack_search")
     merged = search.merge_search_matches(
@@ -809,6 +912,7 @@ def main() -> int:
         case_load_channel_id_passthrough_and_alias,
         case_write_json_secure_permissions,
         case_common_format_ts_utc,
+        case_common_day_bounds_boundaries,
         case_common_truncate_text,
         case_common_format_message_line,
         case_common_context_channel_resolution_order,
@@ -821,9 +925,11 @@ def main() -> int:
         case_context_draft_summaries_uses_channel_samples,
         case_read_users_compact_and_raw,
         case_read_channel_history_and_thread,
+        case_read_channel_history_on_date_payload,
         case_read_not_in_channel_mentions_search_fallback,
         case_search_build_query_options,
         case_search_days_after_conflict_and_to_me_error,
+        case_search_empty_query_with_from_allowed,
         case_search_merge_dedups_and_sorts,
         case_search_command_multi_keyword_compact,
     ]

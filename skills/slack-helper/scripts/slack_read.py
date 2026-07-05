@@ -8,6 +8,7 @@ import argparse
 from slack_common import (
     SlackHelperError,
     add_workspace_arg,
+    day_bounds,
     format_channels,
     format_history,
     format_users,
@@ -59,10 +60,14 @@ def command_channels(args: argparse.Namespace) -> int:
 
 def command_channel_history(args: argparse.Namespace) -> int:
     channel_id = resolve_channel(args.channel)
+    payload: dict = {"channel": channel_id, "limit": args.limit}
+    if getattr(args, "on", None):
+        oldest, latest = day_bounds(args.on)
+        payload.update({"oldest": oldest, "latest": latest, "inclusive": "true"})
     response = slack_method(
         "conversations.history",
         token=token_for(args),
-        payload={"channel": channel_id, "limit": args.limit},
+        payload=payload,
         http_method="GET",
     )
     _ensure_ok(response, "conversations.history")
@@ -121,6 +126,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_workspace_arg(history)
     history.add_argument("--channel", required=True, help="채널 ID 또는 context.json/channel-info.json 별칭")
     history.add_argument("--limit", type=int, default=20)
+    history.add_argument("--on", help="특정 일자(YYYY-MM-DD)의 메시지만 조회 (로컬 타임존 자정 기준)")
     history.add_argument("--raw", action="store_true", help="compact 대신 원본 JSON 출력")
     history.set_defaults(func=command_channel_history)
 
