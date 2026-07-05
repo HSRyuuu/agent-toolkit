@@ -3,7 +3,7 @@
 > `agent-toolkit` 저장소의 현재 플러그인 스킬 목록.
 > 이 문서는 `skills/*/SKILL.md` frontmatter에서 생성한다.
 >
-> Last updated: 2026-07-04
+> Last updated: 2026-07-05
 
 ## 요약
 
@@ -17,7 +17,7 @@
 
 | 디렉토리 | Frontmatter name | Frontmatter description |
 |---|---|---|
-| [agent-harness-construction](../skills/agent-harness-construction/SKILL.md) | `agent-harness-construction` | Use when designing or improving an AI agent's harness — action space, tool definitions, observation format, error recovery contract, or context budgeting strategy. Triggers - "agent design review", "tool definition cleanup", "improve completion rate", "harness construction", "observation schema", "agent benchmarking", "action space granularity". |
+| [agent-harness-construction](../skills/agent-harness-construction/SKILL.md) | `agent-harness-construction` | Use when designing or improving an AI agent's harness, including action space, tool definitions, observation format, subagent delegation, completion evidence, verification contract, error recovery, or context budgeting. Triggers - "agent design review", "receipt-only", "completion evidence", "adversarial verify", "harness construction". |
 | [agent-introspection-debugging](../skills/agent-introspection-debugging/SKILL.md) | `agent-introspection-debugging` | Use when an AI agent run is failing repeatedly, looping on the same tools, consuming tokens without progress, hitting tool-call limits, or drifting from the intended task. Triggers - "agent stuck", "agent looping", "max tool calls", "context overflow", "self-debug", "introspection report", "why is the agent failing". |
 | [create-claude-plugin](../skills/create-claude-plugin/SKILL.md) | `create-claude-plugin` | Scaffold a new local Claude Code plugin from scratch — directory structure, plugin.json, marketplace.json, settings.json registration, and load verification. Use whenever the user wants to create a new plugin, register a local directory as a Claude Code marketplace, set up a personal toolkit/skill-collection plugin, or troubleshoot why a newly created plugin is not loading. Trigger phrases include "플러그인 만들기", "plugin 세팅", "plugin scaffold", "local marketplace 등록", "plugin이 로드 안 됨". |
 | [create-mermaid-erd](../skills/create-mermaid-erd/SKILL.md) | `create-mermaid-erd` | PRD·도메인 설명·테이블 목록 등을 입력받아 ERD(Entity-Relationship Diagram)를 Mermaid `.mmd` 파일로 생성하고, 그 mmd를 즉시 시각화하는 단일 `viewer.html` 도 함께 출력한다. 개념(Conceptual)·논리(Logical)·물리(Physical) 3종 ERD 지원, 다크 테마 + handDrawn 스타일. "ERD 만들어줘", "테이블 관계도", "DB 설계 시각화", "엔티티 관계 다이어그램", "데이터 모델링", "개념 ERD", "논리 ERD", "물리 ERD", "mermaid ERD", "DB 스키마 그려줘", "테이블 설계", "mmd 뷰어", "ERD HTML 미리보기" 등의 요청에 트리거한다. |
@@ -55,7 +55,7 @@
 | [ui-feature-spec-docs](../skills/ui-feature-spec-docs/SKILL.md) | `ui-feature-spec-docs` | 프론트엔드 소스코드(Vue/React/Svelte/Angular/Next.js/Nuxt/SvelteKit 등)와 선택적 화면정의서(docx/pdf)를 입력받아 화면별 기능 정의서를 단일 통합 markdown 파일로 작성하는 스킬. 보조 모드로 라이브 브라우저(Playwright MCP) 검증을 켤 수 있음 — 소스가 없거나 권한/feature flag/조건부 렌더링 검증이 필요한 좁은 케이스용. 시작 시점에 입력을 한 번 받고, 이후 작업 중간에는 묻지 않으며 애매한 부분은 ⚠️/🔒/(TBD) 마커로 결과물에 보존. 트리거 — "화면별 기능 정의서 만들어줘", "UI 기능 명세 정리", "프론트엔드 화면 목록 기능 정의서", "라우터 기반 기능 명세서", "화면설계서랑 소스 교차 검증", "ui feature spec", "/ui-feature-spec-docs". |
 | [ui-test-runner](../skills/ui-test-runner/SKILL.md) | `ui-test-runner` | 화면 기능 명세, 직접 작성한 테스트 시나리오(markdown/JSON), 또는 단순 URL 목록을 입력받아 Playwright MCP로 실제 dev 서버(예: http://localhost:5173)에 접속해 UI 테스트를 수행하고 구조화된 결과 JSON + 사람이 읽을 수 있는 markdown 요약을 출력한다. Chromium에서 실제 JS가 돌아가는 채로 검증하며, **mutation 요청(POST/PUT/DELETE/PATCH)은 fetch/XHR 인터셉터 주입으로 모두 가로채서 실제 백엔드에 절대 도달하지 않게** 한다. GET 등 read-only 요청은 그대로 통과해 실제 데이터를 사용한다. 트리거 - "UI 테스트 돌려줘", "화면 테스트 시나리오 실행", "Playwright로 검증", "smoke test", "이 명세 기준으로 UI 검증", "/ui-test-runner", "E2E 돌려봐줘", "버튼 눌러보고 결과 확인", "프론트 회귀 테스트", "리그레션 체크". 사용하지 않을 때 - 백엔드 실제 mutation까지 흘려보내고 싶은 통합 테스트, 단위 테스트(Jest 등), 실제 DB 변경을 동반해야 하는 시나리오, Cypress/Vitest 코드 작성. |
 | [update-project-docs](../skills/update-project-docs/SKILL.md) | `update-project-docs` | agent-toolkit 저장소의 개발용 문서(AGENTS.md, .claude/CLAUDE.md, README.md, docs/catalog.md)를 현재 단일 skills/ 루트와 Claude/Codex 플러그인 manifest 상태에 맞게 동기화한다. 새 스킬을 추가·이동·삭제했거나, .codex-plugin/plugin.json 또는 .claude-plugin/plugin.json의 skills 설정을 바꿨거나, plugin skill 표면을 다시 정리할 때 사용한다. |
-| [writing-skills](../skills/writing-skills/SKILL.md) | `writing-skills` | Use when creating new skills, editing existing skills, or verifying skills work before deployment |
+| [writing-skills](../skills/writing-skills/SKILL.md) | `writing-skills` | Use when creating, editing, or verifying reusable Codex/Claude skills, SKILL.md files, skill frontmatter, trigger descriptions, or skill deployment readiness. Triggers - "create a skill", "update this skill", "description trigger", "skill testing", "skill quality review". Do NOT use for one-off project docs or conventions that belong in AGENTS.md/CLAUDE.md. |
 
 ## 갱신 방법
 
