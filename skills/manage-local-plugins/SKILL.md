@@ -4,8 +4,8 @@ description: >
   Use when enabling, disabling, installing, removing, reloading, refreshing
   snapshots, checking status, or troubleshooting local Claude Code/Codex plugins
   and marketplaces. Triggers: "플러그인 켜/꺼줘", "plugin reload",
-  "marketplace refresh", "새 세션에 스킬이 안 보여", "local plugin cache". Do NOT
-  use for writing plugin skills or manifests.
+  "marketplace refresh", "새 세션에 스킬이 안 보여", "Unknown command",
+  "local plugin cache". Do NOT use for writing plugin skills or manifests.
 ---
 
 # Manage Local Plugins
@@ -42,6 +42,20 @@ find "$HOME/.codex/plugins/cache/$MARKETPLACE_NAME/$PLUGIN_NAME" -maxdepth 2 -ty
 ```
 
 If a CLI is unavailable, report that host as skipped instead of fabricating state.
+
+## Diagnostic Pattern: Source Has Skill, Session Does Not
+
+When a command or skill exists in the plugin repository but the current session reports `Unknown command` or the skill is missing from the loaded skill list, treat it as a snapshot/session problem before editing source code.
+
+Check these three surfaces separately:
+
+- Source repository: confirm `skills/<skill-name>/SKILL.md` exists in `PLUGIN_ROOT`, and inspect recent commits only as evidence that source contains the skill.
+- Installed plugin snapshot: inspect the host-specific cache, such as `~/.claude/plugins/cache/$MARKETPLACE_NAME/$PLUGIN_NAME/$VERSION/skills/` or `~/.codex/plugins/cache/$MARKETPLACE_NAME/$PLUGIN_NAME/`.
+- Current session: remember that already-running Claude Code or Codex sessions do not reload newly installed skills, hooks, or manifests. A new session is required after refreshing a local plugin.
+
+If the source has the skill but the cache snapshot does not, refresh the installed snapshot for that host. If the cache snapshot has the skill but the current session still does not, start a new session and verify there.
+
+For cross-host plugins, refresh Claude Code and Codex independently. They use separate installation/cache paths, so a successful Claude refresh does not prove the Codex snapshot is current, and vice versa.
 
 ## Claude Code
 
