@@ -13,7 +13,7 @@ description: >
 
 This skill exists to avoid Slack MCP and its token cost. Slack MCP tool definitions and raw responses consume a large amount of context; this helper replaces them with local scripts that return compact, pre-trimmed output. For Slack work, prefer this skill over Slack MCP tools even when MCP is available. The helper is read-first: it supports OAuth setup, compact Slack search/read commands, user/channel context caching, and workflow prompts for common Slack analysis tasks.
 
-Keep this file as the router. For any real task, read only the routed reference file(s) needed for that request, then call the Python scripts from this skill's `scripts/` directory. Always use the absolute path of the installed skill directory (`<SKILL_DIR>` in the reference files) — both when running scripts yourself and in any command shown to the user. Never use cwd-relative `skills/...` paths; the user's terminal and your working directory can be anywhere.
+Keep this file as the router. For any real task, first read `~/.config/slack-helper/MEMORY.md` if it exists and honor the user's recorded preferences; then read only the routed reference file(s) needed for that request, and call the Python scripts from this skill's `scripts/` directory. Always use the absolute path of the installed skill directory (`<SKILL_DIR>` in the reference files) — both when running scripts yourself and in any command shown to the user. Never use cwd-relative `skills/...` paths; the user's terminal and your working directory can be anywhere.
 
 ## Identity
 
@@ -53,3 +53,20 @@ Keep this file as the router. For any real task, read only the routed reference 
 - Prefer compact output. Use `--raw` only when a workflow truly needs full Slack API JSON.
 - For broad work, search compactly first, then read only selected threads with `slack_read.py thread`.
 - Slack search runs with the approved user token scope (`search:read`). Direct channel history/thread reads require bot access to that channel.
+
+## Memory
+
+- `~/.config/slack-helper/MEMORY.md`는 사용자별 **작업 선호·규칙**을 담는 자유형 markdown이다. config 디렉토리(레포 밖)에 두며, 파일은 `600`으로 만든다. 스크립트가 파싱하지 않으므로 에이전트가 Read/Edit로 직접 관리한다.
+- 사용자가 반복될 만한 선호나 규칙을 밝히면(예: "멘션 정리는 주요 채널만", "회고는 항상 결론 먼저") `MEMORY.md`에 한 줄로 append한다. 파일이 없으면 아래 형태로 새로 만든다.
+- 담는 것은 **워크플로우 선호·규칙뿐**이다. token·secret·`Client Secret`·메시지 본문·회사 식별자 값은 절대 기록하지 않는다. 채널/사람 식별자와 한 줄 요약은 `context.json`이 담당하므로 여기서 중복 저장하지 않는다.
+- 사용자가 명시적으로 선호를 바꾸거나 취소하면 해당 줄을 수정·삭제한다. 새 선호는 물어보지 말고 대화에서 분명히 드러난 것만 기록한다.
+
+```markdown
+# slack-helper memory
+
+## 워크플로우 선호
+- (예) 멘션 정리는 주요 채널만 대상으로 한다
+
+## 검색 습관
+- (예) "이번 주" 기준은 월요일 시작
+```
