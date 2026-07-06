@@ -1,4 +1,0 @@
-interface:
-  display_name: "Manage Local Plugins"
-  short_description: "Manage local Claude/Codex plugin state"
-  default_prompt: "Use $manage-local-plugins to turn a local Claude or Codex plugin on, off, or refresh it safely."

@@ -3,13 +3,13 @@
 > `agent-toolkit` 저장소의 현재 플러그인 스킬 목록.
 > 이 문서는 `skills/*/SKILL.md` frontmatter에서 생성한다.
 >
-> Last updated: 2026-07-05
+> Last updated: 2026-07-06
 
 ## 요약
 
 | 항목 | 개수 |
 |---|---:|
-| Physical plugin skills under `skills/` | 39 |
+| Physical plugin skills under `skills/` | 38 |
 
 스킬 카테고리는 이름과 설명에서 읽는 메타데이터다. 플러그인 로더 기준의 활성 스킬 루트는 `skills/` 하나다.
 
@@ -19,7 +19,6 @@
 |---|---|---|
 | [agent-harness-construction](../skills/agent-harness-construction/SKILL.md) | `agent-harness-construction` | Use when designing or reviewing AI agent harnesses, tool contracts, action/observation schemas, subagent delegation, completion evidence, error recovery, adversarial verification, or context budgeting. Triggers: "agent design review", "completion evidence", "adversarial verify", "receipt-only", "harness construction". Do NOT use for ordinary app code review. |
 | [agent-introspection-debugging](../skills/agent-introspection-debugging/SKILL.md) | `agent-introspection-debugging` | Use when an AI agent run is stuck, looping, drifting, hitting max tool calls, overflowing context, retrying without progress, or failing due to tool/environment mismatch. Triggers: "agent stuck", "agent looping", "max tool calls", "context overflow", "self-debug", "introspection report", "why is the agent failing". Do NOT use for ordinary app/runtime debugging. |
-| [create-claude-plugin](../skills/create-claude-plugin/SKILL.md) | `create-claude-plugin` | Use when the user wants to create, register, or troubleshoot a local Claude Code plugin or single-plugin local marketplace. Triggers: "플러그인 만들기", "plugin scaffold", "plugin 세팅", "local marketplace 등록", "plugin이 로드 안 됨". Do NOT use for Codex-only plugin setup. |
 | [create-mermaid-erd](../skills/create-mermaid-erd/SKILL.md) | `create-mermaid-erd` | Use when the user wants an ERD or database relationship diagram from a PRD, domain description, table list, DDL, DB schema, or existing Mermaid ERD. Triggers: "ERD 만들어줘", "테이블 관계도", "DB 설계 시각화", "데이터 모델링", "개념 ERD", "논리 ERD", "물리 ERD", "mermaid ERD", "DB 스키마 그려줘", "ERD HTML 미리보기". |
 | [daily-work-log](../skills/daily-work-log/SKILL.md) | `daily-work-log` | Use when the user wants to create a personal daily work log from Codex/Claude sessions or KB notes, set up a work-log template, or search saved work logs by date, tag, or keyword. Triggers: "daily work log", "오늘 한 일 정리", "어제 한 일 정리", "퇴근 전 회고", "지난주에 뭐 했지", "work log 찾아줘". |
 | [dev-teacher](../skills/dev-teacher/SKILL.md) | `dev-teacher` | Use when the user asks to understand code, infrastructure, CI/CD, architecture, flow, structure, design choices, or patterns in a project. Triggers: "설명해줘", "어떻게 동작해?", "왜 이렇게 했어?", "X 패턴이 뭐야?", "왜 X를 써?", "흐름이 뭐야?", "구조가 어떻게 돼?". |
@@ -36,7 +35,7 @@
 | [kb-manage](../skills/kb-manage/SKILL.md) | `kb-manage` | Use when setting up or maintaining a personal Markdown Knowledge Base (KB): resolving the KB root, explaining conventions, migrating an old layout, or maintaining index.md/log.jsonl. Triggers: "kb 만들어줘/셋업", "지식베이스 정리 규칙", "kb 루트 어디", "인덱스 정리". Do NOT use for adding knowledge, search, or health checks. |
 | [kb-search](../skills/kb-search/SKILL.md) | `kb-search` | Use when answering questions from a personal Markdown Knowledge Base (KB), finding related documents, checking whether something is already recorded, or locating source-of-truth notes without editing files. Triggers: "kb에서 찾아줘/검색해줘", "지식베이스에 ~ 있나", "전에 정리해둔 거 어디". Read-only. Do NOT use for KB writes or linting. |
 | [kb-write](../skills/kb-write/SKILL.md) | `kb-write` | Use when the user wants to save, add, file, merge, or organize knowledge in a personal Markdown Knowledge Base (KB), including notes, URLs, meetings, onboarding, procedures, decisions, and project context. Triggers: "kb에 저장/추가/정리해줘", "이거 메모/기록해둬", "지식베이스에 넣어줘". Do NOT use for KB search, setup, migration, or linting. |
-| [manage-local-plugins](../skills/manage-local-plugins/SKILL.md) | `manage-local-plugins` | Use when enabling, disabling, installing, removing, reloading, refreshing snapshots, checking status, or troubleshooting local Claude Code/Codex plugins and marketplaces. Triggers: "플러그인 켜/꺼줘", "plugin reload", "marketplace refresh", "새 세션에 스킬이 안 보여", "Unknown command", "local plugin cache". Do NOT use for writing plugin skills or manifests. |
+| [local-plugin-manager](../skills/local-plugin-manager/SKILL.md) | `local-plugin-manager` | Use for the full lifecycle of a local Claude Code/Codex plugin or local marketplace: scaffolding a new one, registering it, enabling/disabling, installing/removing, reloading or refreshing snapshots, checking status, and troubleshooting load failures. Triggers: "플러그인 만들기", "plugin scaffold", "local marketplace 등록", "플러그인 켜/꺼줘", "plugin reload", "marketplace refresh", "새 세션에 스킬이 안 보여", "Unknown command", "plugin이 로드 안 됨", "local plugin cache". Do NOT use for writing the skills themselves — use writing-skills. |
 | [node-backend-patterns](../skills/node-backend-patterns/SKILL.md) | `node-backend-patterns` | Use when writing, reviewing, or refactoring Node.js backend code in Express, Next.js API routes, or NestJS. Triggers: "Node 백엔드", "Express 라우트", "Next.js API", "NestJS", "Repository 패턴", "N+1 쿼리", "캐싱 전략", "JWT middleware", "structured logging". Do NOT use for REST contract design alone; use rest-api-design. |
 | [prompt-master](../skills/prompt-master/SKILL.md) | `prompt-master` | Use when creating, improving, reviewing, evaluating, or comparing LLM prompts for chat, API pipelines, system prompts, agent prompts, or subagent orchestration. Triggers: "프롬프트 만들어줘", "prompt 개선", "시스템 프롬프트", "에이전트 프롬프트", "prompt review", "prompt eval", "멀티에이전트 설계". Do NOT use for general product copy or docs. |
 | [publish-agent-toolkit](../skills/publish-agent-toolkit/SKILL.md) | `publish-agent-toolkit` | Use only when the user explicitly invokes "$agent-toolkit:publish-agent-toolkit", "$publish-agent-toolkit", says "agent-toolkit publish", or asks for the agent-toolkit publish/release loop. Do NOT use for ordinary commit, push, PR, or plugin reload requests. |

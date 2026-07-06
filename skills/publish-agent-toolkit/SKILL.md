@@ -20,7 +20,7 @@ This skill is intentionally explicit-only. Do not infer it from a normal request
 Before acting, read and follow:
 
 - `git-actions` for commit and push rules, including `references/commit.md`
-- `manage-local-plugins` for local plugin reload rules
+- `local-plugin-manager` for local plugin reload rules
 
 ## Preconditions
 
@@ -65,7 +65,7 @@ If the push fails, stop. Do not force push and do not reload.
 
 ### 3. Reload Plugins
 
-After a successful push, reload both Codex and Claude Code using `manage-local-plugins`.
+After a successful push, reload both Codex and Claude Code using `local-plugin-manager`.
 
 Run status checks first. If one host CLI is unavailable, report that host as skipped and continue with the available host.
 
@@ -73,7 +73,7 @@ Run status checks first. If one host CLI is unavailable, report that host as ski
 
 Resolve the installed plugin id from current Codex state when possible. Prefer the installed `agent-toolkit@...` entry shown by `codex plugin list`; fall back to the marketplace metadata only when the plugin is not currently installed.
 
-Follow the Codex reload sequence from `manage-local-plugins`:
+Follow the Codex reload sequence from `local-plugin-manager`:
 
 ```bash
 codex plugin marketplace add "$PLUGIN_ROOT" --json
@@ -89,7 +89,7 @@ Remove only the resolved cache path for `agent-toolkit`. Never remove the whole 
 
 Claude Code local plugin edits usually require a fresh Claude Code session to take effect. A separate cache prune is usually not needed.
 
-Follow the Claude Code reload sequence from `manage-local-plugins`:
+Follow the Claude Code reload sequence from `local-plugin-manager`:
 
 ```bash
 claude plugin validate "$PLUGIN_ROOT"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Local Plugin Manager"
+  short_description: "Set up and manage local Claude/Codex plugins"
+  default_prompt: "Use $local-plugin-manager to scaffold, register, toggle, or reload a local Claude/Codex plugin safely."
