@@ -3,13 +3,13 @@
 > `agent-toolkit` 저장소의 현재 플러그인 스킬 목록.
 > 이 문서는 `skills/*/SKILL.md` frontmatter에서 생성한다.
 >
-> Last updated: 2026-07-06
+> Last updated: 2026-07-07
 
 ## 요약
 
 | 항목 | 개수 |
 |---|---:|
-| Physical plugin skills under `skills/` | 38 |
+| Physical plugin skills under `skills/` | 39 |
 
 스킬 카테고리는 이름과 설명에서 읽는 메타데이터다. 플러그인 로더 기준의 활성 스킬 루트는 `skills/` 하나다.
 
@@ -51,6 +51,7 @@
 | [springboot-java-standards](../skills/springboot-java-standards/SKILL.md) | `springboot-java-standards` | Use when writing or reviewing Java 17+ code in a Spring Boot project, especially naming, package structure, immutability, Optional, streams, records/sealed classes, generics, Lombok, exceptions, tests, JPA/QueryDSL, or service-layer design. Triggers: "Java 코드 리뷰", "Spring Boot 서비스 작성", "Optional 써도 돼?", "JPA/QueryDSL 패턴". Do NOT use for Kotlin projects. |
 | [springboot-kotlin-standards](../skills/springboot-kotlin-standards/SKILL.md) | `springboot-kotlin-standards` | Use when writing or reviewing Kotlin code in a Spring Boot project, especially data/sealed classes, null safety, extension/scope functions, companion objects, constructor injection, exceptions, tests, JPA/QueryDSL, or service-layer design. Triggers: "Kotlin 코드 리뷰", "Spring Boot Kotlin 서비스", "nullable 처리", "JPA/QueryDSL 패턴". Do NOT use for Java projects. |
 | [test-sync-verifier](../skills/test-sync-verifier/SKILL.md) | `test-sync-verifier` | Use when code changes need test verification, failing tests need diagnosis, or tests must be updated to match intentional behavior without changing production code. Triggers: "테스트 확인해줘", "변경 검증해줘", "verify changes", "테스트 맞춰줘", "테스트 실패 분석", "regression 점검". Do NOT use when the user wants production-code fixes. |
+| [trace](../skills/trace/SKILL.md) | `trace` | Use when you need to explain WHY an observed result happened — ambiguous, causal, evidence-heavy problems where jumping straight to a fix is premature. Runs competing hypotheses in parallel lanes, ranks them by evidence strength, runs a rebuttal round, and recommends the next probe that collapses uncertainty fastest. Triggers: "왜 이런 결과가 나왔지", "원인 추적", "이 출력 역추적해줘", "regression 원인", "trace the cause", "root cause 분석", "premortem", "postmortem", "/trace". Do NOT use for a straightforward fix with a known cause — use ordinary debugging. |
 | [ui-feature-spec-docs](../skills/ui-feature-spec-docs/SKILL.md) | `ui-feature-spec-docs` | Use when deriving a screen-by-screen UI feature specification from frontend source code and optional design docs (docx/pdf) for Vue, React, Svelte, Angular, Next.js, Nuxt, or SvelteKit. Triggers: "화면별 기능 정의서 만들어줘", "UI 기능 명세 정리", "라우터 기반 기능 명세서", "화면설계서랑 소스 교차 검증", "ui feature spec", "/ui-feature-spec-docs". Do NOT use for component-only docs or UI test execution. |
 | [ui-test-runner](../skills/ui-test-runner/SKILL.md) | `ui-test-runner` | Use when running browser-based UI checks against a live dev server from a feature spec, test scenario, or URL list. Triggers: "UI 테스트 돌려줘", "화면 테스트 시나리오 실행", "Playwright로 검증", "smoke test", "E2E 돌려봐줘", "버튼 눌러보고 결과 확인", "프론트 회귀 테스트", "/ui-test-runner". Do NOT use for unit tests, Cypress/Vitest code generation, or tests that must perform real backend mutations. |
 | [update-project-docs](../skills/update-project-docs/SKILL.md) | `update-project-docs` | Use when the agent-toolkit repo's plugin docs or manifests may be out of sync after adding, moving, deleting, or renaming skills, changing SKILL.md frontmatter, changing .codex-plugin/.claude-plugin skill settings, or updating plugin loading structure. Triggers: "catalog 갱신", "문서 동기화", "스킬 추가했어", "plugin manifest 바꿨어". Do NOT use for unrelated project docs. |
