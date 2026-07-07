@@ -8,7 +8,7 @@
       "name": "agent-toolkit",
       "source": "./",
       "description": "Personal curated skills toolkit",
-      "version": "0.1.2"
+      "version": "0.1.3"
     }
   ]
 }
