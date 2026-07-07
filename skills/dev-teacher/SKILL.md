@@ -1,10 +1,12 @@
 ---
 name: dev-teacher
 description: >
-  Use when the user asks to understand code, infrastructure, CI/CD,
-  architecture, flow, structure, design choices, or patterns in a project.
-  Triggers: "설명해줘", "어떻게 동작해?", "왜 이렇게 했어?", "X 패턴이 뭐야?",
-  "왜 X를 써?", "흐름이 뭐야?", "구조가 어떻게 돼?".
+  Manual-only. Invoke this skill ONLY when the user directly types the
+  "/dev-teacher" slash command. NEVER auto-select or infer this skill from the
+  content of a request — no question, keyword, or topic (code explanation,
+  architecture, flow, structure, design, patterns, "설명해줘", "어떻게 동작해?",
+  etc.) should ever trigger it. If the user did not type "/dev-teacher", ignore
+  this skill entirely and answer normally.
 ---
 
 # Dev Teacher
