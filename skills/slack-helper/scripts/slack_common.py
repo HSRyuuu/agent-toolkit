@@ -12,7 +12,7 @@ import sys
 import tempfile
 import time
 import urllib.parse
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -22,7 +22,13 @@ DEFAULT_CONFIG_DIR = Path("~/.config/slack-helper").expanduser()
 CONFIG_FILE = "config.json"
 LEGACY_CONFIG_FILES = ("oauth-app.json", "api-key.json", "context.json", "channel-info.json")
 DEFAULT_BOT_SCOPES = ["team:read", "users:read", "channels:read", "channels:history"]
-DEFAULT_USER_SCOPES = ["search:read"]
+DEFAULT_USER_SCOPES = [
+    "search:read",
+    "channels:read",
+    "channels:history",
+    "groups:read",
+    "groups:history",
+]
 DEFAULT_REDIRECT_URI = "http://localhost:8765/slack-helper/callback"
 SLACK_API_BASE = "https://slack.com/api"
 SLACK_AUTHORIZE_URL = "https://slack.com/oauth/v2/authorize"
@@ -366,8 +372,9 @@ def user_token_for(args: Any) -> str:
     authed_user = workspace.get("authed_user")
     if not isinstance(authed_user, dict) or not authed_user.get("access_token"):
         raise SlackHelperError(
-            "검색용 User token이 없습니다. Slack App의 OAuth & Permissions > "
-            "User Token Scopes에 search:read를 추가한 뒤 oauth-start와 oauth-finish를 "
+            "User token이 없습니다. Slack App의 OAuth & Permissions > "
+            "User Token Scopes에 search:read, channels:read, channels:history, "
+            "groups:read, groups:history를 추가한 뒤 oauth-start와 oauth-finish를 "
             "다시 실행해 주세요."
         )
     return str(authed_user["access_token"])
@@ -393,13 +400,15 @@ def day_bounds(date_str: str, tz_name: str | None = None) -> tuple[str, str]:
     return f"{start.timestamp():.6f}", f"{next_start.timestamp() - 0.000001:.6f}"
 
 
-def format_ts_utc(ts: str | float | int) -> str:
+def format_ts_local(ts: str | float | int, tz_name: str | None = None) -> str:
     value = str(ts).split(".", 1)[0]
     try:
         seconds = int(value)
     except ValueError:
         return str(ts)
-    return datetime.fromtimestamp(seconds, tz=timezone.utc).strftime("%Y-%m-%d %H:%M")
+    if tz_name:
+        return datetime.fromtimestamp(seconds, tz=ZoneInfo(tz_name)).strftime("%Y-%m-%d %H:%M")
+    return datetime.fromtimestamp(seconds).strftime("%Y-%m-%d %H:%M")
 
 
 def truncate_text(text: str, limit: int = 120) -> str:
@@ -513,7 +522,7 @@ def format_message_line(
     base = re.sub(r"\s+", " ", str(message.get("text") or "")).strip()
     text = truncate_text(display, 120 if display == base else 200)
     permalink = str(message.get("permalink") or "-")
-    return f"[{format_ts_utc(message.get('ts', '-'))}] #{channel} @{user}: {text} | {permalink}"
+    return f"[{format_ts_local(message.get('ts', '-'))}] #{channel} @{user}: {text} | {permalink}"
 
 
 def format_search_results(response: dict[str, Any]) -> str:
@@ -566,7 +575,7 @@ def format_users(response: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def resolve_channel(value: str, token: str) -> str:
+def resolve_channel(value: str, token: str, *, types: str = "public_channel") -> str:
     """채널 ID는 그대로 쓰고, 채널 이름이면 conversations.list로 ID를 찾는다."""
     channel = value.strip().lstrip("#")
     if CHANNEL_ID_RE.match(channel):
@@ -575,7 +584,7 @@ def resolve_channel(value: str, token: str) -> str:
     while True:
         payload: dict[str, Any] = {
             "limit": 200,
-            "types": "public_channel",
+            "types": types,
             "exclude_archived": "true",
         }
         if cursor:

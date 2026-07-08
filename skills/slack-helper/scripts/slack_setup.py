@@ -71,12 +71,17 @@ slack-helper 처음 설정 가이드
 
 6. User Token Scopes 추가
    같은 Scopes 화면의 User Token Scopes에서 추가합니다.
-   Slack 메시지 검색: search:read
+   기본으로 아래 5개를 모두 추가합니다.
+   search:read: 메시지 검색
+   channels:read: 공개 채널 목록 읽기
+   channels:history: 공개 채널 대화와 스레드 직접 읽기
+   groups:read: 사용자가 들어간 비공개 채널 목록 읽기
+   groups:history: 사용자가 들어간 비공개 채널 대화와 스레드 직접 읽기
    참고: search.messages는 User token을 사용합니다. Bot Token Scopes만으로는 검색할 수 없습니다.
-   결론: 기본 권한은 Bot 4개 + User search:read 입니다.
+   결론: 기본 권한은 Bot 4개 + User 5개입니다.
    안내: 이 스킬은 여기서 등록한 권한까지만 Slack을 조회할 수 있습니다.
    전부 읽기 권한이므로 메시지 전송, 수정, 삭제는 불가능하고,
-   등록하지 않은 권한이 필요한 조회(예: DM, 비공개 채널 읽기)도 되지 않습니다.
+   등록하지 않은 권한이 필요한 조회(예: DM 읽기)도 되지 않습니다.
 
 7. Slack 승인 화면 열기
    python3 "{script}" oauth-start --open
@@ -132,9 +137,16 @@ def configured_scopes(oauth_app: dict[str, Any], args: argparse.Namespace) -> st
 def configured_user_scopes(oauth_app: dict[str, Any], args: argparse.Namespace) -> str:
     scopes = args.user_scopes or oauth_app.get("user_scopes") or DEFAULT_USER_SCOPES
     if isinstance(scopes, str):
-        return scopes
+        scope_list = split_scopes(scopes)
+        if args.user_scopes:
+            return ",".join(scope_list)
+        scope_list.extend(scope for scope in DEFAULT_USER_SCOPES if scope not in scope_list)
+        return ",".join(scope_list)
     if isinstance(scopes, list) and all(isinstance(item, str) for item in scopes):
-        return ",".join(scopes)
+        scope_list = [scope for scope in scopes if scope]
+        if not args.user_scopes:
+            scope_list.extend(scope for scope in DEFAULT_USER_SCOPES if scope not in scope_list)
+        return ",".join(scope_list)
     raise SlackHelperError("user_scopes must be a string or list of strings")
 
 
@@ -278,7 +290,8 @@ def command_oauth_finish(args: argparse.Namespace) -> int:
     if not auth_value:
         raise SlackHelperError(
             "OAuth 응답에 사용할 수 있는 토큰이 없습니다. Slack App의 OAuth & Permissions에서 "
-            "Bot Token Scopes 또는 User Token Scopes(search:read)를 추가한 뒤 다시 시도해 주세요."
+            "Bot Token Scopes 또는 User Token Scopes(search:read, channels:read, "
+            "channels:history, groups:read, groups:history)를 추가한 뒤 다시 시도해 주세요."
         )
     token_type = "bot" if bot_token else "user"
 
