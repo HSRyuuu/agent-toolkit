@@ -12,11 +12,9 @@ from slack_common import (
     SlackHelperError,
     add_workspace_arg,
     format_search_results,
-    load_context,
     load_workspace,
     load_workspace_identity,
     print_response,
-    resolve_channel_name,
     run_main,
     slack_method,
     user_token_for,
@@ -44,16 +42,6 @@ def _validate_date(value: str | None, option: str) -> str | None:
     return value
 
 
-def _to_me_user_id(args: argparse.Namespace) -> str | None:
-    explicit = getattr(args, "user_id", None)
-    if explicit:
-        return str(explicit)
-    context_me = load_context().get("me")
-    if isinstance(context_me, dict) and context_me.get("user_id"):
-        return str(context_me["user_id"])
-    return None
-
-
 def build_search_query(keywords: list[str], args: argparse.Namespace) -> list[str]:
     terms = [_quote_keyword(keyword) for keyword in keywords if keyword.strip()]
     if not terms:
@@ -66,9 +54,9 @@ def build_search_query(keywords: list[str], args: argparse.Namespace) -> list[st
     if getattr(args, "from_user", None):
         shared.append(f"from:{args.from_user}")
     if getattr(args, "in_channel", None):
-        shared.append(f"in:{resolve_channel_name(args.in_channel)}")
+        shared.append(f"in:{args.in_channel.strip().lstrip('#')}")
     if getattr(args, "to_me", False):
-        user_id = _to_me_user_id(args)
+        user_id = getattr(args, "user_id", None)
         if not user_id:
             raise SlackHelperError("resolve-me로 내 ID를 먼저 저장하세요.")
         shared.append(f'"<@{user_id}>"')
@@ -125,7 +113,7 @@ def _identity_user_id(args: argparse.Namespace) -> str | None:
     identity = load_workspace_identity(workspace)
     if identity.get("user_id"):
         return str(identity["user_id"])
-    return _to_me_user_id(args)
+    return None
 
 
 def command_search(args: argparse.Namespace) -> int:
@@ -183,7 +171,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_workspace_arg(search)
     search.add_argument("query", nargs="*", default=[], help="검색어. 여러 개면 키워드별로 검색 후 병합. --to-me 또는 --from을 쓰면 생략 가능")
     search.add_argument("--from", dest="from_user", help="Slack search from: modifier 값")
-    search.add_argument("--in", dest="in_channel", help="채널명 또는 context.json 별칭")
+    search.add_argument("--in", dest="in_channel", help="검색 범위를 좁힐 채널 이름")
     search.add_argument("--to-me", action="store_true", help="저장된 내 member ID 멘션 검색")
     search.add_argument("--after", help="YYYY-MM-DD")
     search.add_argument("--before", help="YYYY-MM-DD")

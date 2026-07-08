@@ -134,26 +134,32 @@ def case_match_user_identity_ambiguous_errors() -> bool:
     return check("ambiguous match raises SlackHelperError", False, "no error raised")
 
 
-def case_load_channel_id_passthrough_and_alias() -> bool:
-    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
-        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
+def case_resolve_channel_id_and_name_lookup() -> bool:
+    original = common.slack_method
+
+    def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
+        return {
+            "ok": True,
+            "channels": [
+                {"id": "C0123456789", "name": "general"},
+                {"id": "C0987654321", "name": "backend"},
+            ],
+        }
+
+    try:
+        common.slack_method = fake_slack_method
+        direct = common.resolve_channel("C0123456789", "t")
+        by_name = common.resolve_channel("#backend", "t")
+        missing_raises = False
         try:
-            direct = common.resolve_channel("C0123456789")
-            common.write_json_secure(
-                Path(tmp) / "channel-info.json",
-                {"channels": {"general": "C0123456789"}},
-            )
-            alias = common.resolve_channel("general")
-            missing_raises = False
-            try:
-                common.resolve_channel("nope")
-            except common.SlackHelperError:
-                missing_raises = True
-        finally:
-            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+            common.resolve_channel("nope", "t")
+        except common.SlackHelperError:
+            missing_raises = True
+    finally:
+        common.slack_method = original
     return check(
-        "load_channel_id passes IDs, resolves aliases, errors on unknown",
-        direct == "C0123456789" and alias == "C0123456789" and missing_raises,
+        "resolve_channel passes IDs, resolves names via API, errors on unknown",
+        direct == "C0123456789" and by_name == "C0987654321" and missing_raises,
     )
 
 
@@ -223,61 +229,60 @@ def case_common_format_message_line() -> bool:
     )
 
 
-def case_common_context_channel_resolution_order() -> bool:
+def case_common_legacy_config_migration() -> bool:
     with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
         os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
         try:
-            common.save_context(
+            common.write_json_secure(
+                Path(tmp) / "oauth-app.json",
                 {
-                    "channels": {
-                        "backend": {
-                            "id": "C111",
-                            "name": "backend-team",
-                            "summary": "backend work",
-                        }
-                    }
-                }
+                    "client_id": "CID",
+                    "client_secret": "S",
+                    "redirect_uri": "http://localhost:8765/callback",
+                    "scopes": ["team:read"],
+                    "user_scopes": ["search:read"],
+                    "user_identity": {"identifier": "hs.ryu", "name": "old-name"},
+                },
             )
             common.write_json_secure(
-                Path(tmp) / "channel-info.json",
-                {"channels": {"legacy": "C222"}},
+                Path(tmp) / "api-key.json",
+                {
+                    "default_workspace": "default",
+                    "workspaces": {
+                        "default": {"token": "t", "user_identity": {"user_id": "U123"}}
+                    },
+                },
             )
-            direct = common.resolve_channel("C333")
-            from_context = common.resolve_channel("backend")
-            context_name = common.resolve_channel_name("backend")
-            from_legacy = common.resolve_channel("legacy")
-            missing_raises = False
-            try:
-                common.resolve_channel("missing")
-            except common.SlackHelperError:
-                missing_raises = True
+            common.write_json_secure(
+                Path(tmp) / "context.json",
+                {
+                    "me": {"identifier": "hs.ryu"},
+                    "channels": {
+                        "backend": {"id": "C1", "name": "backend", "summary": "backend work"}
+                    },
+                },
+            )
+            config = common.load_config()
+            config_mode = stat.S_IMODE(common.config_path().stat().st_mode)
+            memory_text = (Path(tmp) / "MEMORY.md").read_text(encoding="utf-8")
+            legacy_left = [
+                name
+                for name in common.LEGACY_CONFIG_FILES
+                if (Path(tmp) / name).exists()
+            ]
         finally:
             os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+    identity = config["workspaces"]["default"]["user_identity"]
     return check(
-        "resolve_channel uses ID, context.json, then channel-info fallback",
-        direct == "C333"
-        and from_context == "C111"
-        and context_name == "backend-team"
-        and from_legacy == "C222"
-        and missing_raises,
-    )
-
-
-def case_common_save_context_permissions() -> bool:
-    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
-        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
-        try:
-            common.save_context({"me": {"identifier": "hs.ryu"}, "channels": {}})
-            target = Path(tmp) / "context.json"
-            file_mode = stat.S_IMODE(target.stat().st_mode)
-            roundtrip = common.load_context()
-        finally:
-            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
-    return check(
-        "save_context writes context.json with 600 permissions",
-        file_mode == 0o600
-        and roundtrip == {"me": {"identifier": "hs.ryu"}, "channels": {}},
-        f"file={oct(file_mode)}",
+        "legacy 3-file config migrates into config.json + MEMORY.md and removes old files",
+        config["app"]["client_id"] == "CID"
+        and "user_identity" not in config["app"]
+        and identity == {"identifier": "hs.ryu", "name": "old-name", "user_id": "U123"}
+        and config["default_workspace"] == "default"
+        and config_mode == 0o600
+        and "backend — C1 — backend work" in memory_text
+        and not legacy_left,
+        str(identity),
     )
 
 
@@ -296,13 +301,15 @@ def case_setup_oauth_url_uses_saved_config() -> bool:
         os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
         try:
             common.write_json_secure(
-                Path(tmp) / "oauth-app.json",
+                Path(tmp) / "config.json",
                 {
-                    "client_id": "CID123",
-                    "client_secret": "S",
-                    "redirect_uri": "http://localhost:8765/callback",
-                    "scopes": ["team:read", "users:read"],
-                    "user_scopes": ["search:read"],
+                    "app": {
+                        "client_id": "CID123",
+                        "client_secret": "S",
+                        "redirect_uri": "http://localhost:8765/callback",
+                        "scopes": ["team:read", "users:read"],
+                        "user_scopes": ["search:read"],
+                    }
                 },
             )
             args = type(
@@ -329,33 +336,37 @@ def case_setup_oauth_url_uses_saved_config() -> bool:
     )
 
 
-def case_setup_save_identity_mirrors_context() -> bool:
+def case_setup_save_identity_single_store() -> bool:
     setup = load_module("slack_setup")
     with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
         os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
         try:
+            missing_workspace_raises = False
+            try:
+                setup.save_identity({"identifier": "hs.ryu"})
+            except common.SlackHelperError:
+                missing_workspace_raises = True
             common.write_json_secure(
-                Path(tmp) / "api-key.json",
+                Path(tmp) / "config.json",
                 {
                     "default_workspace": "default",
                     "workspaces": {"default": {"token": "t"}},
                 },
             )
-            changed = setup.save_identity_to_configs(
+            saved = setup.save_identity(
                 {"identifier": "hs.ryu", "user_id": "U123"},
                 workspace_name="default",
             )
-            api_keys = common.read_json(Path(tmp) / "api-key.json")
-            context = common.load_context()
+            config = common.load_config()
         finally:
             os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
     return check(
-        "slack_setup.save_identity_to_configs mirrors me into context.json",
-        changed["api_key"]
-        and changed["context"]
-        and api_keys["workspaces"]["default"]["user_identity"]["user_id"] == "U123"
-        and context["me"]["identifier"] == "hs.ryu"
-        and context["me"]["user_id"] == "U123",
+        "slack_setup.save_identity stores identity only in workspace record",
+        missing_workspace_raises
+        and saved == "default"
+        and config["workspaces"]["default"]["user_identity"]["user_id"] == "U123"
+        and "user_identity" not in config.get("app", {})
+        and "me" not in config,
     )
 
 
@@ -369,8 +380,6 @@ def case_setup_init_oauth_rejects_non_tty() -> bool:
             "redirect_uri": None,
             "scopes": None,
             "user_scopes": None,
-            "slack_user": None,
-            "slack_user_id": None,
         },
     )()
     try:
@@ -378,105 +387,6 @@ def case_setup_init_oauth_rejects_non_tty() -> bool:
     except common.SlackHelperError:
         return check("slack_setup.init-oauth rejects non-TTY execution", True)
     return check("slack_setup.init-oauth rejects non-TTY execution", False)
-
-
-def case_context_add_remove_show() -> bool:
-    context = load_module("slack_context")
-    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
-        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
-        try:
-            add_args = type(
-                "Args",
-                (),
-                {
-                    "alias": "backend",
-                    "id": "C123",
-                    "name": "backend",
-                    "summary": "backend work",
-                },
-            )()
-            remove_args = type("Args", (), {"alias": "backend"})()
-            with redirect_stdout(io.StringIO()):
-                context.command_add_channel(add_args)
-            saved = common.load_context()
-            output = io.StringIO()
-            with redirect_stdout(output):
-                context.command_show(type("Args", (), {})())
-            with redirect_stdout(io.StringIO()):
-                context.command_remove_channel(remove_args)
-            after_remove = common.load_context()
-        finally:
-            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
-    return check(
-        "slack_context add/show/remove manages context.json channels",
-        saved["channels"]["backend"]["id"] == "C123"
-        and "backend" in output.getvalue()
-        and "backend" not in after_remove["channels"],
-    )
-
-
-def case_context_draft_summaries_uses_channel_samples() -> bool:
-    context = load_module("slack_context")
-    calls: list[tuple[str, dict[str, object]]] = []
-
-    def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
-        calls.append((method, payload or {}))
-        if method == "conversations.list":
-            return {
-                "ok": True,
-                "channels": [
-                    {
-                        "id": "C1",
-                        "name": "backend",
-                        "topic": {"value": "backend topic"},
-                        "purpose": {"value": "backend purpose"},
-                    },
-                    {
-                        "id": "C2",
-                        "name": "ops",
-                        "topic": {"value": "ops topic"},
-                        "purpose": {"value": "ops purpose"},
-                    },
-                ],
-            }
-        if method == "conversations.history" and payload.get("channel") == "C1":
-            return {
-                "ok": True,
-                "messages": [
-                    {"text": "deploy finished", "ts": "1717243200.0"},
-                    {"text": "incident follow up", "ts": "1717243100.0"},
-                ],
-            }
-        return {"ok": False, "error": "not_in_channel"}
-
-    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
-        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
-        try:
-            common.write_json_secure(
-                Path(tmp) / "api-key.json",
-                {
-                    "default_workspace": "default",
-                    "workspaces": {"default": {"token": "t"}},
-                },
-            )
-            context.slack_method = fake_slack_method
-            args = type(
-                "Args",
-                (),
-                {"workspace": None, "limit_channels": 2, "messages_per_channel": 2},
-            )()
-            output = io.StringIO()
-            with redirect_stdout(output):
-                context.command_draft_summaries(args)
-        finally:
-            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
-    text = output.getvalue()
-    return check(
-        "slack_context draft-summaries prints message or topic based summary drafts",
-        ("backend" in text and "deploy finished" in text)
-        and ("ops" in text and "ops topic" in text)
-        and calls[0][0] == "conversations.list",
-    )
 
 
 def case_read_users_compact_and_raw() -> bool:
@@ -496,7 +406,7 @@ def case_read_users_compact_and_raw() -> bool:
         os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
         try:
             common.write_json_secure(
-                Path(tmp) / "api-key.json",
+                Path(tmp) / "config.json",
                 {
                     "default_workspace": "default",
                     "workspaces": {"default": {"token": "t"}},
@@ -522,9 +432,12 @@ def case_read_users_compact_and_raw() -> bool:
 def case_read_channel_history_and_thread() -> bool:
     read = load_module("slack_read")
     calls: list[tuple[str, dict[str, object]]] = []
+    original = common.slack_method
 
     def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
         calls.append((method, payload or {}))
+        if method == "conversations.list":
+            return {"ok": True, "channels": [{"id": "C1", "name": "backend"}]}
         return {
             "ok": True,
             "messages": [
@@ -541,19 +454,13 @@ def case_read_channel_history_and_thread() -> bool:
         os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
         try:
             common.write_json_secure(
-                Path(tmp) / "api-key.json",
+                Path(tmp) / "config.json",
                 {
                     "default_workspace": "default",
                     "workspaces": {"default": {"token": "t"}},
                 },
             )
-            common.save_context(
-                {
-                    "channels": {
-                        "backend": {"id": "C1", "name": "backend", "summary": "backend"}
-                    }
-                }
-            )
+            common.slack_method = fake_slack_method
             read.slack_method = fake_slack_method
             history = io.StringIO()
             with redirect_stdout(history):
@@ -570,16 +477,18 @@ def case_read_channel_history_and_thread() -> bool:
                     type(
                         "Args",
                         (),
-                        {"workspace": None, "channel": "backend", "ts": "1717243200.0", "limit": 50, "raw": False},
+                        {"workspace": None, "channel": "C1", "ts": "1717243200.0", "limit": 50, "raw": False},
                     )()
                 )
         finally:
+            common.slack_method = original
             os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
     return check(
-        "slack_read channel-history resolves channel and thread calls conversations.replies",
+        "slack_read channel-history resolves channel name and thread calls conversations.replies",
         "[2024-06-01 12:00] #C1 @U1: hello | https://example.test/p1" in history.getvalue()
-        and calls[0] == ("conversations.history", {"channel": "C1", "limit": 2})
-        and calls[1] == ("conversations.replies", {"channel": "C1", "ts": "1717243200.0", "limit": 50}),
+        and calls[0][0] == "conversations.list"
+        and calls[1] == ("conversations.history", {"channel": "C1", "limit": 2})
+        and calls[2] == ("conversations.replies", {"channel": "C1", "ts": "1717243200.0", "limit": 50}),
     )
 
 
@@ -595,7 +504,7 @@ def case_read_channel_history_on_date_payload() -> bool:
         os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
         try:
             common.write_json_secure(
-                Path(tmp) / "api-key.json",
+                Path(tmp) / "config.json",
                 {
                     "default_workspace": "default",
                     "workspaces": {"default": {"token": "t"}},
@@ -641,7 +550,7 @@ def case_read_not_in_channel_mentions_search_fallback() -> bool:
         os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
         try:
             common.write_json_secure(
-                Path(tmp) / "api-key.json",
+                Path(tmp) / "config.json",
                 {
                     "default_workspace": "default",
                     "workspaces": {"default": {"token": "t"}},
@@ -665,51 +574,38 @@ def case_read_not_in_channel_mentions_search_fallback() -> bool:
 
 def case_search_build_query_options() -> bool:
     search = load_module("slack_search")
-    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
-        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
-        try:
-            common.save_context(
-                {
-                    "me": {"identifier": "hs.ryu", "user_id": "U123"},
-                    "channels": {
-                        "backend": {"id": "C1", "name": "backend-team", "summary": "backend"}
-                    },
-                }
-            )
-            args = type(
-                "Args",
-                (),
-                {
-                    "from_user": "me",
-                    "in_channel": "backend",
-                    "to_me": True,
-                    "after": "2026-07-01",
-                    "before": None,
-                    "on": None,
-                    "days": None,
-                    "user_id": "U123",
-                },
-            )()
-            queries = search.build_search_query(["deploy fix"], args)
-            multi = search.build_search_query(
-                ["alpha", "beta"],
-                type(
-                    "Args",
-                    (),
-                    {
-                        "from_user": None,
-                        "in_channel": None,
-                        "to_me": False,
-                        "after": None,
-                        "before": None,
-                        "on": None,
-                        "days": None,
-                        "user_id": None,
-                    },
-                )(),
-            )
-        finally:
-            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+    args = type(
+        "Args",
+        (),
+        {
+            "from_user": "me",
+            "in_channel": "#backend-team",
+            "to_me": True,
+            "after": "2026-07-01",
+            "before": None,
+            "on": None,
+            "days": None,
+            "user_id": "U123",
+        },
+    )()
+    queries = search.build_search_query(["deploy fix"], args)
+    multi = search.build_search_query(
+        ["alpha", "beta"],
+        type(
+            "Args",
+            (),
+            {
+                "from_user": None,
+                "in_channel": None,
+                "to_me": False,
+                "after": None,
+                "before": None,
+                "on": None,
+                "days": None,
+                "user_id": None,
+            },
+        )(),
+    )
     return check(
         "slack_search build_search_query maps modifiers and splits multiple keywords",
         queries == ['"deploy fix" from:me in:backend-team "<@U123>" after:2026-07-01']
@@ -742,30 +638,26 @@ def case_search_days_after_conflict_and_to_me_error() -> bool:
         )
     except common.SlackHelperError:
         conflict = True
-    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
-        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
-        try:
-            search.build_search_query(
-                ["deploy"],
-                type(
-                    "Args",
-                    (),
-                    {
-                        "from_user": None,
-                        "in_channel": None,
-                        "to_me": True,
-                        "after": None,
-                        "before": None,
-                        "on": None,
-                        "days": None,
-                        "user_id": None,
-                    },
-                )(),
-            )
-        except common.SlackHelperError as exc:
-            missing_me = "resolve-me" in str(exc)
-        finally:
-            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+    try:
+        search.build_search_query(
+            ["deploy"],
+            type(
+                "Args",
+                (),
+                {
+                    "from_user": None,
+                    "in_channel": None,
+                    "to_me": True,
+                    "after": None,
+                    "before": None,
+                    "on": None,
+                    "days": None,
+                    "user_id": None,
+                },
+            )(),
+        )
+    except common.SlackHelperError as exc:
+        missing_me = "resolve-me" in str(exc)
     return check(
         "slack_search rejects --days/--after conflict and missing --to-me identity",
         conflict and missing_me,
@@ -853,7 +745,7 @@ def case_search_command_multi_keyword_compact() -> bool:
         os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
         try:
             common.write_json_secure(
-                Path(tmp) / "api-key.json",
+                Path(tmp) / "config.json",
                 {
                     "default_workspace": "default",
                     "workspaces": {
@@ -909,20 +801,17 @@ def main() -> int:
         case_supported_redirect_uri,
         case_match_user_identity_unique,
         case_match_user_identity_ambiguous_errors,
-        case_load_channel_id_passthrough_and_alias,
+        case_resolve_channel_id_and_name_lookup,
         case_write_json_secure_permissions,
         case_common_format_ts_utc,
         case_common_day_bounds_boundaries,
         case_common_truncate_text,
         case_common_format_message_line,
-        case_common_context_channel_resolution_order,
-        case_common_save_context_permissions,
+        case_common_legacy_config_migration,
         case_setup_workspace_slug_normalizes,
         case_setup_oauth_url_uses_saved_config,
-        case_setup_save_identity_mirrors_context,
+        case_setup_save_identity_single_store,
         case_setup_init_oauth_rejects_non_tty,
-        case_context_add_remove_show,
-        case_context_draft_summaries_uses_channel_samples,
         case_read_users_compact_and_raw,
         case_read_channel_history_and_thread,
         case_read_channel_history_on_date_payload,

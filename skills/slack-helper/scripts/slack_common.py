@@ -19,6 +19,8 @@ from zoneinfo import ZoneInfo
 
 
 DEFAULT_CONFIG_DIR = Path("~/.config/slack-helper").expanduser()
+CONFIG_FILE = "config.json"
+LEGACY_CONFIG_FILES = ("oauth-app.json", "api-key.json", "context.json", "channel-info.json")
 DEFAULT_BOT_SCOPES = ["team:read", "users:read", "channels:read", "channels:history"]
 DEFAULT_USER_SCOPES = ["search:read"]
 DEFAULT_REDIRECT_URI = "http://localhost:8765/slack-helper/callback"
@@ -245,50 +247,113 @@ def slack_method(
     return response
 
 
+def config_path() -> Path:
+    return config_dir() / CONFIG_FILE
+
+
+def _memory_channel_lines(context: dict[str, Any], channel_info: dict[str, Any]) -> list[str]:
+    lines: list[str] = []
+    channels = context.get("channels")
+    if isinstance(channels, dict):
+        for alias, entry in sorted(channels.items()):
+            if not isinstance(entry, dict):
+                continue
+            channel_id = str(entry.get("id") or "-")
+            note = str(entry.get("summary") or entry.get("name") or "").strip()
+            lines.append(f"- {alias} — {channel_id}" + (f" — {note}" if note else ""))
+    legacy = channel_info.get("channels", channel_info)
+    if isinstance(legacy, dict):
+        for alias, channel_id in sorted(legacy.items()):
+            if isinstance(channel_id, str):
+                lines.append(f"- {alias} — {channel_id}")
+    return lines
+
+
+def _migrate_channels_to_memory(context: dict[str, Any], channel_info: dict[str, Any]) -> None:
+    lines = _memory_channel_lines(context, channel_info)
+    if not lines:
+        return
+    memory_path = config_dir() / "MEMORY.md"
+    existing = memory_path.read_text(encoding="utf-8") if memory_path.exists() else ""
+    if not existing:
+        existing = "# slack-helper memory\n"
+    block = "\n## 채널\n" + "\n".join(lines) + "\n"
+    memory_path.write_text(existing.rstrip("\n") + "\n" + block, encoding="utf-8")
+    os.chmod(memory_path, stat.S_IRUSR | stat.S_IWUSR)
+
+
+def _migrate_legacy_config(target: Path) -> bool:
+    """구버전 3분할 config(oauth-app/api-key/context)를 config.json 하나로 합친다."""
+    directory = config_dir()
+    oauth_app = read_json(directory / "oauth-app.json", required=False)
+    api_keys = read_json(directory / "api-key.json", required=False)
+    context = read_json(directory / "context.json", required=False)
+    channel_info = read_json(directory / "channel-info.json", required=False)
+    if not oauth_app and not api_keys:
+        return False
+
+    config: dict[str, Any] = {}
+    app = {key: value for key, value in oauth_app.items() if key != "user_identity"}
+    if app:
+        config["app"] = app
+    if api_keys.get("default_workspace"):
+        config["default_workspace"] = api_keys["default_workspace"]
+    workspaces = api_keys.get("workspaces")
+    config["workspaces"] = workspaces if isinstance(workspaces, dict) else {}
+
+    context_me = context.get("me")
+    oauth_identity = oauth_app.get("user_identity")
+    fallback_identity = merge_user_identity(
+        context_me if isinstance(context_me, dict) else None,
+        oauth_identity if isinstance(oauth_identity, dict) else None,
+    )
+    for workspace in config["workspaces"].values():
+        if not isinstance(workspace, dict):
+            continue
+        existing = workspace.get("user_identity")
+        merged = merge_user_identity(
+            fallback_identity, existing if isinstance(existing, dict) else None
+        )
+        if merged:
+            workspace["user_identity"] = merged
+
+    write_json_secure(target, config)
+    _migrate_channels_to_memory(context, channel_info)
+    for name in LEGACY_CONFIG_FILES:
+        legacy_path = directory / name
+        if legacy_path.exists():
+            legacy_path.unlink()
+    return True
+
+
+def load_config(*, required: bool = True) -> dict[str, Any]:
+    path = config_path()
+    if not path.exists():
+        _migrate_legacy_config(path)
+    return read_json(path, required=required)
+
+
+def save_config(data: dict[str, Any]) -> None:
+    write_json_secure(config_path(), data)
+
+
 def load_workspace(name: str | None) -> tuple[str, dict[str, Any]]:
-    api_keys = read_json(config_dir() / "api-key.json")
-    workspace_name = name or api_keys.get("default_workspace")
+    config = load_config()
+    workspace_name = name or config.get("default_workspace")
     if not workspace_name:
         raise SlackHelperError("No workspace specified and no default_workspace is set")
-    workspaces = api_keys.get("workspaces")
+    workspaces = config.get("workspaces")
     if not isinstance(workspaces, dict) or workspace_name not in workspaces:
-        raise SlackHelperError(f"Workspace not found in api-key.json ({workspace_name})")
+        raise SlackHelperError(f"Workspace not found in config.json ({workspace_name})")
     workspace = workspaces[workspace_name]
     if not isinstance(workspace, dict) or not workspace.get("token"):
         raise SlackHelperError(f"Workspace has no token: {workspace_name}")
     return workspace_name, workspace
 
 
-def load_context() -> dict[str, Any]:
-    context = read_json(config_dir() / "context.json", required=False)
-    if not isinstance(context.get("me", {}), dict):
-        context["me"] = {}
-    if not isinstance(context.get("channels", {}), dict):
-        context["channels"] = {}
-    return context
-
-
-def save_context(data: dict[str, Any]) -> None:
-    context = dict(data)
-    if not isinstance(context.get("me", {}), dict):
-        context["me"] = {}
-    if not isinstance(context.get("channels", {}), dict):
-        context["channels"] = {}
-    write_json_secure(config_dir() / "context.json", context)
-
-
 def load_workspace_identity(workspace: dict[str, Any]) -> dict[str, Any]:
-    context_identity = load_context().get("me")
-    oauth_app = read_json(config_dir() / "oauth-app.json", required=False)
-    oauth_identity = oauth_app.get("user_identity")
-    workspace_identity = workspace.get("user_identity")
-    return merge_user_identity(
-        merge_user_identity(
-            context_identity if isinstance(context_identity, dict) else None,
-            oauth_identity if isinstance(oauth_identity, dict) else None,
-        ),
-        workspace_identity if isinstance(workspace_identity, dict) else None,
-    )
+    identity = workspace.get("user_identity")
+    return identity if isinstance(identity, dict) else {}
 
 
 def token_for(args: Any) -> str:
@@ -435,50 +500,41 @@ def format_users(response: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _legacy_channels() -> dict[str, Any]:
-    channel_info = read_json(config_dir() / "channel-info.json", required=False)
-    channels = channel_info.get("channels", channel_info)
-    return channels if isinstance(channels, dict) else {}
-
-
-def _context_channel_entry(value: str) -> dict[str, Any] | None:
-    channels = load_context().get("channels", {})
-    entry = channels.get(value) if isinstance(channels, dict) else None
-    return entry if isinstance(entry, dict) else None
-
-
-def resolve_channel(value: str) -> str:
-    channel = value.strip()
-    if CHANNEL_ID_RE.match(channel):
-        return channel
-    entry = _context_channel_entry(channel)
-    if entry and entry.get("id"):
-        return str(entry["id"])
-    legacy = _legacy_channels()
-    if isinstance(legacy.get(channel), str):
-        return str(legacy[channel])
-    raise SlackHelperError(
-        f"Unknown channel alias '{channel}'. slack_context.py add-channel로 등록하거나 Slack 채널 ID를 넘겨 주세요."
-    )
-
-
-def resolve_channel_name(value: str) -> str:
+def resolve_channel(value: str, token: str) -> str:
+    """채널 ID는 그대로 쓰고, 채널 이름이면 conversations.list로 ID를 찾는다."""
     channel = value.strip().lstrip("#")
-    entry = _context_channel_entry(channel)
-    if entry:
-        return str(entry.get("name") or channel).lstrip("#")
-    legacy = _legacy_channels()
-    if isinstance(legacy.get(channel), str):
-        return channel
     if CHANNEL_ID_RE.match(channel):
         return channel
+    cursor = ""
+    while True:
+        payload: dict[str, Any] = {
+            "limit": 200,
+            "types": "public_channel",
+            "exclude_archived": "true",
+        }
+        if cursor:
+            payload["cursor"] = cursor
+        response = slack_method(
+            "conversations.list", token=token, payload=payload, http_method="GET"
+        )
+        if response.get("ok") is not True:
+            raise SlackHelperError(
+                f"conversations.list failed: {response.get('error', response)}"
+            )
+        for entry in response.get("channels", []):
+            if isinstance(entry, dict) and entry.get("name") == channel and entry.get("id"):
+                return str(entry["id"])
+        metadata = response.get("response_metadata")
+        cursor = str(metadata.get("next_cursor") or "") if isinstance(metadata, dict) else ""
+        if not cursor:
+            break
     raise SlackHelperError(
-        f"Unknown channel alias '{channel}'. slack_context.py add-channel로 name을 등록해 주세요."
+        f"'{value}' 채널을 찾지 못했습니다. slack_read.py channels로 채널 이름/ID를 확인해 주세요."
     )
 
 
 def add_workspace_arg(parser: Any) -> None:
-    parser.add_argument("--workspace", help="api-key.json에 저장된 workspace 이름")
+    parser.add_argument("--workspace", help="config.json에 저장된 workspace 이름")
 
 
 def print_compact_or_raw(response: dict[str, Any], formatter: str | Any, *, raw: bool = False) -> int:

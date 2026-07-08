@@ -20,20 +20,18 @@ from slack_common import (
     SLACK_AUTHORIZE_URL,
     SlackHelperError,
     add_workspace_arg,
-    config_dir,
-    load_context,
+    config_path,
+    load_config,
     load_workspace,
     load_workspace_identity,
     merge_user_identity,
     print_response,
-    read_json,
     run_main,
-    save_context,
+    save_config,
     slack_method,
     split_scopes,
     token_for,
     user_identity_from_value,
-    write_json_secure,
 )
 
 
@@ -61,7 +59,7 @@ slack-helper 처음 설정 가이드
 4. Redirect URL 등록
    왼쪽 메뉴 OAuth & Permissions > Redirect URLs
    Add New Redirect URL > http://localhost:8765/slack-helper/callback 입력 > Add > Save URLs
-   주의: 나중에 oauth-app.json에 넣는 redirect_uri와 Slack에 등록한 Redirect URL이 같아야 합니다.
+   주의: config.json에 저장된 redirect_uri와 Slack에 등록한 Redirect URL이 같아야 합니다.
 
 5. Bot Token Scopes 추가
    같은 OAuth & Permissions 화면의 Scopes > Bot Token Scopes에서 추가합니다.
@@ -110,11 +108,13 @@ def is_supported_redirect_uri(value: str) -> bool:
 
 
 def load_oauth_app() -> dict[str, Any]:
-    data = read_json(config_dir() / "oauth-app.json")
+    app = load_config().get("app")
+    if not isinstance(app, dict):
+        raise SlackHelperError("config.json에 app 설정이 없습니다. 먼저 init-oauth를 실행해 주세요.")
     for key in ("client_id", "client_secret"):
-        if not data.get(key):
-            raise SlackHelperError(f"oauth-app.json is missing required key: {key}")
-    return data
+        if not app.get(key):
+            raise SlackHelperError(f"config.json app 설정에 {key}가 없습니다.")
+    return app
 
 
 def configured_scopes(oauth_app: dict[str, Any], args: argparse.Namespace) -> str:
@@ -164,7 +164,6 @@ def command_init_oauth(args: argparse.Namespace) -> int:
             "Client Secret을 화면·셸 히스토리에 남기지 않고 안전하게 입력받으려면 대화형 입력이 필요합니다."
         )
 
-    target_path = config_dir() / "oauth-app.json"
     print("slack-helper OAuth 설정 파일을 만듭니다.")
     print("Slack App Management: https://api.slack.com/apps")
     print("Basic Information 화면의 Client ID / Client Secret을 준비해 주세요.")
@@ -178,10 +177,6 @@ def command_init_oauth(args: argparse.Namespace) -> int:
     redirect_uri = args.redirect_uri or DEFAULT_REDIRECT_URI
     scopes = split_scopes(args.scopes) if args.scopes else list(DEFAULT_BOT_SCOPES)
     user_scopes = split_scopes(args.user_scopes) if args.user_scopes else list(DEFAULT_USER_SCOPES)
-    user_identity = user_identity_from_value(
-        args.slack_user_id or args.slack_user or "",
-        force_user_id=bool(args.slack_user_id),
-    )
 
     if not client_id:
         raise SlackHelperError("Client ID가 비어 있습니다.")
@@ -198,19 +193,19 @@ def command_init_oauth(args: argparse.Namespace) -> int:
     if not user_scopes:
         raise SlackHelperError("User Token Scopes가 비어 있습니다.")
 
-    oauth_config: dict[str, Any] = {
+    app_config: dict[str, Any] = {
         "client_id": client_id,
         "redirect_uri": redirect_uri,
         "scopes": scopes,
         "user_scopes": user_scopes,
     }
-    oauth_config["client" + "_secret"] = secret_value
-    if user_identity:
-        oauth_config["user_identity"] = user_identity
-    write_json_secure(target_path, oauth_config)
+    app_config["client" + "_secret"] = secret_value
+    config = load_config(required=False)
+    config["app"] = app_config
+    save_config(config)
     print()
     print("✅ Client ID / Client Secret 등록에 성공했어요!")
-    print(f"설정 파일을 저장했습니다: {target_path}")
+    print(f"설정 파일을 저장했습니다: {config_path()}")
     print(f"기본 Redirect URI: {redirect_uri}")
     print(f"기본 Bot Token Scopes: {', '.join(scopes)}")
     print(f"기본 User Token Scopes: {', '.join(user_scopes)}")
@@ -284,9 +279,8 @@ def command_oauth_finish(args: argparse.Namespace) -> int:
         )
     token_type = "bot" if bot_token else "user"
 
-    api_key_path = config_dir() / "api-key.json"
-    api_keys = read_json(api_key_path, required=False)
-    workspaces = api_keys.setdefault("workspaces", {})
+    config = load_config()
+    workspaces = config.setdefault("workspaces", {})
     workspace_record = {
         "token_type": token_type,
         "team_id": team_id,
@@ -296,15 +290,11 @@ def command_oauth_finish(args: argparse.Namespace) -> int:
         "scope": response.get("scope"),
     }
     workspace_record["tok" + "en"] = auth_value
-    workspaces[workspace] = workspace_record
-    user_identity = oauth_app.get("user_identity")
-    if isinstance(user_identity, dict) and user_identity:
-        workspaces[workspace]["user_identity"] = user_identity
-        mirror_identity_to_context(user_identity)
     if isinstance(authed_user, dict) and authed_user.get("access_token"):
-        workspaces[workspace]["authed_user"] = authed_user
-    api_keys["default_workspace"] = workspace
-    write_json_secure(api_key_path, api_keys)
+        workspace_record["authed_user"] = authed_user
+    workspaces[workspace] = workspace_record
+    config["default_workspace"] = workspace
+    save_config(config)
 
     print(json.dumps({
         "ok": True,
@@ -312,49 +302,25 @@ def command_oauth_finish(args: argparse.Namespace) -> int:
         "team_id": team_id,
         "team_name": team.get("name"),
         "scope": response.get("scope"),
-        "api_key_path": str(api_key_path),
+        "config_path": str(config_path()),
     }, ensure_ascii=False, indent=2))
     return 0
 
 
-def mirror_identity_to_context(identity: dict[str, Any]) -> bool:
-    if not identity:
-        return False
-    context = load_context()
-    context["me"] = {
-        key: value
-        for key, value in identity.items()
-        if key in {"identifier", "user_id", "name", "real_name", "display_name"} and value
-    }
-    save_context(context)
-    return True
-
-
-def save_identity_to_configs(
-    identity: dict[str, Any],
-    *,
-    workspace_name: str | None = None,
-) -> dict[str, bool]:
-    changed = {"oauth_app": False, "api_key": False, "context": False}
-    oauth_path = config_dir() / "oauth-app.json"
-    oauth_app = read_json(oauth_path, required=False)
-    if oauth_app:
-        oauth_app["user_identity"] = identity
-        write_json_secure(oauth_path, oauth_app)
-        changed["oauth_app"] = True
-
-    api_key_path = config_dir() / "api-key.json"
-    api_keys = read_json(api_key_path, required=False)
-    workspaces = api_keys.get("workspaces")
-    if isinstance(workspaces, dict) and workspaces:
-        target_workspace = workspace_name or api_keys.get("default_workspace")
-        if target_workspace and isinstance(workspaces.get(target_workspace), dict):
-            workspaces[target_workspace]["user_identity"] = identity
-            write_json_secure(api_key_path, api_keys)
-            changed["api_key"] = True
-
-    changed["context"] = mirror_identity_to_context(identity)
-    return changed
+def save_identity(identity: dict[str, Any], *, workspace_name: str | None = None) -> str:
+    """identity의 단일 저장소는 config.json의 workspaces.<name>.user_identity 하나뿐이다."""
+    config = load_config()
+    workspaces = config.get("workspaces")
+    if not isinstance(workspaces, dict) or not workspaces:
+        raise SlackHelperError(
+            "저장된 workspace가 없습니다. 먼저 oauth-finish로 Slack 연결을 끝내 주세요."
+        )
+    target = workspace_name or config.get("default_workspace")
+    if not target or not isinstance(workspaces.get(target), dict):
+        raise SlackHelperError(f"Workspace not found in config.json ({target})")
+    workspaces[target]["user_identity"] = identity
+    save_config(config)
+    return str(target)
 
 
 def command_auth_test(args: argparse.Namespace) -> int:
@@ -428,7 +394,7 @@ def match_user_identity(members: list[dict[str, Any]], identity: dict[str, Any])
     identifier = identity.get("identifier") or user_id
     if not isinstance(identifier, str) or not identifier.strip():
         raise SlackHelperError(
-            "내 Slack 식별자가 없습니다. init-oauth에 --slack-user 또는 --slack-user-id를 넣어 주세요."
+            "내 Slack 식별자가 없습니다. set-me --slack-user 또는 --slack-user-id로 먼저 저장해 주세요."
         )
 
     normalized_identifier = normalize_match_value(identifier)
@@ -506,14 +472,13 @@ def command_resolve_me(args: argparse.Namespace) -> int:
     identifier = str(identity.get("identifier") or identity.get("user_id") or member.get("id"))
     resolved_identity = user_identity_record(identifier, member)
 
-    changed = save_identity_to_configs(resolved_identity, workspace_name=workspace_name)
+    saved_workspace = save_identity(resolved_identity, workspace_name=workspace_name)
     return print_response(
         {
             "ok": True,
-            "workspace": workspace_name,
+            "workspace": saved_workspace,
             "user_identity": resolved_identity,
-            "updated": changed,
-            "api_key_path": str(config_dir() / "api-key.json"),
+            "config_path": str(config_path()),
         }
     )
 
@@ -525,17 +490,13 @@ def command_set_me(args: argparse.Namespace) -> int:
     )
     if not identity:
         raise SlackHelperError("--slack-user 또는 --slack-user-id 값이 필요합니다.")
-    changed = save_identity_to_configs(identity, workspace_name=args.workspace)
-    if not changed["oauth_app"] and not changed["api_key"] and not changed["context"]:
-        raise SlackHelperError(
-            "수정할 설정 파일이 없습니다. 먼저 init-oauth를 실행해 주세요."
-        )
+    saved_workspace = save_identity(identity, workspace_name=args.workspace)
     return print_response(
         {
             "ok": True,
+            "workspace": saved_workspace,
             "user_identity": identity,
-            "updated": changed,
-            "config_dir": str(config_dir()),
+            "config_path": str(config_path()),
         }
     )
 
@@ -555,21 +516,19 @@ def build_parser() -> argparse.ArgumentParser:
 
     init_oauth = subparsers.add_parser(
         "init-oauth",
-        help="대화형으로 oauth-app.json 생성 (Client Secret은 화면에 보이지 않게 입력받음)",
+        help="대화형으로 config.json에 앱 정보 저장 (Client Secret은 화면에 보이지 않게 입력받음)",
     )
     init_oauth.add_argument("--client-id", "--client_id", dest="client_id", help="Slack app Client ID (비밀 아님)")
     init_oauth.add_argument("--redirect-uri", "--redirect_uri", dest="redirect_uri", help="Slack OAuth Redirect URL")
     init_oauth.add_argument("--scopes", help="쉼표로 구분한 Bot Token Scopes")
     init_oauth.add_argument("--user-scopes", "--user_scopes", dest="user_scopes", help="쉼표로 구분한 User Token Scopes")
-    init_oauth.add_argument("--slack-user", "--slack_user", dest="slack_user", help="내 Slack 표시 이름 또는 @핸들")
-    init_oauth.add_argument("--slack-user-id", "--slack_user_id", dest="slack_user_id", help="내 Slack member ID, 예: U123...")
     init_oauth.set_defaults(func=command_init_oauth)
 
     oauth_start = subparsers.add_parser("oauth-start", help="Slack OAuth 승인 URL 출력 또는 브라우저 열기")
     oauth_start.add_argument("--open", action="store_true", help="브라우저에서 승인 URL 열기")
     oauth_start.add_argument("--scopes", help="쉼표로 구분한 Bot Token Scopes")
     oauth_start.add_argument("--user-scopes", help="쉼표로 구분한 User Token Scopes")
-    oauth_start.add_argument("--redirect-uri", "--redirect_uri", dest="redirect_uri", help="oauth-app.json의 redirect_uri 대신 사용할 값")
+    oauth_start.add_argument("--redirect-uri", "--redirect_uri", dest="redirect_uri", help="config.json의 redirect_uri 대신 사용할 값")
     oauth_start.add_argument("--state", help="선택 OAuth state 값")
     oauth_start.add_argument("--team", help="선택 Slack team ID 힌트")
     oauth_start.set_defaults(func=command_oauth_start)
@@ -577,8 +536,8 @@ def build_parser() -> argparse.ArgumentParser:
     oauth_finish = subparsers.add_parser("oauth-finish", help="OAuth code를 토큰으로 교환하고 저장")
     oauth_finish.add_argument("--url", dest="redirect_url", help="승인 후 브라우저 주소창에서 복사한 redirect 주소 전체")
     oauth_finish.add_argument("--code", help="Redirect 주소에서 뽑은 임시 code (주소 전체를 넣어도 됨)")
-    oauth_finish.add_argument("--workspace", help="api-key.json에 저장할 workspace 이름")
-    oauth_finish.add_argument("--redirect-uri", "--redirect_uri", dest="redirect_uri", help="oauth-app.json의 redirect_uri 대신 사용할 값")
+    oauth_finish.add_argument("--workspace", help="config.json에 저장할 workspace 이름")
+    oauth_finish.add_argument("--redirect-uri", "--redirect_uri", dest="redirect_uri", help="config.json의 redirect_uri 대신 사용할 값")
     oauth_finish.set_defaults(func=command_oauth_finish)
 
     auth_test = subparsers.add_parser("auth-test", help="Slack auth.test 호출")

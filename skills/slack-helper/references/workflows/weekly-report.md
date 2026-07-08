@@ -4,11 +4,7 @@ Use for "주간보고 초안", "이번 주 내가 한 일", or "업무일지 재
 
 ## Steps
 
-1. Load my identity and important channels.
-
-```bash
-python3 "<SKILL_DIR>/scripts/slack_context.py" show
-```
+1. Read `~/.config/slack-helper/MEMORY.md` for preferences and important channels (없으면 건너뛴다).
 
 2. Search my messages across the week.
 

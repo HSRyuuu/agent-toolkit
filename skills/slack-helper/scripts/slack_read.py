@@ -59,14 +59,15 @@ def command_channels(args: argparse.Namespace) -> int:
 
 
 def command_channel_history(args: argparse.Namespace) -> int:
-    channel_id = resolve_channel(args.channel)
+    token = token_for(args)
+    channel_id = resolve_channel(args.channel, token)
     payload: dict = {"channel": channel_id, "limit": args.limit}
     if getattr(args, "on", None):
         oldest, latest = day_bounds(args.on)
         payload.update({"oldest": oldest, "latest": latest, "inclusive": "true"})
     response = slack_method(
         "conversations.history",
-        token=token_for(args),
+        token=token,
         payload=payload,
         http_method="GET",
     )
@@ -79,10 +80,11 @@ def command_channel_history(args: argparse.Namespace) -> int:
 
 
 def command_thread(args: argparse.Namespace) -> int:
-    channel_id = resolve_channel(args.channel)
+    token = token_for(args)
+    channel_id = resolve_channel(args.channel, token)
     response = slack_method(
         "conversations.replies",
-        token=token_for(args),
+        token=token,
         payload={"channel": channel_id, "ts": args.ts, "limit": args.limit},
         http_method="GET",
     )
@@ -124,7 +126,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     history = subparsers.add_parser("channel-history", help="Slack conversations.history 호출")
     add_workspace_arg(history)
-    history.add_argument("--channel", required=True, help="채널 ID 또는 context.json/channel-info.json 별칭")
+    history.add_argument("--channel", required=True, help="채널 ID 또는 공개 채널 이름 (이름은 conversations.list로 ID를 찾음)")
     history.add_argument("--limit", type=int, default=20)
     history.add_argument("--on", help="특정 일자(YYYY-MM-DD)의 메시지만 조회 (로컬 타임존 자정 기준)")
     history.add_argument("--raw", action="store_true", help="compact 대신 원본 JSON 출력")
@@ -132,7 +134,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     thread = subparsers.add_parser("thread", help="특정 Slack thread만 on-demand 조회")
     add_workspace_arg(thread)
-    thread.add_argument("--channel", required=True, help="채널 ID 또는 context.json/channel-info.json 별칭")
+    thread.add_argument("--channel", required=True, help="채널 ID 또는 공개 채널 이름 (이름은 conversations.list로 ID를 찾음)")
     thread.add_argument("--ts", required=True, help="thread_ts 또는 원 메시지 ts")
     thread.add_argument("--limit", type=int, default=50)
     thread.add_argument("--raw", action="store_true", help="compact 대신 원본 JSON 출력")

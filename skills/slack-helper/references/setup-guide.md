@@ -21,7 +21,7 @@ Use this file when config is missing, OAuth is incomplete, scopes are unclear, o
 
 - 다음 단계 내용을 미리 보여주지 않는다. "완료되면 알려주세요"로 각 단계를 끝맺는다.
 - 사용자가 완료했다고 하면, 각 단계에 적힌 확인 방법으로 실제 상태를 검증한 뒤 다음 단계로 넘어간다. 확인이 실패하면 어디까지 됐는지 물어보고 그 지점부터 다시 안내한다.
-- 이미 끝난 단계가 확인되면(예: `~/.config/slack-helper/oauth-app.json` 존재) 그 단계는 건너뛰고 다음 단계부터 시작한다.
+- 이미 끝난 단계가 확인되면(예: `~/.config/slack-helper/config.json`에 `app` 설정 존재) 그 단계는 건너뛰고 다음 단계부터 시작한다.
 
 ## 1단계: Slack 앱 만들기 (브라우저에서)
 
@@ -80,7 +80,7 @@ python3 "<SKILL_DIR>/scripts/slack_setup.py" init-oauth
 
 `Client Secret`은 채팅·명령 인자·파일로 절대 받지 않는다. `init-oauth`의 대화형 프롬프트가 유일한 입력 경로다.
 
-**에이전트 확인:** 사용자가 완료를 알리면 `~/.config/slack-helper/oauth-app.json`이 생겼는지 확인한다 (`test -f ~/.config/slack-helper/oauth-app.json`). 있으면 "등록 확인했어요!" 하고 3단계로. 없으면 어느 지점에서 막혔는지 물어보고 다시 안내한다.
+**에이전트 확인:** 사용자가 완료를 알리면 `~/.config/slack-helper/config.json`이 생겼는지 확인한다 (`test -f ~/.config/slack-helper/config.json`). 있으면 "등록 확인했어요!" 하고 3단계로. 없으면 어느 지점에서 막혔는지 물어보고 다시 안내한다.
 
 ## 3단계: 권한 설정 (브라우저에서)
 
@@ -183,17 +183,15 @@ python3 "<SKILL_DIR>/scripts/slack_search.py" search --to-me --days 30 --count 3
 - OO 프로젝트 관련 최근 결정사항 찾아줘
 ```
 
-## Optional Context Cache
+## Optional: 자주 쓰는 채널 기억하기
 
-자주 쓰는 채널이 있으면 context cache를 제안할 수 있다 (설정 흐름의 필수 단계는 아니다):
+자주 쓰는 채널이 있으면 `~/.config/slack-helper/MEMORY.md`의 `## 채널` 섹션에 기록해두자고 제안할 수 있다 (설정 흐름의 필수 단계는 아니다). 채널 ID는 아래로 찾는다.
 
 ```bash
-python3 "<SKILL_DIR>/scripts/slack_context.py" draft-summaries --workspace default
-python3 "<SKILL_DIR>/scripts/slack_context.py" add-channel --alias backend --id C0123456789 --name backend --summary "backend team discussions"
-python3 "<SKILL_DIR>/scripts/slack_context.py" show
+python3 "<SKILL_DIR>/scripts/slack_read.py" channels --limit 100
 ```
 
-`draft-summaries` prints summary drafts only. Save a summary only after the user confirms or edits it.
+기록 형식은 `- 별칭 — C채널ID — 한 줄 요약`이며, 에이전트가 Read/Edit로 직접 관리한다 (SKILL.md의 Memory 규칙을 따른다). 사용자가 확인한 내용만 저장한다.
 
 ## Avoid
 
