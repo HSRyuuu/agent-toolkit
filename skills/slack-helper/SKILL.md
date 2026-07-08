@@ -30,10 +30,8 @@ Keep this file as the router. For any real task, first read `~/.config/slack-hel
 | Request | Read First | Main Scripts |
 | --- | --- | --- |
 | First setup, OAuth, scopes, missing config, auth check | `references/setup-guide.md` | `slack_setup.py` |
-| Mentions triage, missed requests, "내 멘션 정리" | `references/workflows/mentions-triage.md` | `slack_search.py`, `slack_read.py` |
-| Incident/issue timeline, 장애 회고 | `references/workflows/incident-timeline.md` | `slack_search.py`, `slack_read.py` |
-| Weekly report, 업무일지, "이번 주 내가 한 일" | `references/workflows/weekly-report.md` | `slack_search.py`, `slack_read.py` |
-| Daily review, 특정 일자 하루 정리, "데일리 리뷰", "어제/그날 내 슬랙 정리" | `references/workflows/daily-review.md` | `slack_search.py`, `slack_read.py` |
+| Mentions triage("내 멘션 정리"), incident timeline(장애 회고), weekly report("이번 주 내가 한 일"), daily review("데일리 리뷰", "어제/그날 내 슬랙 정리") | `references/workflows.md` | `slack_search.py`, `slack_read.py` |
+| 집계·통계·대량 파싱 등 기본 스크립트 범위를 넘는 분석 ("전부 세줘", "종류별로 묶어줘") | `references/adhoc-scripts.md` | scratchpad 일회용 스크립트 → `slack_search.py`, `slack_read.py` |
 | Project history, person/channel search, keyword monitoring, other combinations | `references/scripts-reference.md` | compose scripts as needed |
 
 ## Local Files
@@ -60,7 +58,7 @@ Keep this file as the router. For any real task, first read `~/.config/slack-hel
 - 채널 작업 전에 `MEMORY.md`의 채널 목록을 먼저 참고한다. 거기 없으면 `slack_read.py channels`로 찾고, 자주 쓸 채널이면 MEMORY에 기록을 제안한다.
 - Prefer compact output. Use `--raw` only when a workflow truly needs full Slack API JSON.
 - For broad work, search compactly first, then read only selected threads with `slack_read.py thread`. 결과가 100건을 넘을 것 같으면 `--page` 수동 반복 대신 `slack_search.py search ... --limit N`을 쓴다.
-- 집계·통계처럼 기본 스크립트 범위를 넘는 분석은 `references/scripts-reference.md`의 Ad-hoc Scripts 규칙에 따라 scratchpad에 일회용 스크립트를 만들어 처리한다.
+- 집계·통계처럼 기본 스크립트 범위를 넘는 분석은 `references/adhoc-scripts.md`의 임시 스크립트 작성 규칙을 먼저 읽고, scratchpad에 일회용 스크립트를 만들어 처리한다.
 - Slack search runs with the approved user token scope (`search:read`). Direct channel history/thread reads require bot access to that channel.
 
 ## Memory
@@ -69,7 +67,7 @@ Keep this file as the router. For any real task, first read `~/.config/slack-hel
 - 기록 경로는 세 가지다.
   - **제안형**: 대화에서 기억해둘 만한 것(반복될 선호, 교정 피드백, 자주 찾는 채널·사람 등)이 보이면 저장할 한 줄을 보여주며 "이거 기억해둘까요?"라고 먼저 물어본다. 동의할 때만 기록하고, 같은 내용을 두 번 제안하지 않는다.
   - **명령형**: 사용자가 "기억해둬", "기억해", "저장해둬"라고 하면 묻지 않고 바로 기록한 뒤, 기록한 문장을 그대로 보여준다.
-  - **탐지형**: 작업 요청 안에 **사용자가 알려주지 않으면 모르는 사실**(예: "X채널은 우리 B2C팀 서비스 에러 alert 채널이야" 같은 채널·사람·조직 맥락)이 들어 있으면, 먼저 요청받은 작업을 끝낸 뒤 "이 내용을 MEMORY에 저장할까요? — <저장할 한 줄>"이라고 물어본다. 동의하면 기록한다. 채널이면 `slack_read.py channels`로 ID를 찾아 별칭·요약과 함께 `## 채널`에 적는다.
+  - **탐지형**: 작업 요청 안에 **사용자가 알려주지 않으면 모르는 사실**(예: "X채널은 우리 팀 배포 알림 채널이야" 같은 채널·사람·조직 맥락)이 들어 있으면, 먼저 요청받은 작업을 끝낸 뒤 "이 내용을 MEMORY에 저장할까요? — <저장할 한 줄>"이라고 물어본다. 동의하면 기록한다. 채널이면 `slack_read.py channels`로 ID를 찾아 별칭·요약과 함께 `## 채널`에 적는다.
 - 담는 것은 **워크플로우 선호·규칙과 채널/사람 식별자 + 한 줄 요약**까지다. token·secret·`Client Secret`·메시지 본문은 절대 기록하지 않는다.
 - 사용자가 명시적으로 선호를 바꾸거나 취소하면 해당 줄을 수정·삭제한다.
 

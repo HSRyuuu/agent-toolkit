@@ -237,8 +237,8 @@ def case_common_format_message_line_attachment_text() -> bool:
         "attachments": [
             {
                 "title": "500 Internal Server Error",
-                "text": "POST /api/reports failed",
-                "fallback": "500 Internal Server Error - POST /api/reports failed",
+                "text": "POST /api/orders failed",
+                "fallback": "500 Internal Server Error - POST /api/orders failed",
             }
         ],
         "permalink": "https://example.test/p1",
@@ -246,7 +246,7 @@ def case_common_format_message_line_attachment_text() -> bool:
     line = common.format_message_line(message, "alerts", "alertbot")
     return check(
         "format_message_line surfaces attachment text when message text is empty",
-        "500 Internal Server Error" in line and "POST /api/reports failed" in line,
+        "500 Internal Server Error" in line and "POST /api/orders failed" in line,
         line,
     )
 
@@ -289,7 +289,7 @@ def case_common_legacy_config_migration() -> bool:
                     "redirect_uri": "http://localhost:8765/callback",
                     "scopes": ["team:read"],
                     "user_scopes": ["search:read"],
-                    "user_identity": {"identifier": "hs.ryu", "name": "old-name"},
+                    "user_identity": {"identifier": "sample.user", "name": "old-name"},
                 },
             )
             common.write_json_secure(
@@ -304,7 +304,7 @@ def case_common_legacy_config_migration() -> bool:
             common.write_json_secure(
                 Path(tmp) / "context.json",
                 {
-                    "me": {"identifier": "hs.ryu"},
+                    "me": {"identifier": "sample.user"},
                     "channels": {
                         "backend": {"id": "C1", "name": "backend", "summary": "backend work"}
                     },
@@ -325,7 +325,7 @@ def case_common_legacy_config_migration() -> bool:
         "legacy 3-file config migrates into config.json + MEMORY.md and removes old files",
         config["app"]["client_id"] == "CID"
         and "user_identity" not in config["app"]
-        and identity == {"identifier": "hs.ryu", "name": "old-name", "user_id": "U123"}
+        and identity == {"identifier": "sample.user", "name": "old-name", "user_id": "U123"}
         and config["default_workspace"] == "default"
         and config_mode == 0o600
         and "backend — C1 — backend work" in memory_text
@@ -391,7 +391,7 @@ def case_setup_save_identity_single_store() -> bool:
         try:
             missing_workspace_raises = False
             try:
-                setup.save_identity({"identifier": "hs.ryu"})
+                setup.save_identity({"identifier": "sample.user"})
             except common.SlackHelperError:
                 missing_workspace_raises = True
             common.write_json_secure(
@@ -402,7 +402,7 @@ def case_setup_save_identity_single_store() -> bool:
                 },
             )
             saved = setup.save_identity(
-                {"identifier": "hs.ryu", "user_id": "U123"},
+                {"identifier": "sample.user", "user_id": "U123"},
                 workspace_name="default",
             )
             config = common.load_config()

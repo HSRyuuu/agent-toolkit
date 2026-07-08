@@ -54,12 +54,7 @@ python3 "<SKILL_DIR>/scripts/slack_read.py" thread --channel C0123456789 --ts 17
 
 ## Ad-hoc Scripts (일회용 분석 스크립트)
 
-집계·통계·대량 파싱처럼 기본 스크립트 범위를 넘는 요청(예: "어제 알림 전부 에러 종류별로 세줘")은 일회용 Python 스크립트를 만들어 처리한다. 규칙:
-
-- 스크립트는 **scratchpad(세션 임시 디렉토리)에만** 만든다. 스킬 디렉토리나 사용자 프로젝트에 저장하지 않는다.
-- Slack 접근은 반드시 이 스킬의 스크립트를 `subprocess`로 호출해서 한다 (`slack_search.py search ... --limit N --raw` 등). 토큰 로딩·인증·API 호출을 재구현하지 않고, `~/.config/slack-helper/config.json`을 직접 읽지 않는다.
-- 먼저 `--limit`과 compact 출력으로 충분한지 시도하고, attachment 구조 파싱 등 원본 필드가 필요할 때만 `--raw`를 쓴다.
-- 사용자에게는 스크립트 코드가 아니라 결과만 보여준다. 무엇을 했는지는 한 줄로 설명한다.
+집계·통계·대량 파싱처럼 기본 스크립트 범위를 넘는 요청은 `references/adhoc-scripts.md`의 임시 스크립트 작성 규칙과 예제를 따라 scratchpad에 일회용 스크립트를 만들어 처리한다.
 
 ## Limits
 
