@@ -59,7 +59,7 @@ Keep this file as the router. For any real task, first read `~/.config/slack-hel
 - Prefer compact output. Use `--raw` only when a workflow truly needs full Slack API JSON.
 - For broad work, search compactly first, then read only selected threads with `slack_read.py thread`. 결과가 100건을 넘을 것 같으면 `--page` 수동 반복 대신 `slack_search.py search ... --limit N`을 쓴다.
 - 집계·통계처럼 기본 스크립트 범위를 넘는 분석은 `references/adhoc-scripts.md`의 임시 스크립트 작성 규칙을 먼저 읽고, scratchpad에 일회용 스크립트를 만들어 처리한다.
-- Slack search runs with the approved user token scope (`search:read`). Direct channel history/thread reads require bot access to that channel.
+- Slack search runs with the approved user token scope (`search:read`). Direct channel history/thread reads try the bot token first, then retry with the user token when bot access fails. The default user scopes are `search:read`, `channels:read`, `channels:history`, `groups:read`, and `groups:history`.
 
 ## Memory
 

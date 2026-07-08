@@ -6,7 +6,7 @@ Use this file when a Slack request does not exactly match one of the workflow fi
 
 1. Read local memory first: `~/.config/slack-helper/MEMORY.md` (선호 규칙과 채널 별칭·ID가 여기 있다; 없으면 건너뛴다)
 2. Search broadly with compact output: `python3 "<SKILL_DIR>/scripts/slack_search.py" search <keywords> --days 7`
-3. Open only useful threads: `python3 "<SKILL_DIR>/scripts/slack_read.py" thread --channel <id-or-name> --ts <thread_ts>`
+3. Open only useful threads: `python3 "<SKILL_DIR>/scripts/slack_read.py" thread --channel <id-or-name> --ts <thread_ts>` (`slack_read.py` tries the bot token first, then retries with the user token when bot access fails)
 4. Use `--raw` only when compact output hides a field you truly need.
 
 ## Scripts
@@ -58,7 +58,7 @@ python3 "<SKILL_DIR>/scripts/slack_read.py" thread --channel C0123456789 --ts 17
 
 ## Limits
 
-- 이 스킬은 **조회 전용**이다. OAuth scope가 읽기 권한(`team:read`, `users:read`, `channels:read`, `channels:history`, `search:read`)뿐이라 메시지 전송·수정·삭제·리액션은 API 차원에서 불가능하며, 그런 기능을 추가하지도 않는다.
-- `slack_read.py channel-history` and `thread` require bot access to that channel.
-- If direct read fails with `not_in_channel`, use `slack_search.py search` and rely on permalinks.
+- 이 스킬은 **조회 전용**이다. OAuth scope가 읽기 권한뿐이라 메시지 전송·수정·삭제·리액션은 API 차원에서 불가능하며, 그런 기능을 추가하지도 않는다.
+- 기본 User Token Scopes는 `search:read`, `channels:read`, `channels:history`, `groups:read`, `groups:history`다. 공개 채널과 사용자가 들어간 비공개 채널은 User token fallback으로 직접 읽을 수 있다.
+- `slack_read.py channel-history` and `thread` try bot access first, then user access. If both direct reads fail, use `slack_search.py search` and rely on permalinks.
 - Do not store message bodies in `MEMORY.md`; channel notes stay one line.

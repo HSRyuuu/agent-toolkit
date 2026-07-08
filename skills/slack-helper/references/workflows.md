@@ -129,7 +129,7 @@ python3 "<SKILL_DIR>/scripts/slack_read.py" channel-history --channel backend --
 
 - 일자를 지정하지 않으면 오늘 날짜로 진행하되, 리포트 첫 줄에 대상 일자를 명시해 사용자가 바로잡을 수 있게 한다.
 - `--on`의 날짜 경계는 로컬 타임존 자정 기준이다.
-- 직접 읽기가 `not_in_channel`로 실패하면 검색 결과와 permalink로 대체한다.
+- 직접 읽기는 Bot token으로 먼저 시도하고, 접근 권한 문제면 User token으로 재시도한다. 둘 다 실패하면 검색 결과와 permalink로 대체한다.
 - 검색 인덱싱 지연이나 DM 검색 범위 제한으로 일부 기록이 누락될 수 있다. 리포트 말미에 이 한계를 한 줄로 표시한다.
 - 기본 출력은 채팅 응답이다. 사용자가 요청할 때만 markdown 파일로 저장하고, 저장 위치는 그때 확인한다.
 
