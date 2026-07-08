@@ -54,19 +54,22 @@ Keep this file as the router. For any real task, first read `~/.config/slack-hel
 
 ## Rules
 
+- **이 스킬은 조회 전용이다.** 메시지 전송·수정·삭제·리액션 기능을 제공하지 않으며, OAuth scope도 읽기 권한만 요청하므로 API 차원에서 불가능하다. 사용자가 전송류 작업을 요청하면 이 스킬의 범위 밖임을 안내한다.
 - Never ask the user to paste Slack tokens or `Client Secret` into chat. `Client Secret` is accepted only through the interactive `slack_setup.py init-oauth` prompt.
 - Config lives outside the repo at `~/.config/slack-helper`; files should be `600` and the directory `700`.
 - 채널 작업 전에 `MEMORY.md`의 채널 목록을 먼저 참고한다. 거기 없으면 `slack_read.py channels`로 찾고, 자주 쓸 채널이면 MEMORY에 기록을 제안한다.
 - Prefer compact output. Use `--raw` only when a workflow truly needs full Slack API JSON.
-- For broad work, search compactly first, then read only selected threads with `slack_read.py thread`.
+- For broad work, search compactly first, then read only selected threads with `slack_read.py thread`. 결과가 100건을 넘을 것 같으면 `--page` 수동 반복 대신 `slack_search.py search ... --limit N`을 쓴다.
+- 집계·통계처럼 기본 스크립트 범위를 넘는 분석은 `references/scripts-reference.md`의 Ad-hoc Scripts 규칙에 따라 scratchpad에 일회용 스크립트를 만들어 처리한다.
 - Slack search runs with the approved user token scope (`search:read`). Direct channel history/thread reads require bot access to that channel.
 
 ## Memory
 
 - `~/.config/slack-helper/MEMORY.md`는 사용자별 **작업 선호·규칙과 채널 컨텍스트**를 담는 자유형 markdown이다. config 디렉토리(레포 밖)에 두며, 파일은 `600`으로 만든다. 스크립트가 파싱하지 않으므로 에이전트가 Read/Edit로 직접 관리한다.
-- 기록 경로는 두 가지다.
+- 기록 경로는 세 가지다.
   - **제안형**: 대화에서 기억해둘 만한 것(반복될 선호, 교정 피드백, 자주 찾는 채널·사람 등)이 보이면 저장할 한 줄을 보여주며 "이거 기억해둘까요?"라고 먼저 물어본다. 동의할 때만 기록하고, 같은 내용을 두 번 제안하지 않는다.
   - **명령형**: 사용자가 "기억해둬", "기억해", "저장해둬"라고 하면 묻지 않고 바로 기록한 뒤, 기록한 문장을 그대로 보여준다.
+  - **탐지형**: 작업 요청 안에 **사용자가 알려주지 않으면 모르는 사실**(예: "X채널은 우리 B2C팀 서비스 에러 alert 채널이야" 같은 채널·사람·조직 맥락)이 들어 있으면, 먼저 요청받은 작업을 끝낸 뒤 "이 내용을 MEMORY에 저장할까요? — <저장할 한 줄>"이라고 물어본다. 동의하면 기록한다. 채널이면 `slack_read.py channels`로 ID를 찾아 별칭·요약과 함께 `## 채널`에 적는다.
 - 담는 것은 **워크플로우 선호·규칙과 채널/사람 식별자 + 한 줄 요약**까지다. token·secret·`Client Secret`·메시지 본문은 절대 기록하지 않는다.
 - 사용자가 명시적으로 선호를 바꾸거나 취소하면 해당 줄을 수정·삭제한다.
 

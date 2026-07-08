@@ -117,40 +117,62 @@ def _identity_user_id(args: argparse.Namespace) -> str | None:
 
 
 def command_search(args: argparse.Namespace) -> int:
+    limit = getattr(args, "limit", None)
     if args.count < 1 or args.count > 100:
         raise SlackHelperError("--count는 1부터 100 사이여야 합니다.")
     if args.page < 1 or args.page > 100:
         raise SlackHelperError("--page는 1부터 100 사이여야 합니다.")
+    if limit is not None:
+        if limit < 1 or limit > 1000:
+            raise SlackHelperError("--limit는 1부터 1000 사이여야 합니다.")
+        if args.page != 1:
+            raise SlackHelperError("--limit와 --page는 동시에 사용할 수 없습니다.")
     if args.to_me and not getattr(args, "user_id", None):
         args.user_id = _identity_user_id(args)
 
     queries = build_search_query(args.query, args)
     responses = []
     auth_value = user_token_for(args)
+    per_page = min(limit, 100) if limit is not None else args.count
     for query in queries:
-        payload = {
-            "query": query,
-            "count": args.count,
-            "page": args.page,
-            "sort": args.sort,
-            "sort_dir": args.sort_dir,
-            "highlight": "true" if args.highlight else "false",
-        }
-        response = slack_method(
-            "search.messages",
-            token=auth_value,
-            payload=payload,
-            http_method="GET",
-        )
-        if response.get("ok") is not True:
-            raise SlackHelperError(f"search.messages failed: {response.get('error', response)}")
-        responses.append(response)
+        page = args.page
+        collected = 0
+        while True:
+            payload = {
+                "query": query,
+                "count": per_page,
+                "page": page,
+                "sort": args.sort,
+                "sort_dir": args.sort_dir,
+                "highlight": "true" if args.highlight else "false",
+            }
+            response = slack_method(
+                "search.messages",
+                token=auth_value,
+                payload=payload,
+                http_method="GET",
+            )
+            if response.get("ok") is not True:
+                raise SlackHelperError(f"search.messages failed: {response.get('error', response)}")
+            responses.append(response)
+            if limit is None:
+                break
+            messages = response.get("messages")
+            matches = messages.get("matches", []) if isinstance(messages, dict) else []
+            paging = messages.get("paging", {}) if isinstance(messages, dict) else {}
+            collected += len(matches)
+            total_pages = int(paging.get("pages") or page)
+            if collected >= limit or not matches or page >= total_pages:
+                break
+            page += 1
 
     if args.raw:
         if len(responses) == 1:
             return print_response(responses[0])
         return print_response({"ok": True, "responses": responses})
     merged = merge_search_matches(responses)
+    if limit is not None:
+        merged = merged[:limit]
     text = format_search_results({"ok": True, "messages": {"matches": merged}})
     if text:
         print(text)
@@ -179,6 +201,11 @@ def build_parser() -> argparse.ArgumentParser:
     search.add_argument("--days", type=int, help="최근 N일 after: modifier")
     search.add_argument("--count", type=int, default=20, help="검색 결과 수, 최대 100")
     search.add_argument("--page", type=int, default=1, help="검색 결과 페이지, 최대 100")
+    search.add_argument(
+        "--limit",
+        type=int,
+        help="페이지를 자동으로 넘기며 최대 N건 수집 (1~1000). --page와 함께 쓸 수 없음",
+    )
     search.add_argument(
         "--sort",
         choices=("score", "timestamp"),

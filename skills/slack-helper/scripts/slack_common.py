@@ -438,6 +438,70 @@ def _message_user_name(message: dict[str, Any]) -> str:
     )
 
 
+def _block_texts(blocks: Any) -> list[str]:
+    texts: list[str] = []
+
+    def walk(node: Any) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key == "text" and isinstance(value, str):
+                    texts.append(value)
+                else:
+                    walk(value)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(blocks)
+    return texts
+
+
+def _attachment_texts(attachments: Any) -> list[str]:
+    texts: list[str] = []
+    if not isinstance(attachments, list):
+        return texts
+    for attachment in attachments:
+        if not isinstance(attachment, dict):
+            continue
+        parts = [
+            value
+            for value in (attachment.get(key) for key in ("title", "pretext", "text"))
+            if isinstance(value, str) and value.strip()
+        ]
+        if not parts and isinstance(attachment.get("fallback"), str):
+            parts = [attachment["fallback"]]
+        fields = attachment.get("fields")
+        if isinstance(fields, list):
+            for field in fields:
+                if not isinstance(field, dict):
+                    continue
+                for key in ("title", "value"):
+                    value = field.get(key)
+                    if isinstance(value, str) and value.strip():
+                        parts.append(value)
+        texts.extend(parts)
+        texts.extend(_block_texts(attachment.get("blocks")))
+    return texts
+
+
+def message_display_text(message: dict[str, Any]) -> str:
+    """봇 알림처럼 text가 비고 attachment/block에만 본문이 있는 메시지도 compact 출력에서 읽히게 합친다."""
+    base = re.sub(r"\s+", " ", str(message.get("text") or "")).strip()
+    parts: list[str] = [base] if base else []
+    seen: set[str] = set(parts)
+    extras = [
+        *_attachment_texts(message.get("attachments")),
+        *_block_texts(message.get("blocks")),
+    ]
+    for raw in extras:
+        normalized = re.sub(r"\s+", " ", raw).strip()
+        if not normalized or normalized in seen or (base and normalized in base):
+            continue
+        seen.add(normalized)
+        parts.append(normalized)
+    return " · ".join(parts)
+
+
 def format_message_line(
     message: dict[str, Any],
     channel_name: str | None = None,
@@ -445,7 +509,9 @@ def format_message_line(
 ) -> str:
     channel = (channel_name or _message_channel_name(message)).lstrip("#")
     user = (user_name or _message_user_name(message)).lstrip("@")
-    text = truncate_text(str(message.get("text") or ""))
+    display = message_display_text(message)
+    base = re.sub(r"\s+", " ", str(message.get("text") or "")).strip()
+    text = truncate_text(display, 120 if display == base else 200)
     permalink = str(message.get("permalink") or "-")
     return f"[{format_ts_utc(message.get('ts', '-'))}] #{channel} @{user}: {text} | {permalink}"
 

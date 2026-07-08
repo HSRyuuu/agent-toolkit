@@ -229,6 +229,54 @@ def case_common_format_message_line() -> bool:
     )
 
 
+def case_common_format_message_line_attachment_text() -> bool:
+    message = {
+        "ts": "1717243200.000100",
+        "user": "B123",
+        "text": "",
+        "attachments": [
+            {
+                "title": "500 Internal Server Error",
+                "text": "POST /api/reports failed",
+                "fallback": "500 Internal Server Error - POST /api/reports failed",
+            }
+        ],
+        "permalink": "https://example.test/p1",
+    }
+    line = common.format_message_line(message, "alerts", "alertbot")
+    return check(
+        "format_message_line surfaces attachment text when message text is empty",
+        "500 Internal Server Error" in line and "POST /api/reports failed" in line,
+        line,
+    )
+
+
+def case_common_format_message_line_blocks_dedup() -> bool:
+    message = {
+        "ts": "1717243200.000100",
+        "user": "U123",
+        "text": "hello world",
+        "blocks": [
+            {
+                "type": "rich_text",
+                "elements": [
+                    {
+                        "type": "rich_text_section",
+                        "elements": [{"type": "text", "text": "hello world"}],
+                    }
+                ],
+            }
+        ],
+        "permalink": "https://example.test/p1",
+    }
+    line = common.format_message_line(message, "backend", "alice")
+    return check(
+        "format_message_line dedups block text that mirrors message text",
+        ": hello world |" in line,
+        line,
+    )
+
+
 def case_common_legacy_config_migration() -> bool:
     with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
         os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
@@ -772,6 +820,7 @@ def case_search_command_multi_keyword_compact() -> bool:
                     "days": None,
                     "count": 20,
                     "page": 1,
+                    "limit": None,
                     "sort": "timestamp",
                     "sort_dir": "desc",
                     "highlight": False,
@@ -787,6 +836,84 @@ def case_search_command_multi_keyword_compact() -> bool:
         "slack_search command calls search per keyword and prints compact merged output",
         [call[1]["query"] for call in calls] == ["alpha", "beta"]
         and "#backend @U1" in output.getvalue(),
+    )
+
+
+def case_search_limit_auto_paginates() -> bool:
+    search = load_module("slack_search")
+    calls: list[dict[str, object]] = []
+
+    def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
+        payload = payload or {}
+        calls.append(payload)
+        page = int(str(payload.get("page")))
+        start = (page - 1) * 100
+        size = 100 if page == 1 else 35
+        matches = [
+            {
+                "channel": {"id": "C1", "name": "alerts"},
+                "ts": f"{1717243200 + start + index}.0",
+                "user": "U1",
+                "text": f"alert {start + index}",
+                "permalink": f"https://example.test/p{start + index}",
+            }
+            for index in range(size)
+        ]
+        return {
+            "ok": True,
+            "messages": {"matches": matches, "paging": {"page": page, "pages": 2}},
+        }
+
+    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
+        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
+        try:
+            common.write_json_secure(
+                Path(tmp) / "config.json",
+                {
+                    "default_workspace": "default",
+                    "workspaces": {
+                        "default": {
+                            "token": "t",
+                            "authed_user": {"access_token": "u"},
+                        }
+                    },
+                },
+            )
+            search.slack_method = fake_slack_method
+            args = type(
+                "Args",
+                (),
+                {
+                    "workspace": None,
+                    "query": ["alert"],
+                    "from_user": None,
+                    "in_channel": None,
+                    "to_me": False,
+                    "after": None,
+                    "before": None,
+                    "on": None,
+                    "days": None,
+                    "count": 20,
+                    "page": 1,
+                    "limit": 120,
+                    "sort": "timestamp",
+                    "sort_dir": "desc",
+                    "highlight": False,
+                    "raw": False,
+                },
+            )()
+            output = io.StringIO()
+            with redirect_stdout(output):
+                search.command_search(args)
+        finally:
+            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+    lines = [line for line in output.getvalue().splitlines() if line.strip()]
+    return check(
+        "slack_search --limit walks pages with count=100 and trims merged output to limit",
+        [call["page"] for call in calls] == [1, 2]
+        and all(call["count"] == 100 for call in calls)
+        and len(lines) == 120,
+        f"pages={[call['page'] for call in calls]} lines={len(lines)}",
     )
 
 
@@ -807,6 +934,8 @@ def main() -> int:
         case_common_day_bounds_boundaries,
         case_common_truncate_text,
         case_common_format_message_line,
+        case_common_format_message_line_attachment_text,
+        case_common_format_message_line_blocks_dedup,
         case_common_legacy_config_migration,
         case_setup_workspace_slug_normalizes,
         case_setup_oauth_url_uses_saved_config,
@@ -821,6 +950,7 @@ def main() -> int:
         case_search_empty_query_with_from_allowed,
         case_search_merge_dedups_and_sorts,
         case_search_command_multi_keyword_compact,
+        case_search_limit_auto_paginates,
     ]
     results = [case() for case in cases]
     print(f"\n{sum(results)}/{len(results)} passed")
