@@ -177,10 +177,10 @@ def case_write_json_secure_permissions() -> bool:
     )
 
 
-def case_common_format_ts_utc() -> bool:
+def case_common_format_ts_local() -> bool:
     return check(
-        "format_ts_utc renders Slack ts in UTC",
-        common.format_ts_utc("1717243200.000100") == "2024-06-01 12:00",
+        "format_ts_local renders Slack ts in the requested timezone",
+        common.format_ts_local("1717243200.000100", "Asia/Seoul") == "2024-06-01 21:00",
     )
 
 
@@ -225,7 +225,7 @@ def case_common_format_message_line() -> bool:
     return check(
         "format_message_line emits compact one-line message",
         common.format_message_line(message, "backend", "alice")
-        == "[2024-06-01 12:00] #backend @alice: hello world | https://example.slack.com/archives/C1/p1717243200000100",
+        == "[2024-06-01 21:00] #backend @alice: hello world | https://example.slack.com/archives/C1/p1717243200000100",
     )
 
 
@@ -378,7 +378,7 @@ def case_setup_oauth_url_uses_saved_config() -> bool:
         "slack_setup.oauth_url composes Slack authorization URL",
         "client_id=CID123" in url
         and "scope=team%3Aread%2Cusers%3Aread" in url
-        and "user_scope=search%3Aread" in url
+        and "user_scope=search%3Aread%2Cchannels%3Aread%2Cchannels%3Ahistory%2Cgroups%3Aread%2Cgroups%3Ahistory" in url
         and "state=abc" in url,
         url,
     )
@@ -533,7 +533,7 @@ def case_read_channel_history_and_thread() -> bool:
             os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
     return check(
         "slack_read channel-history resolves channel name and thread calls conversations.replies",
-        "[2024-06-01 12:00] #C1 @U1: hello | https://example.test/p1" in history.getvalue()
+        "[2024-06-01 21:00] #C1 @U1: hello | https://example.test/p1" in history.getvalue()
         and calls[0][0] == "conversations.list"
         and calls[1] == ("conversations.history", {"channel": "C1", "limit": 2})
         and calls[2] == ("conversations.replies", {"channel": "C1", "ts": "1717243200.0", "limit": 50}),
@@ -588,11 +588,25 @@ def case_read_channel_history_on_date_payload() -> bool:
     )
 
 
-def case_read_not_in_channel_mentions_search_fallback() -> bool:
+def case_read_not_in_channel_uses_user_token_fallback() -> bool:
     read = load_module("slack_read")
+    calls: list[tuple[str, str | None, dict[str, object]]] = []
 
     def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
-        return {"ok": False, "_slack_error": "not_in_channel", "error": "not_in_channel"}
+        calls.append((method, token, payload or {}))
+        if token == "bot":
+            return {"ok": False, "_slack_error": "not_in_channel", "error": "not_in_channel"}
+        return {
+            "ok": True,
+            "messages": [
+                {
+                    "ts": "1.0",
+                    "user": "U1",
+                    "text": "fallback ok",
+                    "permalink": "https://example.test/thread",
+                }
+            ],
+        }
 
     with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
         os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
@@ -601,22 +615,104 @@ def case_read_not_in_channel_mentions_search_fallback() -> bool:
                 Path(tmp) / "config.json",
                 {
                     "default_workspace": "default",
-                    "workspaces": {"default": {"token": "t"}},
+                    "workspaces": {
+                        "default": {
+                            "token": "bot",
+                            "authed_user": {"access_token": "user"},
+                        }
+                    },
                 },
             )
             read.slack_method = fake_slack_method
-            raised = False
-            try:
+            output = io.StringIO()
+            with redirect_stdout(output):
                 read.command_thread(
                     type("Args", (), {"workspace": None, "channel": "C1", "ts": "1.0", "limit": 50, "raw": False})()
                 )
-            except common.SlackHelperError as exc:
-                raised = "search" in str(exc) and "permalink" in str(exc)
         finally:
             os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
     return check(
-        "slack_read not_in_channel error suggests search permalink fallback",
-        raised,
+        "slack_read not_in_channel retries direct read with user token",
+        calls
+        == [
+            ("conversations.replies", "bot", {"channel": "C1", "ts": "1.0", "limit": 50}),
+            ("conversations.replies", "user", {"channel": "C1", "ts": "1.0", "limit": 50}),
+        ]
+        and "fallback ok" in output.getvalue(),
+        str(calls),
+    )
+
+
+def case_read_private_channel_name_uses_user_token_resolution() -> bool:
+    read = load_module("slack_read")
+    calls: list[tuple[str, str | None, dict[str, object]]] = []
+    original = common.slack_method
+
+    def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
+        calls.append((method, token, payload or {}))
+        if method == "conversations.list" and token == "bot":
+            return {"ok": True, "channels": [{"id": "C1", "name": "public"}]}
+        if method == "conversations.list" and token == "user":
+            return {"ok": True, "channels": [{"id": "G1", "name": "private-team"}]}
+        return {
+            "ok": True,
+            "messages": [
+                {
+                    "ts": "2.0",
+                    "user": "U1",
+                    "text": "private ok",
+                    "permalink": "https://example.test/private",
+                }
+            ],
+        }
+
+    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
+        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
+        try:
+            common.write_json_secure(
+                Path(tmp) / "config.json",
+                {
+                    "default_workspace": "default",
+                    "workspaces": {
+                        "default": {
+                            "token": "bot",
+                            "authed_user": {"access_token": "user"},
+                        }
+                    },
+                },
+            )
+            common.slack_method = fake_slack_method
+            read.slack_method = fake_slack_method
+            output = io.StringIO()
+            with redirect_stdout(output):
+                read.command_channel_history(
+                    type(
+                        "Args",
+                        (),
+                        {"workspace": None, "channel": "private-team", "limit": 20, "on": None, "raw": False},
+                    )()
+                )
+        finally:
+            common.slack_method = original
+            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+    return check(
+        "slack_read resolves private channel names with user token fallback",
+        calls
+        == [
+            (
+                "conversations.list",
+                "bot",
+                {"limit": 200, "types": "public_channel", "exclude_archived": "true"},
+            ),
+            (
+                "conversations.list",
+                "user",
+                {"limit": 200, "types": "public_channel,private_channel", "exclude_archived": "true"},
+            ),
+            ("conversations.history", "user", {"channel": "G1", "limit": 20}),
+        ]
+        and "private ok" in output.getvalue(),
+        str(calls),
     )
 
 
@@ -930,7 +1026,7 @@ def main() -> int:
         case_match_user_identity_ambiguous_errors,
         case_resolve_channel_id_and_name_lookup,
         case_write_json_secure_permissions,
-        case_common_format_ts_utc,
+        case_common_format_ts_local,
         case_common_day_bounds_boundaries,
         case_common_truncate_text,
         case_common_format_message_line,
@@ -944,7 +1040,8 @@ def main() -> int:
         case_read_users_compact_and_raw,
         case_read_channel_history_and_thread,
         case_read_channel_history_on_date_payload,
-        case_read_not_in_channel_mentions_search_fallback,
+        case_read_not_in_channel_uses_user_token_fallback,
+        case_read_private_channel_name_uses_user_token_resolution,
         case_search_build_query_options,
         case_search_days_after_conflict_and_to_me_error,
         case_search_empty_query_with_from_allowed,
