@@ -92,7 +92,9 @@ def case_missing_dependency_exits_3() -> bool:
     result = run_lint(root, {"PYTHONPATH": str(stub)})
     return check(
         "missing dependency exits 3",
-        result.returncode == 3 and "Missing dependency: python-frontmatter" in result.stderr,
+        result.returncode == 3
+        and "Missing dependency: python-frontmatter" in result.stderr
+        and ".venvs/agent-toolkit-kb" in result.stderr,
         f"exit={result.returncode}",
     )
 
@@ -119,7 +121,7 @@ def case_finding_exits_1() -> bool:
 
 def case_aws_key_exits_2() -> bool:
     root = new_kb()
-    write_doc(root, "alpha.md", title="Alpha", body="AKIA1234567890ABCDEF")
+    write_doc(root, "alpha.md", title="Alpha", body="AKIA" + "1234567890ABCDEF")
     write_index(root, ["alpha.md"])
     result = run_lint(root)
     return check(
@@ -261,6 +263,19 @@ def case_password_values_detected() -> bool:
     )
 
 
+def case_log_template_placeholder_reports() -> bool:
+    root = new_kb()
+    write_index(root, [])
+    template = Path(__file__).parents[2] / "kb-manage" / "templates" / "log.jsonl"
+    (root / "log.jsonl").write_text(template.read_text(encoding="utf-8"), encoding="utf-8")
+    result = run_lint(root)
+    return check(
+        "log template placeholder reports",
+        result.returncode == 1 and "[log-placeholder]" in result.stdout,
+        f"exit={result.returncode}",
+    )
+
+
 def main() -> int:
     cases = [
         case_missing_dependency_exits_3,
@@ -275,6 +290,7 @@ def main() -> int:
         case_absolute_path_link_warns,
         case_password_placeholders_not_detected,
         case_password_values_detected,
+        case_log_template_placeholder_reports,
     ]
     results = [case() for case in cases]
     print(f"\n{sum(results)}/{len(results)} passed")

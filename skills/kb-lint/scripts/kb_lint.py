@@ -3,9 +3,9 @@
 
 Covers only what a machine can decide reliably: frontmatter completeness, valid
 agent_edit_mode, date format, title/H1 match, _archived/ rules, index.md link
-targets, broken relative Markdown links, log.jsonl validity, and high-confidence
-secret patterns. Judgement checks (duplicate topics, conflicting claims, split
-candidates) stay with the kb-lint LLM workflow.
+targets, broken relative Markdown links, log.jsonl validity/placeholders, and
+high-confidence secret patterns. Judgement checks (duplicate topics,
+conflicting claims, split candidates) stay with the kb-lint LLM workflow.
 
 Exit codes:
     0  no findings
@@ -13,7 +13,7 @@ Exit codes:
     2  high-risk secret candidates present (implies findings)
     3  cannot run (python-frontmatter missing)
 
-Reuses the shared frontmatter loader from the kb-search scripts.
+Uses the frontmatter loader bundled with kb-lint.
 """
 
 from __future__ import annotations
@@ -21,15 +21,10 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sys
 import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import unquote
-
-# Import contract: see kb-manage/references/conventions.md (Script Paths).
-SEARCH_SCRIPTS = Path(__file__).resolve().parents[2] / "kb-search" / "scripts"
-sys.path.insert(0, str(SEARCH_SCRIPTS))
 
 from kb_frontmatter import KbDoc, load_docs, normalize_date  # noqa: E402
 
@@ -41,6 +36,7 @@ ENTRYPOINT_NAMES = {"index.md", "readme.md", "agents.md", "claude.md"}
 VALID_MODES = {"read_only", "append_only", "editable"}
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
+TEMPLATE_PLACEHOLDER_RE = re.compile(r"\bYYYY-MM-DD(?:THH:MM:SS)?")
 
 # High-confidence secret shapes. Value-form matches, not context keywords.
 SECRET_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
@@ -240,6 +236,9 @@ def check_log(root: Path) -> list[Finding]:
             json.loads(line)
         except json.JSONDecodeError:
             out.append(Finding("error", "log-malformed", "log.jsonl", lineno, "line is not valid JSON"))
+            continue
+        if TEMPLATE_PLACEHOLDER_RE.search(line):
+            out.append(Finding("error", "log-placeholder", "log.jsonl", lineno, "template placeholder remains"))
     out += scan_secrets_in_text("log.jsonl", log_path.read_text(encoding="utf-8"))
     return out
 
