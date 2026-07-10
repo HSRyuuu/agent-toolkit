@@ -9,22 +9,34 @@ a rule here conflicts with a skill's own prose, this file wins. When local KB
 guidance (`AGENTS.md`, `CLAUDE.md`, `.agents/rules/*.md` at the resolved root)
 conflicts with this file, the local guidance wins.
 
-## Script Paths
+## Skill Routing
 
-Skill scripts live under the plugin root. In Claude Code the plugin root is
-injected as `${CLAUDE_PLUGIN_ROOT}`:
+Route cross-skill work by skill name, never by repository layout:
 
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/resolve_kb_root.py"
-```
+- `kb-manage` owns setup, root resolution, index maintenance, and edit guards.
+- `kb-search` owns structured metadata search and recent activity.
+- `kb-lint` owns deterministic and judgement lint.
+- `kb-write` owns document mutations.
 
-If `${CLAUDE_PLUGIN_ROOT}` is unset (for example under Codex), resolve the path
-relative to the invoking `SKILL.md`'s location instead.
+Each skill resolves its own bundled `scripts/`, `templates/`, and `references/`
+resources internally. Cross-skill work is always delegated by skill name.
 
-`kb-search/scripts/` is the shared Python helper home for KB frontmatter code.
-`kb-lint/scripts/kb_lint.py` and `kb-manage/scripts/kb_build_index.py` import
-from it by inserting that relative path into `sys.path`; if these directories
-move, update all three files together.
+For first-time setup and Python requirements, read
+[`getting-started.md`](./getting-started.md). Use one isolated virtual-environment
+interpreter for prerequisite checks, package installation, and all KB helpers.
+The default is `~/.venvs/agent-toolkit-kb/bin/python`; do not install KB
+dependencies into Homebrew/system Python.
+
+## Installation Approval
+
+Every installation-related mutation requires explicit user confirmation after
+showing the exact source, command, destination, and impact. This includes
+packages, runtimes, virtual environments, skill registration,
+clone/download, `npx`, skill copy/symlink, enablement, updates, reinstalls, and
+removal. Read-only availability/version checks are allowed before confirmation.
+One confirmation covers only the fully disclosed batch; newly discovered or
+changed actions require a new confirmation. See `getting-started.md` and, for
+optional Obsidian skills, `obsidian-skills.md`.
 
 ## KB Identity
 
@@ -61,18 +73,26 @@ document body, never in frontmatter.
 
 ## Root Resolution
 
+`~/.config/kb/kb-config.json` is mandatory. Every KB root must be registered
+there before search, lint, write, or maintenance work begins.
+
 Resolve the KB root from the first matching source:
 
-1. A user-provided absolute path, or a registered KB name.
+1. A registered KB name, or an absolute path that exactly matches a registered root.
 2. The current working directory, only when it is inside a **registered** KB root.
 3. The configured `default` KB.
 4. The single registered KB, when exactly one is configured.
 
-If none resolves (nothing configured, or several KBs registered with no default
-and cwd outside all of them), ask the user which KB to use. Never infer a KB root
-from an *unregistered* directory, parent directories, `index.md`, `log.jsonl`,
-`.obsidian/`, frontmatter, or guidance files. Step 2 only ever selects a root the
-user explicitly registered.
+If the config is missing or empty, route to `kb-manage` config bootstrap. Propose
+`~/KnowledgeBase` as registration `personal` and default, while allowing the
+user to choose another absolute directory. Create or update the config after
+showing the exact change and receiving approval. Do not accept an unregistered
+absolute path as a temporary bypass.
+
+When several KBs are registered with no default and cwd is outside all of them,
+ask which registered KB to use. Never infer a root from an unregistered
+directory, parent directories, `index.md`, `log.jsonl`, `.obsidian/`,
+frontmatter, or guidance files.
 
 The config file `~/.config/kb/kb-config.json` is a UTF-8 JSON object. Single-KB
 shape (back-compatible; `kb_root` and `root` are aliases for `path`):
@@ -90,13 +110,9 @@ Multiple-KB shape:
 }
 ```
 
-For the fastest deterministic check:
-
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/resolve_kb_root.py"
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/resolve_kb_root.py" /absolute/path/to/kb
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/resolve_kb_root.py" work   # by registered name
-```
+For the fastest deterministic check, route to `kb-manage` and run its bundled
+`scripts/resolve_kb_root.py` with no argument, a registered absolute path, or a
+registered name such as `work`.
 
 The script prints the resolved root on stdout and exits nonzero (with a reason)
 when the root is unresolved or ambiguous.
@@ -104,6 +120,11 @@ when the root is unresolved or ambiguous.
 After resolving the root, always read local guidance from the resolved root
 (not only the current shell directory), in this order: `AGENTS.md`, `CLAUDE.md`,
 `.agents/rules/*.md`. Local root guidance overrides these generic conventions.
+
+Hidden files and directories are excluded from KB document discovery, indexing,
+search results, and lint input. This includes `.agents/`, `.claude/`, `.codex/`,
+`.obsidian/`, and hidden notes. Guidance files under `.agents/rules/` are read
+explicitly during orientation, not treated as KB knowledge documents.
 
 ## Frontmatter
 
@@ -153,8 +174,8 @@ Writing rules:
 Scope:
 
 - Apply to normal KB documents and KB rule documents.
-- Do not add frontmatter to root entrypoints (`AGENTS.md`, `CLAUDE.md`), to
-  plugin `SKILL.md` files, or to non-Markdown files.
+- Do not add frontmatter to root entrypoints (`AGENTS.md`, `CLAUDE.md`), agent
+  skill definition files, or non-Markdown files.
 - Do not add `kind: canonical`, `kind: daily-log`, or raw-source link fields
   unless the local KB already uses them intentionally.
 
@@ -175,14 +196,10 @@ new documents as `editable` and add the field during the next meaningful update.
 
 ### Git Guard
 
-In a git-backed KB, run this guard after changing Markdown files and before
-reporting completion or preparing a git action:
-
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/check_agent_edit_mode.py"
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/check_agent_edit_mode.py" --staged
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/check_agent_edit_mode.py" --files path/a.md path/b.md
-```
+In a git-backed KB, route to `kb-manage` and run its bundled
+`scripts/check_agent_edit_mode.py` after changing Markdown and before reporting
+completion or preparing a git action. It accepts `--staged` and
+`--files path/a.md path/b.md`; with neither, it checks all changed Markdown.
 
 Protection is judged by each file's **baseline** (pre-change) `agent_edit_mode`:
 

@@ -14,10 +14,15 @@ description: >
 
 Search a curated Markdown KB in read-only mode. The maintained documents are the source-of-truth surface. Do not cite `log.jsonl` as evidence for a fact; it is the primary work-history pointer for locating relevant files and past work, while the documents themselves hold the facts. Do not rely on embeddings or general web knowledge unless the user explicitly asks for outside-KB research.
 
-**Required orientation:** read
-[`kb-manage/references/conventions.md`](../kb-manage/references/conventions.md)
+**REQUIRED SKILL:** Load `kb-manage` by name and follow its shared conventions
 for KB root resolution, frontmatter fields, uncertainty markers, `index.md` /
-`log.jsonl` rules, and script paths.
+`log.jsonl` rules, and bundled-resource routing.
+
+**First-time recovery:** if no registered root resolves, route to `kb-manage`
+config bootstrap; never search an unregistered absolute path. If the config is
+missing or empty, propose `~/KnowledgeBase` while allowing another absolute
+directory. For missing runtime packages, follow `kb-manage` first-time setup.
+Do not mutate config or install packages without approval.
 
 ## Core Principles
 
@@ -43,41 +48,44 @@ for KB root resolution, frontmatter fields, uncertainty markers, `index.md` /
 
 ## Useful Commands
 
-Resolve the KB root once, then pass it explicitly:
+Route root resolution to `kb-manage`, then pass the resolved absolute root to
+`kb-search`. For structured frontmatter search, use the `kb-search` bundled
+helpers:
 
-```bash
-KB_ROOT="$(python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/resolve_kb_root.py")"
-```
+- `scripts/kb_meta_search.py <KB_ROOT> --updated 2026-07-01`
+- `scripts/kb_meta_search.py <KB_ROOT> --created 2026-07-01 --tag kafka`
+- `scripts/kb_meta_search.py <KB_ROOT> --updated-since 2026-06-01 --updated-until 2026-06-30`
+- `scripts/kb_recent_activity.py <KB_ROOT> --date 2026-07-01`
+- `scripts/kb_recent_activity.py <KB_ROOT> --since 2026-06-28`
 
-Structured frontmatter search using `python-frontmatter`:
+Use these scripts before `rg` when the query is about structured frontmatter
+fields such as `title`, `summary`, `tags`, `aliases`, `source`, `created`,
+`updated`, or `agent_edit_mode`. They require the locked `python-frontmatter`
+and `PyYAML` runtime from the bundled `scripts/requirements.txt`. Follow the
+first-time recovery guide when it is absent or mismatched; for a read-only
+search that cannot wait for approved installation, fall back to `rg` and
+disclose that structured metadata parsing was unavailable.
 
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_meta_search.py" "$KB_ROOT" --updated 2026-07-01
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_meta_search.py" "$KB_ROOT" --created 2026-07-01 --tag kafka
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_meta_search.py" "$KB_ROOT" --updated-since 2026-06-01 --updated-until 2026-06-30
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_recent_activity.py" "$KB_ROOT" --date 2026-07-01
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-search/scripts/kb_recent_activity.py" "$KB_ROOT" --since 2026-06-28
-```
-
-Use these scripts before `rg` when the query is about structured frontmatter fields such as `title`, `summary`, `tags`, `aliases`, `source`, `created`, `updated`, or `agent_edit_mode`. They require `python-frontmatter`; if it is absent, install the dependency listed in `scripts/requirements.txt` or fall back to `rg`.
+Run bundled Python helpers with `~/.venvs/agent-toolkit-kb/bin/python` by
+default. Do not install dependencies into Homebrew/system Python.
 
 Inventory:
 
 ```bash
-find "$KB_ROOT" -path '*/.git' -prune -o -path '*/.obsidian' -prune -o -name '*.md' -print
+find "$KB_ROOT" -path '*/.*' -prune -o -path '*/node_modules' -prune -o -name '*.md' -print
 ```
 
 Structure fields and headings:
 
 ```bash
-rg -n --glob '*.md' --glob '!**/.git/**' --glob '!**/.obsidian/**' \
+rg -n --glob '*.md' --glob '!**/.*/**' --glob '!**/.*' --glob '!**/node_modules/**' \
   "title:|summary:|tags:|aliases:|^#{1,6} " "$KB_ROOT"
 ```
 
 Body keyword search (replace `<검색어>` and `<synonym>`):
 
 ```bash
-rg -n --glob '*.md' --glob '!**/.git/**' --glob '!**/.obsidian/**' \
+rg -n --glob '*.md' --glob '!**/.*/**' --glob '!**/.*' --glob '!**/node_modules/**' \
   "<검색어>|<synonym>" "$KB_ROOT"
 ```
 

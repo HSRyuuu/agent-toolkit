@@ -14,10 +14,16 @@ description: >
 
 Health-check a curated Markdown KB. This lint model follows a source-of-truth document workflow: frontmatter, document clarity, `index.md`, `log.jsonl`, security hygiene, and search quality are what it checks.
 
-**Required orientation:** read
-[`kb-manage/references/conventions.md`](../kb-manage/references/conventions.md)
-for KB root resolution, frontmatter fields, uncertainty markers, `agent_edit_mode`,
-`index.md` / `log.jsonl` rules, security principles, and script paths.
+**REQUIRED SKILL:** Load `kb-manage` by name and follow its shared conventions
+for KB root resolution, frontmatter fields, uncertainty markers,
+`agent_edit_mode`, `index.md` / `log.jsonl`, security, and bundled-resource
+routing.
+
+**First-time recovery:** if no registered root resolves, route to `kb-manage`
+config bootstrap; never lint an unregistered absolute path. If the config is
+missing or empty, propose `~/KnowledgeBase` while allowing another absolute
+directory. If the helper exits `3`, follow the runtime setup. Do not mutate
+config or install packages without approval.
 
 ## Default Mode
 
@@ -48,15 +54,18 @@ Never auto-fix sensitive content. Report it and ask.
 format, title/H1 mismatch, `_archived/` depth and read_only rules, `index.md`
 link targets and coverage (`_inbox/` and `_archived/` coverage is optional),
 broken relative Markdown links, absolute Markdown path warnings, `log.jsonl`
-JSON validity, and high-confidence secret candidates.
+JSON validity/template placeholders, and high-confidence secret candidates.
 
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-lint/scripts/kb_lint.py" /path/to/kb
-```
+Route to `kb-lint` and run its bundled `scripts/kb_lint.py` with the absolute KB
+root.
 
 Exit `0` clean, `1` findings present, `2` high-confidence secret candidates
-present, `3` cannot run because `python-frontmatter` is missing. It needs
-`python-frontmatter` (see `../kb-search/scripts/requirements.txt`).
+present, `3` cannot run because the frontmatter runtime is missing. It needs
+the locked `python-frontmatter` and `PyYAML` versions from the bundled
+`scripts/requirements.txt`; use the prerequisite and installation flow in the
+first-time recovery guide.
+Run it with `~/.venvs/agent-toolkit-kb/bin/python` by default; do not install
+dependencies into Homebrew/system Python.
 Treat its output as the factual base for the report, then add the judgement-only
 findings below.
 
@@ -90,6 +99,7 @@ judgement-heavy review in `[LLM]`.
 
 - `[script]` `log.jsonl` missing — it is the primary work-history trail and is expected by default, unless local KB rules opt out
 - `[script]` malformed `log.jsonl`, when present
+- `[script]` setup template placeholders left in `log.jsonl`
 - `[LLM]` recent changed documents with no approximate log entry
 - `[LLM]` log entries pointing to missing files, when present
 - `[script]` log entries containing sensitive raw values, when present
@@ -137,37 +147,34 @@ The grep below over-matches on purpose; use it as a candidate list, not a verdic
 
 ## Suggested Commands
 
-Resolve the KB root once, then pass it explicitly:
-
-```bash
-KB_ROOT="$(python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/resolve_kb_root.py")"
-```
+Resolve the KB root through `kb-manage`, then pass it explicitly to `kb-lint`.
 
 Inventory:
 
 ```bash
-find "$KB_ROOT" -path '*/.git' -prune -o -path '*/.obsidian' -prune -o -name '*.md' -print
+find "$KB_ROOT" -path '*/.*' -prune -o -path '*/node_modules' -prune -o -name '*.md' -print
 ```
 
 Frontmatter and uncertainty:
 
 ```bash
-rg -n --glob '*.md' "^---$|^title:|^summary:|^tags:|^aliases:|^created:|^updated:|확인 필요|미정|추정|과거 정보" "$KB_ROOT"
+rg -n --glob '*.md' --glob '!**/.*/**' --glob '!**/.*' --glob '!**/node_modules/**' \
+  "^---$|^title:|^summary:|^tags:|^aliases:|^created:|^updated:|확인 필요|미정|추정|과거 정보" "$KB_ROOT"
 ```
 
 Security candidate scans (candidate only — review before reporting):
 
 ```bash
 # Credentials and token-shaped context candidates.
-rg -n -i --glob '*.md' --glob '*.jsonl' \
+rg -n -i --glob '*.md' --glob '*.jsonl' --glob '!**/.*/**' --glob '!**/.*' --glob '!**/node_modules/**' \
   "password|passwd|token|secret|api[_-]?key|private key|cookie|session|jwt|bearer" "$KB_ROOT"
 
 # Infrastructure, endpoints, and access-path candidates.
-rg -n -i --glob '*.md' --glob '*.jsonl' \
+rg -n -i --glob '*.md' --glob '*.jsonl' --glob '!**/.*/**' --glob '!**/.*' --glob '!**/node_modules/**' \
   "ssh|vpn|rdp|host|endpoint|internal|prod|staging|database|db[_-]?url|jdbc|redis|kafka" "$KB_ROOT"
 
 # Korean security/access wording candidates.
-rg -n -i --glob '*.md' --glob '*.jsonl' \
+rg -n -i --glob '*.md' --glob '*.jsonl' --glob '!**/.*/**' --glob '!**/.*' --glob '!**/node_modules/**' \
   "운영|비밀번호|토큰|시크릿|계정|내부|접속|인증|권한" "$KB_ROOT"
 ```
 
@@ -178,11 +185,8 @@ test -f "$KB_ROOT/index.md" && rg -n "\\.md\\)|\\.md" "$KB_ROOT/index.md"
 test -f "$KB_ROOT/log.jsonl" && tail -100 "$KB_ROOT/log.jsonl"
 ```
 
-Agent edit-mode guard in git repositories:
-
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/check_agent_edit_mode.py"
-```
+For the agent edit-mode guard in git repositories, route to `kb-manage` and run
+its bundled guard.
 
 ## Report Shape
 

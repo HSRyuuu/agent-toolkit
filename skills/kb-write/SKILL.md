@@ -15,11 +15,14 @@ description: >
 Add knowledge to a Markdown KB as curated source-of-truth documents. The
 maintained document is the truth surface.
 
-**Required orientation:** read
-[`kb-manage/references/conventions.md`](../kb-manage/references/conventions.md)
+**REQUIRED SKILL:** Load `kb-manage` by name and follow its shared conventions
 for KB root resolution, frontmatter, `agent_edit_mode`, uncertainty markers,
-`index.md` / `log.jsonl`, security principles, and script paths. Read `kb-manage`
-itself for setup, folder structure, and migration.
+`index.md` / `log.jsonl`, security, setup, folder structure, and migration.
+
+If this is the user's first KB write or no registered root resolves, route to
+`kb-manage` config bootstrap. Every KB root must be registered before writing.
+When config is missing or empty, propose `~/KnowledgeBase` and allow the user to
+choose another absolute directory.
 
 ## Fast Path vs Full Path
 
@@ -58,7 +61,8 @@ Most writes are small. Do not run the full ritual for a one-line note.
 Before writing:
 
 1. Resolve the KB root using the conventions Root Resolution rules; if none
-   resolves, stop and ask the user for an absolute KB path.
+   resolves, stop and route to `kb-manage` config bootstrap. Do not write to an
+   unregistered absolute path or treat the current directory as a new KB.
 2. Read root guidance from the resolved root (`AGENTS.md`, `CLAUDE.md`,
    `.agents/rules/*.md`), even if the shell directory is elsewhere.
 3. Read `index.md` if present to find existing topics.
@@ -71,7 +75,9 @@ If the KB has project-local add/search/security/writing rules, follow those over
 
 ## Optional Obsidian Skill Use
 
-Use Obsidian skills only when they are available and the write task needs Obsidian-specific behavior. Read `kb-manage` and, when relevant, its `references/obsidian-skills.md` guidance first. Plain Markdown KB writing must work without these skills.
+Use Obsidian skills only when they are available and the write task needs
+Obsidian-specific behavior. Route to `kb-manage` for its optional Obsidian
+guidance first. Plain Markdown KB writing must work without these skills.
 
 | Situation during write | Helpful skill | Use it for | Keep `kb-write` responsible for |
 |---|---|---|---|
@@ -189,9 +195,7 @@ as `editable` and add the field during the next meaningful update.
 In a git-backed KB, after writing and before completion or any git action, run
 the guard, scoped to the files this task touched:
 
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/check_agent_edit_mode.py" --files path/to/doc.md
-```
+Route to `kb-manage` and run its bundled edit-mode guard for the target files.
 
 If it reports a `read_only` or `append_only` violation, stop. Name the protected
 file and ask whether the change was intentional. Human edits are allowed; agent

@@ -13,5 +13,5 @@ This document is the KB catalog. Check each linked source document for detailed 
 
 | Document | Summary | Tags | Updated |
 |---|---|---|---|
-| [Example](./example.md) | One-line summary. | `kb` | YYYY-MM-DD |
+| _(none)_ | | | |
 <!-- kb:documents:end -->

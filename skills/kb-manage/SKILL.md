@@ -16,12 +16,28 @@ Manage the KB itself: root path, identity, setup files, `index.md`, and
 `log.jsonl`. This is a lightweight Markdown source-of-truth KB model where
 maintained documents are the truth surface.
 
+Human-facing quickstart and document navigation live in
+[`README.md`](./README.md). Agent workflows must still follow this `SKILL.md`
+and the routed references below.
+
 **Shared conventions live in one place:** read
 [`references/conventions.md`](./references/conventions.md) for KB identity, root
 resolution, uncertainty markers, frontmatter, `agent_edit_mode`, `index.md` /
-`log.jsonl` rules, security principles, and script paths. This SKILL.md covers
+`log.jsonl` rules, security principles, and resource routing. This SKILL.md covers
 only the manage-specific work: setup, templates, folder structure, migration,
 and index/log maintenance.
+
+## First-Time Users
+
+When this is the first KB setup, no root resolves, or a Python dependency is
+missing, read
+[`references/getting-started.md`](./references/getting-started.md) completely
+before changing files. It is the single onboarding flow for skill availability,
+Python requirements, `python-frontmatter`, KB registration, initialization,
+skill-name routing, and smoke tests.
+
+Do not treat “templates were copied” as setup completion. First-time setup must
+meet the verification criteria in the getting-started guide.
 
 ## Repository Operating Defaults
 
@@ -90,24 +106,24 @@ Obsidian skills for normal KB work.
 
 ## Setup
 
-When initializing a KB:
+After the first-time prerequisite check passes, initialize a KB:
 
-1. Confirm the root path.
-2. Create the root directory only after user approval if it does not exist.
-3. Create or adapt `AGENTS.md` from `templates/AGENTS.md` if no agent entrypoint
+1. Inspect `~/.config/kb/kb-config.json`. Registration is mandatory.
+2. If no KB is registered, propose `~/KnowledgeBase` as `personal`/default and
+   let the user choose another absolute directory instead.
+3. Show and approve the config change, then write it before root initialization.
+4. Create the registered root directory only after approval if it does not exist.
+5. Create or adapt `AGENTS.md` from `templates/AGENTS.md` if no agent entrypoint
    exists.
-4. Create or adapt `index.md` from `templates/index.md` if missing.
-5. Create `log.jsonl` from `templates/log.jsonl` — it is the primary
+6. Create or adapt `index.md` from `templates/index.md` if missing.
+7. Create `log.jsonl` from `templates/log.jsonl` — it is the primary
    work-history trail and must work without git (see conventions). Replace
    placeholders with the setup datetime and a root-specific summary. Skip it
    only when the user explicitly opts out of a work-history file.
-6. Register this KB in `~/.config/kb/kb-config.json` after user approval
-   (create the file or add/update the `kbs` entry). Registration lets other
-   directories resolve the KB root automatically. If the user explicitly
-   declines, skip registration and tell them they will need to provide the
-   absolute KB path in each session.
-7. Do not create `_raw/`.
-8. Create `_inbox/` only if the user explicitly wants a staging area.
+8. Do not create `_raw/`.
+9. Create `_inbox/` only if the user explicitly wants a staging area.
+10. Run the getting-started verification sequence. Remove all template
+   placeholders before linting; a new empty KB should lint cleanly.
 
 ### Template Usage
 
@@ -201,17 +217,17 @@ logs, or `kind: canonical`:
 the shape. Keep it content-oriented, not chronological, and do not include every
 heading or long excerpts.
 
-Prefer regenerating the Documents catalog from frontmatter instead of editing it
-by hand. The build script preserves the human-written preamble (everything before
-the `<!-- kb:documents:start -->` marker) and rewrites only the generated tables:
+Prefer regenerating the Documents catalog from frontmatter instead of editing
+it by hand. Route to `kb-manage` and use its bundled
+`scripts/kb_build_index.py`: pass the KB root for preview, add `--write` to
+apply, or add `--check` for drift verification. The script preserves the
+human-written preamble and rewrites only the generated marker block.
 
-```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/kb_build_index.py" /path/to/kb            # preview
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/kb_build_index.py" /path/to/kb --write    # apply
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/kb_build_index.py" /path/to/kb --check    # drift check
-```
-
-It needs `python-frontmatter` (see `../kb-search/scripts/requirements.txt`).
+It needs the locked `python-frontmatter` and `PyYAML` runtime from the bundled
+`scripts/requirements.txt`. Use the prerequisite and installation flow in
+[`references/getting-started.md`](./references/getting-started.md); never switch
+Python interpreters between installation and script execution. By default, run
+it with `~/.venvs/agent-toolkit-kb/bin/python`, not Homebrew/system Python.
 
 ## Log Maintenance
 

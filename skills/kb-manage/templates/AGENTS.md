@@ -2,16 +2,16 @@
 
 This repository is a Markdown knowledge base. Maintained documents are the source of truth.
 
-This file is the local KB rulebook. Where it conflicts with the AgentToolkit KB
-skills' generic conventions, this file wins. Keep it aligned with the skills'
-`conventions.md` unless this KB intentionally diverges.
+This file is the local KB rulebook. Where it conflicts with generic KB skill
+conventions, this file wins. Keep intentional differences explicit.
 
 ## Read First
 
 - Use `index.md` as the document catalog.
 - Use `log.jsonl` as the primary work-history trail for finding files and past work; it works without git. Git history, when this KB is git-backed, is a supplementary reference only.
+- Resolve this root only through its registration in `~/.config/kb/kb-config.json`; KB skills must not use an unregistered absolute path.
 - If an agent is working from a nested or different directory, it should still resolve this KB root and read this file before changing or answering from the KB.
-- Use the AgentToolkit KB skills when available:
+- Route KB work by these skill names when available:
   - `kb-manage` for setup, conventions, migration, and root management.
   - `kb-write` for creating, appending, merging, updating, or reorganizing knowledge.
   - `kb-search` for read-only search and Q&A.
@@ -29,7 +29,7 @@ skills' generic conventions, this file wins. Keep it aligned with the skills'
   - `read_only`: agents must not edit the file.
   - `append_only`: agents may add new content anywhere, including `>` blockquotes or notes, but must preserve existing text exactly.
   - `editable`: agents may edit text, structure, frontmatter, and remove content when appropriate.
-- In git repositories, run the edit-mode guard before completing Markdown changes: `python3 "${CLAUDE_PLUGIN_ROOT}/skills/kb-manage/scripts/check_agent_edit_mode.py"` (if `${CLAUDE_PLUGIN_ROOT}` is unset, use the agent-toolkit plugin's `skills/kb-manage/scripts/` path).
+- In git repositories, route to `kb-manage` and run its bundled edit-mode guard before completing Markdown changes. Use the isolated Python interpreter selected during KB prerequisite setup (default: `~/.venvs/agent-toolkit-kb/bin/python`).
 - If the guard reports a protected-file violation, ask whether the change was intentionally made by a human before proceeding.
 
 ## Document Structure
@@ -37,6 +37,7 @@ skills' generic conventions, this file wins. Keep it aligned with the skills'
 - New knowledge documents should use YAML frontmatter unless local rules say otherwise.
 - Keep `title`, `summary`, `tags`, `aliases`, `created`, `updated`, and `agent_edit_mode` useful for search and maintenance.
 - Keep root agent entrypoints such as this file free of KB document frontmatter.
+- Exclude hidden files and directories from KB document discovery, indexing, search, and lint. Read hidden agent guidance separately when instructed.
 - Use ordinary Markdown links for external URLs.
 - Add internal links only when they are clearly useful.
 
