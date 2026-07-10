@@ -2,7 +2,7 @@
 """Resolve the configured Markdown KB root.
 
 Resolution order:
-1. Positional argument: an absolute path, or the name of a registered KB.
+1. Positional argument: a registered absolute path, or a registered KB name.
 2. If the current working directory is inside a registered KB root, that root.
 3. The configured `default` KB, when set.
 4. The only registered KB, when exactly one is configured.
@@ -17,8 +17,9 @@ Multiple KBs:
     {"kbs": {"personal": "/abs/personal", "work": "/abs/work"},
      "default": "personal"}
 
-The cwd auto-select in step 2 only ever picks a root the user explicitly
-registered; it never infers an arbitrary directory as a KB.
+Every usable KB root must be registered in the config. The cwd auto-select in
+step 2 only ever picks a root the user explicitly registered; an unregistered
+absolute path is never accepted as a KB root.
 """
 
 from __future__ import annotations
@@ -31,6 +32,7 @@ from typing import Any
 
 
 CONFIG_PATH = Path.home() / ".config" / "kb" / "kb-config.json"
+SUGGESTED_ROOT = Path.home() / "KnowledgeBase"
 SINGLE_KEYS = ("path", "kb_root", "root")
 
 
@@ -99,19 +101,26 @@ def resolve_root(user_arg: str | None) -> tuple[Path | None, str | None]:
     config = load_config(CONFIG_PATH)
     roots, default_name = collect_roots(config)
 
+    if not roots:
+        return None, (
+            f"No KB is registered in {CONFIG_PATH}. Configure kb-config.json first. "
+            f"Suggested root: {SUGGESTED_ROOT}. You may register a different absolute path."
+        )
+
     if user_arg:
-        direct = valid_root(user_arg)
-        if direct is not None:
-            return direct, None
         if user_arg in roots:
             return roots[user_arg], None
-        if Path(user_arg).expanduser().is_absolute():
-            return None, f"Path is not an existing directory: {user_arg}"
+        candidate = Path(user_arg).expanduser()
+        if candidate.is_absolute():
+            direct = candidate.resolve()
+            if direct in roots.values():
+                return direct, None
+            return None, (
+                f"KB path is not registered in {CONFIG_PATH}: {direct}. "
+                "Register it before using KB skills."
+            )
         known = ", ".join(sorted(roots)) or "none"
         return None, f"No KB named {user_arg!r}. Registered KBs: {known}."
-
-    if not roots:
-        return None, None
 
     cwd = Path.cwd().resolve()
     for root in roots.values():
@@ -132,7 +141,7 @@ def resolve_root(user_arg: str | None) -> tuple[Path | None, str | None]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Resolve the configured KB root.")
-    parser.add_argument("path", nargs="?", help="Absolute KB path or a registered KB name")
+    parser.add_argument("path", nargs="?", help="Registered absolute KB path or registered KB name")
     args = parser.parse_args()
 
     try:
@@ -143,10 +152,7 @@ def main() -> int:
 
     if root is None:
         if error is None:
-            error = (
-                "No valid KB root resolved. Provide an absolute path or configure "
-                f"{CONFIG_PATH}."
-            )
+            error = f"No valid registered KB root resolved from {CONFIG_PATH}."
         print(error, file=sys.stderr)
         return 1
 
