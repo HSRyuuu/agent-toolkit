@@ -13,7 +13,7 @@ Modes:
     --write     write the result back to index.md
     --check     exit 1 if index.md is out of date (no write); for lint/CI
 
-Reuses the shared frontmatter loader from the kb-search scripts.
+Uses the frontmatter loader bundled with kb-manage.
 """
 
 from __future__ import annotations
@@ -21,10 +21,6 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-
-# Import contract: see kb-manage/references/conventions.md (Script Paths).
-SEARCH_SCRIPTS = Path(__file__).resolve().parents[2] / "kb-search" / "scripts"
-sys.path.insert(0, str(SEARCH_SCRIPTS))
 
 from kb_frontmatter import KbDoc, coerce_list, load_docs, normalize_date  # noqa: E402
 
