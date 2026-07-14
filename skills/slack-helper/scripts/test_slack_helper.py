@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import importlib.util
 import io
+import json
 import os
 import stat
 import sys
@@ -486,6 +487,8 @@ def case_read_channel_history_and_thread() -> bool:
         calls.append((method, payload or {}))
         if method == "conversations.list":
             return {"ok": True, "channels": [{"id": "C1", "name": "backend"}]}
+        if method == "users.info":
+            return {"ok": True, "user": {"id": "U1", "name": "alice", "profile": {"display_name": "Alice"}}}
         return {
             "ok": True,
             "messages": [
@@ -533,10 +536,13 @@ def case_read_channel_history_and_thread() -> bool:
             os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
     return check(
         "slack_read channel-history resolves channel name and thread calls conversations.replies",
-        "[2024-06-01 21:00] #C1 @U1: hello | https://example.test/p1" in history.getvalue()
+        "[2024-06-01 21:00] #C1 @Alice: hello | https://example.test/p1" in history.getvalue()
         and calls[0][0] == "conversations.list"
         and calls[1] == ("conversations.history", {"channel": "C1", "limit": 2})
-        and calls[2] == ("conversations.replies", {"channel": "C1", "ts": "1717243200.0", "limit": 50}),
+        and calls[2] == ("users.info", {"user": "U1"})
+        and calls[3] == ("conversations.replies", {"channel": "C1", "ts": "1717243200.0", "limit": 50})
+        and "@Alice" in thread.getvalue(),
+        str(calls),
     )
 
 
@@ -591,9 +597,12 @@ def case_read_channel_history_on_date_payload() -> bool:
 def case_read_not_in_channel_uses_user_token_fallback() -> bool:
     read = load_module("slack_read")
     calls: list[tuple[str, str | None, dict[str, object]]] = []
+    original = common.slack_method
 
     def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
         calls.append((method, token, payload or {}))
+        if method == "users.info":
+            return {"ok": True, "user": {"id": "U1", "name": "alice", "profile": {}}}
         if token == "bot":
             return {"ok": False, "_slack_error": "not_in_channel", "error": "not_in_channel"}
         return {
@@ -623,6 +632,7 @@ def case_read_not_in_channel_uses_user_token_fallback() -> bool:
                     },
                 },
             )
+            common.slack_method = fake_slack_method
             read.slack_method = fake_slack_method
             output = io.StringIO()
             with redirect_stdout(output):
@@ -630,6 +640,7 @@ def case_read_not_in_channel_uses_user_token_fallback() -> bool:
                     type("Args", (), {"workspace": None, "channel": "C1", "ts": "1.0", "limit": 50, "raw": False})()
                 )
         finally:
+            common.slack_method = original
             os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
     return check(
         "slack_read not_in_channel retries direct read with user token",
@@ -637,6 +648,7 @@ def case_read_not_in_channel_uses_user_token_fallback() -> bool:
         == [
             ("conversations.replies", "bot", {"channel": "C1", "ts": "1.0", "limit": 50}),
             ("conversations.replies", "user", {"channel": "C1", "ts": "1.0", "limit": 50}),
+            ("users.info", "bot", {"user": "U1"}),
         ]
         and "fallback ok" in output.getvalue(),
         str(calls),
@@ -654,6 +666,8 @@ def case_read_private_channel_name_uses_user_token_resolution() -> bool:
             return {"ok": True, "channels": [{"id": "C1", "name": "public"}]}
         if method == "conversations.list" and token == "user":
             return {"ok": True, "channels": [{"id": "G1", "name": "private-team"}]}
+        if method == "users.info":
+            return {"ok": True, "user": {"id": "U1", "name": "alice", "profile": {}}}
         return {
             "ok": True,
             "messages": [
@@ -710,6 +724,7 @@ def case_read_private_channel_name_uses_user_token_resolution() -> bool:
                 {"limit": 200, "types": "public_channel,private_channel", "exclude_archived": "true"},
             ),
             ("conversations.history", "user", {"channel": "G1", "limit": 20}),
+            ("users.info", "bot", {"user": "U1"}),
         ]
         and "private ok" in output.getvalue(),
         str(calls),
@@ -867,8 +882,11 @@ def case_search_merge_dedups_and_sorts() -> bool:
 def case_search_command_multi_keyword_compact() -> bool:
     search = load_module("slack_search")
     calls: list[tuple[str, dict[str, object]]] = []
+    original = common.slack_method
 
     def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
+        if method == "users.info":
+            return {"ok": True, "user": {"id": "U1", "name": "alice", "profile": {"display_name": "Alice"}}}
         calls.append((method, payload or {}))
         return {
             "ok": True,
@@ -888,6 +906,7 @@ def case_search_command_multi_keyword_compact() -> bool:
     with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
         os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
         try:
+            common.slack_method = fake_slack_method
             common.write_json_secure(
                 Path(tmp) / "config.json",
                 {
@@ -920,6 +939,7 @@ def case_search_command_multi_keyword_compact() -> bool:
                     "sort": "timestamp",
                     "sort_dir": "desc",
                     "highlight": False,
+                    "jsonl": False,
                     "raw": False,
                 },
             )()
@@ -927,20 +947,25 @@ def case_search_command_multi_keyword_compact() -> bool:
             with redirect_stdout(output):
                 search.command_search(args)
         finally:
+            common.slack_method = original
             os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
     return check(
         "slack_search command calls search per keyword and prints compact merged output",
         [call[1]["query"] for call in calls] == ["alpha", "beta"]
-        and "#backend @U1" in output.getvalue(),
+        and "#backend @Alice" in output.getvalue(),
+        output.getvalue(),
     )
 
 
 def case_search_limit_auto_paginates() -> bool:
     search = load_module("slack_search")
     calls: list[dict[str, object]] = []
+    original = common.slack_method
 
     def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
         payload = payload or {}
+        if method == "users.info":
+            return {"ok": True, "user": {"id": "U1", "name": "alice", "profile": {}}}
         calls.append(payload)
         page = int(str(payload.get("page")))
         start = (page - 1) * 100
@@ -975,6 +1000,7 @@ def case_search_limit_auto_paginates() -> bool:
                     },
                 },
             )
+            common.slack_method = fake_slack_method
             search.slack_method = fake_slack_method
             args = type(
                 "Args",
@@ -995,6 +1021,7 @@ def case_search_limit_auto_paginates() -> bool:
                     "sort": "timestamp",
                     "sort_dir": "desc",
                     "highlight": False,
+                    "jsonl": False,
                     "raw": False,
                 },
             )()
@@ -1002,6 +1029,7 @@ def case_search_limit_auto_paginates() -> bool:
             with redirect_stdout(output):
                 search.command_search(args)
         finally:
+            common.slack_method = original
             os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
     lines = [line for line in output.getvalue().splitlines() if line.strip()]
     return check(
@@ -1010,6 +1038,388 @@ def case_search_limit_auto_paginates() -> bool:
         and all(call["count"] == 100 for call in calls)
         and len(lines) == 120,
         f"pages={[call['page'] for call in calls]} lines={len(lines)}",
+    )
+
+
+def case_common_parse_permalink() -> bool:
+    plain = common.parse_permalink(
+        "https://acme.slack.com/archives/C0123456789/p1717243200000100"
+    )
+    reply = common.parse_permalink(
+        "https://acme.slack.com/archives/C0123456789/p1717243999000500"
+        "?thread_ts=1717243200.000100&cid=C0123456789"
+    )
+    invalid_raises = False
+    try:
+        common.parse_permalink("https://acme.slack.com/messages/general")
+    except common.SlackHelperError:
+        invalid_raises = True
+    return check(
+        "parse_permalink extracts channel/ts and prefers thread_ts for replies",
+        plain == ("C0123456789", "1717243200.000100")
+        and reply == ("C0123456789", "1717243200.000100")
+        and invalid_raises,
+        str((plain, reply)),
+    )
+
+
+def case_common_resolve_mentions_in_text() -> bool:
+    users = {"U1": "Alice"}
+    resolved = common.resolve_mentions_in_text(
+        "<@U1> <@U2> <@U3|bob> <#C1|backend> <#C2> <!here>", users
+    )
+    return check(
+        "resolve_mentions_in_text maps cached users, labels, channels, and specials",
+        resolved == "@Alice @U2 @bob #backend #C2 @here",
+        resolved,
+    )
+
+
+def case_common_format_message_line_uses_users_cache() -> bool:
+    message = {
+        "ts": "1717243200.000100",
+        "user": "U1",
+        "text": "cc <@U2>",
+        "permalink": "https://example.test/p1",
+    }
+    line = common.format_message_line(message, "backend", users={"U1": "Alice", "U2": "Bob"})
+    return check(
+        "format_message_line resolves author and mentions from the users cache",
+        line == "[2024-06-01 21:00] #backend @Alice: cc @Bob | https://example.test/p1",
+        line,
+    )
+
+
+def case_common_range_bounds() -> bool:
+    day_start, _ = common.day_bounds("2026-07-01", "Asia/Seoul")
+    _, day_end = common.day_bounds("2026-07-05", "Asia/Seoul")
+    both = common.range_bounds("2026-07-01", "2026-07-05", "Asia/Seoul")
+    only_after = common.range_bounds("2026-07-01", None, "Asia/Seoul")
+    inverted_raises = False
+    try:
+        common.range_bounds("2026-07-05", "2026-07-01", "Asia/Seoul")
+    except common.SlackHelperError:
+        inverted_raises = True
+    bad_tz_raises = False
+    try:
+        common.range_bounds("2026-07-01", None, "Not/AZone")
+    except common.SlackHelperError:
+        bad_tz_raises = True
+    return check(
+        "range_bounds spans inclusive days and rejects inverted range / bad tz",
+        both == (day_start, day_end)
+        and only_after == (day_start, None)
+        and inverted_raises
+        and bad_tz_raises,
+        str(both),
+    )
+
+
+def case_common_users_cache_roundtrip_and_ensure() -> bool:
+    original = common.slack_method
+    calls: list[str] = []
+
+    def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
+        user_id = str((payload or {}).get("user"))
+        calls.append(user_id)
+        if user_id == "U5":
+            return {"ok": False, "_slack_error": "user_not_found"}
+        if user_id == "U2":
+            return {"ok": False, "_slack_error": "missing_scope"}
+        return {"ok": True, "user": {"id": "U1", "profile": {"display_name": "Alice"}}}
+
+    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
+        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
+        try:
+            common.save_users_cache({"U9": "Nine"})
+            cache_mode = stat.S_IMODE(common.users_cache_path().stat().st_mode)
+            common.slack_method = fake_slack_method
+            cache = common.ensure_users_cached(["U9", "U1", "U5", "U2", "U3"], "t")
+            reloaded = common.load_users_cache()
+        finally:
+            common.slack_method = original
+            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+    expected = {"U9": "Nine", "U1": "Alice", "U5": "U5"}
+    return check(
+        "users cache persists at 600, negative-caches dead ids, stops on missing_scope",
+        cache_mode == 0o600
+        and cache == expected
+        and reloaded == expected
+        and calls == ["U1", "U5", "U2"],
+        f"cache={cache} calls={calls}",
+    )
+
+
+def case_read_thread_permalink_and_jsonl() -> bool:
+    read = load_module("slack_read")
+    calls: list[tuple[str, dict[str, object]]] = []
+    original = common.slack_method
+
+    def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
+        calls.append((method, payload or {}))
+        if method == "users.info":
+            return {"ok": True, "user": {"id": "U1", "profile": {"display_name": "Alice"}}}
+        return {
+            "ok": True,
+            "messages": [
+                {"ts": "1717243200.000100", "user": "U1", "text": "root <@U1>", "reply_count": 2}
+            ],
+        }
+
+    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
+        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
+        try:
+            common.write_json_secure(
+                Path(tmp) / "config.json",
+                {"default_workspace": "default", "workspaces": {"default": {"token": "t"}}},
+            )
+            common.slack_method = fake_slack_method
+            read.slack_method = fake_slack_method
+            output = io.StringIO()
+            with redirect_stdout(output):
+                read.command_thread(
+                    type(
+                        "Args",
+                        (),
+                        {
+                            "workspace": None,
+                            "channel": None,
+                            "ts": None,
+                            "permalink": "https://acme.slack.com/archives/C0123456789/p1717243200000100",
+                            "limit": 50,
+                            "jsonl": True,
+                            "raw": False,
+                        },
+                    )()
+                )
+            conflict_raises = False
+            try:
+                read.command_thread(
+                    type(
+                        "Args",
+                        (),
+                        {
+                            "workspace": None,
+                            "channel": "C1",
+                            "ts": None,
+                            "permalink": "https://acme.slack.com/archives/C1/p1717243200000100",
+                            "limit": 50,
+                            "jsonl": False,
+                            "raw": False,
+                        },
+                    )()
+                )
+            except common.SlackHelperError:
+                conflict_raises = True
+        finally:
+            common.slack_method = original
+            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+    record = json.loads(output.getvalue().splitlines()[0])
+    return check(
+        "thread --permalink parses channel/ts and --jsonl emits structured lines",
+        calls[0]
+        == (
+            "conversations.replies",
+            {"channel": "C0123456789", "ts": "1717243200.000100", "limit": 50},
+        )
+        and record["channel"] == "C0123456789"
+        and record["user_name"] == "Alice"
+        and record["text"] == "root @Alice"
+        and record["reply_count"] == 2
+        and conflict_raises,
+        str(record),
+    )
+
+
+def case_read_channel_history_range_payload() -> bool:
+    read = load_module("slack_read")
+    calls: list[tuple[str, dict[str, object]]] = []
+
+    def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
+        calls.append((method, payload or {}))
+        return {"ok": True, "messages": []}
+
+    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
+        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
+        try:
+            common.write_json_secure(
+                Path(tmp) / "config.json",
+                {"default_workspace": "default", "workspaces": {"default": {"token": "t"}}},
+            )
+            read.slack_method = fake_slack_method
+
+            def make_args(**overrides):
+                fields = {
+                    "workspace": None,
+                    "channel": "C1",
+                    "limit": 100,
+                    "on": None,
+                    "after": "2026-07-01",
+                    "before": "2026-07-05",
+                    "tz": "Asia/Seoul",
+                    "jsonl": False,
+                    "raw": False,
+                }
+                fields.update(overrides)
+                return type("Args", (), fields)()
+
+            with redirect_stdout(io.StringIO()):
+                read.command_channel_history(make_args())
+            conflict_raises = False
+            try:
+                read.command_channel_history(make_args(on="2026-07-03"))
+            except common.SlackHelperError:
+                conflict_raises = True
+        finally:
+            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+    oldest, latest = common.range_bounds("2026-07-01", "2026-07-05", "Asia/Seoul")
+    return check(
+        "channel-history --after/--before/--tz sets inclusive oldest/latest bounds",
+        calls[0]
+        == (
+            "conversations.history",
+            {"channel": "C1", "limit": 100, "oldest": oldest, "latest": latest, "inclusive": "true"},
+        )
+        and conflict_raises,
+        str(calls[0] if calls else None),
+    )
+
+
+def case_search_jsonl_output() -> bool:
+    search = load_module("slack_search")
+    original = common.slack_method
+
+    def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
+        if method == "users.info":
+            return {"ok": True, "user": {"id": "U1", "profile": {"display_name": "Alice"}}}
+        return {
+            "ok": True,
+            "messages": {
+                "matches": [
+                    {
+                        "channel": {"id": "C1", "name": "backend"},
+                        "ts": "1717243200.0",
+                        "user": "U1",
+                        "text": "deploy done",
+                        "permalink": "https://example.test/p1",
+                    }
+                ]
+            },
+        }
+
+    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
+        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
+        try:
+            common.write_json_secure(
+                Path(tmp) / "config.json",
+                {
+                    "default_workspace": "default",
+                    "workspaces": {
+                        "default": {"token": "t", "authed_user": {"access_token": "u"}}
+                    },
+                },
+            )
+            common.slack_method = fake_slack_method
+            search.slack_method = fake_slack_method
+            args = type(
+                "Args",
+                (),
+                {
+                    "workspace": None,
+                    "query": ["deploy"],
+                    "from_user": None,
+                    "in_channel": None,
+                    "to_me": False,
+                    "after": None,
+                    "before": None,
+                    "on": None,
+                    "days": None,
+                    "count": 20,
+                    "page": 1,
+                    "limit": None,
+                    "sort": "timestamp",
+                    "sort_dir": "desc",
+                    "highlight": False,
+                    "jsonl": True,
+                    "raw": False,
+                },
+            )()
+            output = io.StringIO()
+            with redirect_stdout(output):
+                search.command_search(args)
+            conflict_raises = False
+            try:
+                args.raw = True
+                search.command_search(args)
+            except common.SlackHelperError:
+                conflict_raises = True
+        finally:
+            common.slack_method = original
+            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+    record = json.loads(output.getvalue().splitlines()[0])
+    return check(
+        "search --jsonl emits one JSON object per match and rejects --raw combo",
+        record["channel"] == "C1"
+        and record["channel_name"] == "backend"
+        and record["user"] == "U1"
+        and record["user_name"] == "Alice"
+        and record["text"] == "deploy done"
+        and record["permalink"] == "https://example.test/p1"
+        and conflict_raises,
+        str(record),
+    )
+
+
+def case_setup_doctor_reports_status() -> bool:
+    setup = load_module("slack_setup")
+    original = common.slack_method
+
+    def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
+        return {"ok": True, "team": "acme", "user": "helper"}
+
+    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
+        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
+        try:
+            missing_output = io.StringIO()
+            with redirect_stdout(missing_output):
+                missing_code = setup.command_doctor(type("Args", (), {"workspace": None})())
+            common.write_json_secure(
+                Path(tmp) / "config.json",
+                {
+                    "app": {"client_id": "CID", "client_secret": "S"},
+                    "default_workspace": "default",
+                    "workspaces": {
+                        "default": {
+                            "token": "bot",
+                            "scope": "team:read,users:read,channels:read,channels:history",
+                            "authed_user": {
+                                "access_token": "user",
+                                "scope": "search:read,channels:read",
+                            },
+                            "user_identity": {"identifier": "alice", "user_id": "U1"},
+                        }
+                    },
+                },
+            )
+            common.slack_method = fake_slack_method
+            setup.slack_method = fake_slack_method
+            ok_output = io.StringIO()
+            with redirect_stdout(ok_output):
+                ok_code = setup.command_doctor(type("Args", (), {"workspace": None})())
+        finally:
+            common.slack_method = original
+            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+    text = ok_output.getvalue()
+    return check(
+        "doctor reports missing config as failure and healthy setup with scope warning",
+        missing_code == 1
+        and "설정 파일이 없습니다" in missing_output.getvalue()
+        and ok_code == 0
+        and "Bot token 유효" in text
+        and "User token 유효" in text
+        and "User scope 부족" in text
+        and "identity 확인됨" in text,
+        text.splitlines()[-1] if text else "",
     )
 
 
@@ -1048,6 +1458,15 @@ def main() -> int:
         case_search_merge_dedups_and_sorts,
         case_search_command_multi_keyword_compact,
         case_search_limit_auto_paginates,
+        case_common_parse_permalink,
+        case_common_resolve_mentions_in_text,
+        case_common_format_message_line_uses_users_cache,
+        case_common_range_bounds,
+        case_common_users_cache_roundtrip_and_ensure,
+        case_read_thread_permalink_and_jsonl,
+        case_read_channel_history_range_payload,
+        case_search_jsonl_output,
+        case_setup_doctor_reports_status,
     ]
     results = [case() for case in cases]
     print(f"\n{sum(results)}/{len(results)} passed")

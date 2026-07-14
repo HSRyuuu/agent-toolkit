@@ -20,6 +20,7 @@ from zoneinfo import ZoneInfo
 
 DEFAULT_CONFIG_DIR = Path("~/.config/slack-helper").expanduser()
 CONFIG_FILE = "config.json"
+USERS_CACHE_FILE = "users.json"
 LEGACY_CONFIG_FILES = ("oauth-app.json", "api-key.json", "context.json", "channel-info.json")
 DEFAULT_BOT_SCOPES = ["team:read", "users:read", "channels:read", "channels:history"]
 DEFAULT_USER_SCOPES = [
@@ -35,7 +36,12 @@ SLACK_AUTHORIZE_URL = "https://slack.com/oauth/v2/authorize"
 USER_ID_RE = re.compile(r"^[UW][A-Z0-9]+$")
 CHANNEL_ID_RE = re.compile(r"^[CDG][A-Z0-9]+$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+PERMALINK_RE = re.compile(r"/archives/([CDG][A-Z0-9]+)/p(\d{10})(\d{6})")
+USER_MENTION_RE = re.compile(r"<@([UW][A-Z0-9]+)(?:\|([^>]*))?>")
+CHANNEL_MENTION_RE = re.compile(r"<#([CDG][A-Z0-9]+)(?:\|([^>]*))?>")
+SPECIAL_MENTION_RE = re.compile(r"<!(here|channel|everyone)(?:\|[^>]*)?>")
 MAX_RETRY_AFTER_SECONDS = 60
+MAX_USER_INFO_FETCH = 25
 
 
 class SlackHelperError(RuntimeError):
@@ -343,6 +349,119 @@ def save_config(data: dict[str, Any]) -> None:
     write_json_secure(config_path(), data)
 
 
+def users_cache_path() -> Path:
+    return config_dir() / USERS_CACHE_FILE
+
+
+def load_users_cache() -> dict[str, str]:
+    """user ID → 표시 이름 캐시. 캐시는 보조 데이터라 어떤 오류에도 빈 dict로 넘어간다."""
+    try:
+        data = read_json(users_cache_path(), required=False)
+    except (SlackHelperError, OSError):
+        return {}
+    users = data.get("users", data)
+    if not isinstance(users, dict):
+        return {}
+    return {
+        key: value
+        for key, value in users.items()
+        if isinstance(key, str) and isinstance(value, str) and value
+    }
+
+
+def save_users_cache(users: dict[str, str]) -> None:
+    if not users:
+        return
+    merged = load_users_cache()
+    merged.update(users)
+    try:
+        write_json_secure(users_cache_path(), {"users": merged})
+    except OSError:
+        pass
+
+
+def member_display_name(member: dict[str, Any]) -> str:
+    profile = member.get("profile") if isinstance(member.get("profile"), dict) else {}
+    for value in (
+        profile.get("display_name"),
+        profile.get("real_name"),
+        member.get("real_name"),
+        member.get("name"),
+    ):
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return str(member.get("id") or "-")
+
+
+def update_users_cache_from_members(members: Any) -> dict[str, str]:
+    if not isinstance(members, list):
+        return {}
+    users = {
+        str(member["id"]): member_display_name(member)
+        for member in members
+        if isinstance(member, dict) and member.get("id")
+    }
+    save_users_cache(users)
+    return users
+
+
+def collect_user_ids(messages: Any) -> list[str]:
+    """메시지 작성자와 본문 멘션에 등장하는 user ID를 중복 없이 모은다."""
+    ids: list[str] = []
+    if not isinstance(messages, list):
+        return ids
+    for message in messages:
+        if not isinstance(message, dict):
+            continue
+        user = message.get("user")
+        if isinstance(user, str) and USER_ID_RE.match(user):
+            ids.append(user)
+        for user_id, _label in USER_MENTION_RE.findall(message_display_text(message)):
+            ids.append(user_id)
+    return list(dict.fromkeys(ids))
+
+
+def ensure_users_cached(
+    user_ids: list[str], token: str, *, max_fetch: int = MAX_USER_INFO_FETCH
+) -> dict[str, str]:
+    """캐시에 없는 user ID를 users.info로 채운다. 보강 실패는 조용히 넘어간다."""
+    cache = load_users_cache()
+    unknown = [user_id for user_id in user_ids if user_id and user_id not in cache]
+    fetched: dict[str, str] = {}
+    for user_id in unknown[:max_fetch]:
+        try:
+            response = slack_method(
+                "users.info", token=token, payload={"user": user_id}, http_method="GET"
+            )
+        except SlackHelperError:
+            break
+        member = response.get("user")
+        if response.get("ok") is True and isinstance(member, dict):
+            fetched[user_id] = member_display_name(member)
+        elif response.get("_slack_error") in {
+            "missing_scope",
+            "not_authed",
+            "invalid_auth",
+            "token_revoked",
+            "account_inactive",
+        }:
+            break
+        else:
+            # user_not_found 등 영구 실패 ID는 ID 그대로 캐시해 매 조회마다 재시도하지 않는다.
+            fetched[user_id] = user_id
+    if fetched:
+        save_users_cache(fetched)
+        cache.update(fetched)
+    return cache
+
+
+def users_for_messages(messages: Any, token: str) -> dict[str, str]:
+    try:
+        return ensure_users_cached(collect_user_ids(messages), token)
+    except Exception:
+        return load_users_cache()
+
+
 def load_workspace(name: str | None) -> tuple[str, dict[str, Any]]:
     config = load_config()
     workspace_name = name or config.get("default_workspace")
@@ -385,19 +504,61 @@ def print_response(response: dict[str, Any]) -> int:
     return 0
 
 
-def day_bounds(date_str: str, tz_name: str | None = None) -> tuple[str, str]:
+def _resolve_tz(tz_name: str | None) -> Any:
+    if not tz_name:
+        return datetime.now().astimezone().tzinfo
+    try:
+        return ZoneInfo(tz_name)
+    except Exception as exc:
+        raise SlackHelperError(f"알 수 없는 타임존입니다: {tz_name} (예: Asia/Seoul)") from exc
+
+
+def day_bounds(date_str: str, tz_name: str | None = None, option: str = "--on") -> tuple[str, str]:
     """하루(자정~다음날 자정 직전)의 Slack ts 경계를 소수 6자리 epoch 문자열로 반환한다."""
     value = date_str.strip()
     if not DATE_RE.match(value):
-        raise SlackHelperError(f"--on은 YYYY-MM-DD 형식이어야 합니다 (입력값: {date_str})")
+        raise SlackHelperError(f"{option}은 YYYY-MM-DD 형식이어야 합니다 (입력값: {date_str})")
     try:
         day = datetime.strptime(value, "%Y-%m-%d").date()
     except ValueError as exc:
-        raise SlackHelperError(f"--on 날짜가 유효하지 않습니다 (입력값: {date_str})") from exc
-    tz = ZoneInfo(tz_name) if tz_name else datetime.now().astimezone().tzinfo
+        raise SlackHelperError(f"{option} 날짜가 유효하지 않습니다 (입력값: {date_str})") from exc
+    tz = _resolve_tz(tz_name)
     start = datetime.combine(day, datetime.min.time(), tzinfo=tz)
     next_start = datetime.combine(day + timedelta(days=1), datetime.min.time(), tzinfo=tz)
     return f"{start.timestamp():.6f}", f"{next_start.timestamp() - 0.000001:.6f}"
+
+
+def range_bounds(
+    after: str | None, before: str | None, tz_name: str | None = None
+) -> tuple[str | None, str | None]:
+    """--after/--before 일자 범위(양끝 날짜 포함)의 Slack ts 경계를 반환한다."""
+    oldest = day_bounds(after, tz_name, option="--after")[0] if after else None
+    latest = day_bounds(before, tz_name, option="--before")[1] if before else None
+    if oldest and latest and float(oldest) > float(latest):
+        raise SlackHelperError("--after 날짜가 --before보다 늦습니다.")
+    return oldest, latest
+
+
+def parse_permalink(url: str) -> tuple[str, str]:
+    """Slack permalink에서 (channel_id, ts)를 뽑는다. 답글 permalink면 thread_ts를 우선한다."""
+    value = url.strip().strip('"').strip("'")
+    parsed = urllib.parse.urlparse(value)
+    match = PERMALINK_RE.search(parsed.path)
+    if not match:
+        raise SlackHelperError(
+            "permalink에서 채널/ts를 찾지 못했습니다. "
+            "https://<workspace>.slack.com/archives/<채널ID>/p<숫자16자리> 형태인지 확인해 주세요."
+        )
+    channel_id = match.group(1)
+    ts = f"{match.group(2)}.{match.group(3)}"
+    params = urllib.parse.parse_qs(parsed.query)
+    thread_ts = (params.get("thread_ts") or [""])[0].strip()
+    if thread_ts:
+        ts = thread_ts
+    cid = (params.get("cid") or [""])[0].strip().upper()
+    if cid and CHANNEL_ID_RE.match(cid):
+        channel_id = cid
+    return channel_id, ts
 
 
 def format_ts_local(ts: str | float | int, tz_name: str | None = None) -> str:
@@ -434,10 +595,12 @@ def _message_channel_name(message: dict[str, Any]) -> str:
     return str(message.get("channel_name") or message.get("channel_id") or channel or "-").lstrip("#")
 
 
-def _message_user_name(message: dict[str, Any]) -> str:
+def _message_user_name(message: dict[str, Any], users: dict[str, str] | None = None) -> str:
     user = message.get("user")
     if isinstance(user, dict):
         return str(user.get("name") or user.get("id") or "-")
+    if users and isinstance(user, str) and user in users:
+        return users[user]
     return str(
         message.get("user_name")
         or message.get("username")
@@ -445,6 +608,24 @@ def _message_user_name(message: dict[str, Any]) -> str:
         or user
         or "-"
     )
+
+
+def resolve_mentions_in_text(text: str, users: dict[str, str] | None = None) -> str:
+    """`<@U…>`/`<#C…|name>` 원시 멘션을 사람이 읽는 `@이름`/`#채널`로 바꾼다."""
+    mapping = users or {}
+
+    def _user(match: re.Match[str]) -> str:
+        label = (match.group(2) or "").strip()
+        name = label or mapping.get(match.group(1)) or match.group(1)
+        return f"@{name}"
+
+    def _channel(match: re.Match[str]) -> str:
+        label = (match.group(2) or "").strip()
+        return f"#{label or match.group(1)}"
+
+    value = USER_MENTION_RE.sub(_user, text)
+    value = CHANNEL_MENTION_RE.sub(_channel, value)
+    return SPECIAL_MENTION_RE.sub(lambda match: f"@{match.group(1)}", value)
 
 
 def _block_texts(blocks: Any) -> list[str]:
@@ -515,34 +696,76 @@ def format_message_line(
     message: dict[str, Any],
     channel_name: str | None = None,
     user_name: str | None = None,
+    users: dict[str, str] | None = None,
 ) -> str:
     channel = (channel_name or _message_channel_name(message)).lstrip("#")
-    user = (user_name or _message_user_name(message)).lstrip("@")
+    user = (user_name or _message_user_name(message, users)).lstrip("@")
     display = message_display_text(message)
     base = re.sub(r"\s+", " ", str(message.get("text") or "")).strip()
-    text = truncate_text(display, 120 if display == base else 200)
+    limit = 120 if display == base else 200
+    text = truncate_text(resolve_mentions_in_text(display, users), limit)
     permalink = str(message.get("permalink") or "-")
     return f"[{format_ts_local(message.get('ts', '-'))}] #{channel} @{user}: {text} | {permalink}"
 
 
-def format_search_results(response: dict[str, Any]) -> str:
+def format_search_results(response: dict[str, Any], users: dict[str, str] | None = None) -> str:
     messages = response.get("messages")
     matches = messages.get("matches", []) if isinstance(messages, dict) else []
     lines = [
-        format_message_line(match)
+        format_message_line(match, users=users)
         for match in matches
         if isinstance(match, dict)
     ]
     return "\n".join(lines)
 
 
-def format_history(response: dict[str, Any], channel: str | None = None) -> str:
+def format_history(
+    response: dict[str, Any],
+    channel: str | None = None,
+    users: dict[str, str] | None = None,
+) -> str:
     messages = response.get("messages", [])
     lines = [
-        format_message_line(message, channel_name=channel)
+        format_message_line(message, channel_name=channel, users=users)
         for message in messages
         if isinstance(message, dict)
     ]
+    return "\n".join(lines)
+
+
+def format_jsonl(
+    messages: Any,
+    channel: str | None = None,
+    users: dict[str, str] | None = None,
+) -> str:
+    """임시 분석 스크립트용 한 줄 JSON. 본문은 자르지 않고 멘션만 치환한다."""
+    lines: list[str] = []
+    if not isinstance(messages, list):
+        return ""
+    for message in messages:
+        if not isinstance(message, dict):
+            continue
+        user = message.get("user")
+        user_id = str(user.get("id") or "") if isinstance(user, dict) else str(user or "")
+        record: dict[str, Any] = {
+            "ts": str(message.get("ts") or ""),
+            "channel": channel or _message_channel_id(message),
+        }
+        channel_name = _message_channel_name(message)
+        if channel_name not in ("-", record["channel"]):
+            record["channel_name"] = channel_name
+        if user_id:
+            record["user"] = user_id
+        user_name = _message_user_name(message, users)
+        if user_name not in ("-", user_id):
+            record["user_name"] = user_name
+        record["text"] = resolve_mentions_in_text(message_display_text(message), users)
+        for key in ("thread_ts", "reply_count"):
+            if message.get(key) is not None:
+                record[key] = message[key]
+        if message.get("permalink"):
+            record["permalink"] = str(message["permalink"])
+        lines.append(json.dumps(record, ensure_ascii=False, separators=(",", ":")))
     return "\n".join(lines)
 
 
@@ -610,6 +833,12 @@ def resolve_channel(value: str, token: str, *, types: str = "public_channel") ->
 
 def add_workspace_arg(parser: Any) -> None:
     parser.add_argument("--workspace", help="config.json에 저장된 workspace 이름")
+
+
+def validate_output_flags(args: Any) -> None:
+    """--raw/--jsonl 충돌을 API 호출 전에 거른다. 명령 함수 첫 줄에서 호출한다."""
+    if getattr(args, "raw", False) and getattr(args, "jsonl", False):
+        raise SlackHelperError("--raw와 --jsonl은 동시에 쓸 수 없습니다.")
 
 
 def print_compact_or_raw(response: dict[str, Any], formatter: str | Any, *, raw: bool = False) -> int:

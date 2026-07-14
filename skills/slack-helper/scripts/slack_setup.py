@@ -7,6 +7,7 @@ import argparse
 import getpass
 import json
 import re
+import stat
 import sys
 import urllib.parse
 import webbrowser
@@ -20,8 +21,10 @@ from slack_common import (
     SLACK_AUTHORIZE_URL,
     SlackHelperError,
     add_workspace_arg,
+    config_dir,
     config_path,
     load_config,
+    load_users_cache,
     load_workspace,
     load_workspace_identity,
     merge_user_identity,
@@ -31,6 +34,7 @@ from slack_common import (
     slack_method,
     split_scopes,
     token_for,
+    update_users_cache_from_members,
     user_identity_from_value,
 )
 
@@ -103,6 +107,9 @@ slack-helper 처음 설정 가이드
 
 12. 이제 자연어로 요청하기
    이 Python 스크립트는 에이전트가 내부적으로 실행합니다.
+
+문제가 생기면 아래 명령으로 설정·토큰 상태를 한 번에 점검할 수 있습니다.
+   python3 "{script}" doctor
 """
 
 
@@ -484,6 +491,7 @@ def command_resolve_me(args: argparse.Namespace) -> int:
     )
     identity = merge_user_identity(load_workspace_identity(workspace), override_identity)
     members = fetch_all_users(str(workspace["token"]))
+    update_users_cache_from_members(members)
     member = match_user_identity(members, identity)
     identifier = str(identity.get("identifier") or identity.get("user_id") or member.get("id"))
     resolved_identity = user_identity_record(identifier, member)
@@ -497,6 +505,130 @@ def command_resolve_me(args: argparse.Namespace) -> int:
             "config_path": str(config_path()),
         }
     )
+
+
+def _auth_test_safe(token: str) -> dict[str, Any]:
+    try:
+        return slack_method("auth.test", token=token)
+    except SlackHelperError as exc:
+        return {"ok": False, "_slack_error": str(exc)}
+
+
+def command_doctor(args: argparse.Namespace) -> int:
+    """설정·토큰·identity 상태를 한 번에 점검해 한 줄씩 보고한다."""
+    problems = 0
+    warnings = 0
+
+    def good(message: str) -> None:
+        print(f"✅ {message}")
+
+    def warn(message: str) -> None:
+        nonlocal warnings
+        warnings += 1
+        print(f"⚠️ {message}")
+
+    def bad(message: str) -> None:
+        nonlocal problems
+        problems += 1
+        print(f"❌ {message}")
+
+    path = config_path()
+    if not path.exists():
+        bad(f"설정 파일이 없습니다: {path}")
+        print("   Slack 연결이 아직 안 된 상태입니다. setup-guide의 1단계부터 진행해 주세요.")
+        return 1
+
+    directory = config_dir()
+    dir_mode = stat.S_IMODE(directory.stat().st_mode)
+    file_mode = stat.S_IMODE(path.stat().st_mode)
+    if dir_mode & 0o077:
+        warn(f"설정 디렉토리 권한이 넓습니다({oct(dir_mode)}) — chmod 700 권장: {directory}")
+    else:
+        good(f"설정 디렉토리 권한 OK: {directory}")
+    if file_mode & 0o077:
+        warn(f"config.json 권한이 넓습니다({oct(file_mode)}) — chmod 600 권장")
+    else:
+        good("config.json 권한 OK")
+
+    config = load_config()
+    app = config.get("app") if isinstance(config.get("app"), dict) else {}
+    if app.get("client_id") and app.get("client" + "_secret"):
+        good("앱 자격증명(client_id/client_secret) 있음")
+    else:
+        bad("앱 자격증명이 없습니다 — init-oauth를 먼저 실행해 주세요.")
+
+    workspaces = config.get("workspaces") if isinstance(config.get("workspaces"), dict) else {}
+    target = args.workspace or config.get("default_workspace")
+    if not workspaces:
+        bad("연결된 workspace가 없습니다 — oauth-start / oauth-finish로 Slack을 연결해 주세요.")
+    elif not target or not isinstance(workspaces.get(target), dict):
+        bad(f"workspace를 찾지 못했습니다({target}) — config.json의 default_workspace를 확인해 주세요.")
+    else:
+        workspace = workspaces[target]
+        bot_token = workspace.get("tok" + "en")
+        if not bot_token:
+            bad(f"workspace '{target}'에 Bot token이 없습니다 — oauth-finish를 다시 실행해 주세요.")
+        else:
+            response = _auth_test_safe(str(bot_token))
+            if response.get("ok") is True:
+                good(
+                    f"Bot token 유효 — workspace '{target}' "
+                    f"(team: {response.get('team')}, bot: {response.get('user')})"
+                )
+            else:
+                bad(f"Bot token 인증 실패: {response.get('_slack_error', 'unknown_error')}")
+            stored_scopes = split_scopes(str(workspace.get("scope") or ""))
+            missing = [scope for scope in DEFAULT_BOT_SCOPES if scope not in stored_scopes]
+            if stored_scopes and missing:
+                warn(f"Bot scope 부족: {', '.join(missing)} — Slack App에서 추가 후 oauth 재승인 필요")
+            elif stored_scopes:
+                good("Bot scopes OK")
+            else:
+                warn("config에 Bot scope 기록이 없어 점검을 건너뜁니다 — oauth-finish를 다시 실행하면 기록됩니다.")
+
+        authed_user = workspace.get("authed_user")
+        user_token = (
+            authed_user.get("access_" + "token") if isinstance(authed_user, dict) else None
+        )
+        if not user_token:
+            bad("User token이 없습니다 — 검색(search)이 동작하지 않습니다. "
+                "User Token Scopes 추가 후 oauth-start/oauth-finish를 다시 실행해 주세요.")
+        else:
+            response = _auth_test_safe(str(user_token))
+            if response.get("ok") is True:
+                good(f"User token 유효 (user: {response.get('user')})")
+            else:
+                bad(f"User token 인증 실패: {response.get('_slack_error', 'unknown_error')}")
+            user_scopes = split_scopes(str(authed_user.get("scope") or ""))
+            missing = [scope for scope in DEFAULT_USER_SCOPES if scope not in user_scopes]
+            if user_scopes and missing:
+                warn(f"User scope 부족: {', '.join(missing)} — Slack App에서 추가 후 oauth 재승인 필요")
+            elif user_scopes:
+                good("User scopes OK")
+            else:
+                warn("config에 User scope 기록이 없어 점검을 건너뜁니다 — oauth-finish를 다시 실행하면 기록됩니다.")
+
+        identity = load_workspace_identity(workspace)
+        if identity.get("user_id"):
+            good(f"내 identity 확인됨 ({identity['user_id']})")
+        elif identity:
+            warn("identity에 user_id가 없습니다 — resolve-me를 실행하면 --to-me 검색이 가능해집니다.")
+        else:
+            warn("내 identity가 없습니다 — set-me와 resolve-me를 실행하면 --to-me 검색이 가능해집니다.")
+
+    memory_path = directory / "MEMORY.md"
+    print(f"ℹ️ MEMORY.md {'있음' if memory_path.exists() else '없음 (없어도 정상)'}")
+    print(f"ℹ️ 사용자 이름 캐시 {len(load_users_cache())}명 (users.json)")
+
+    print()
+    if problems:
+        print(f"요약: 문제 {problems}개, 경고 {warnings}개 — 위 ❌ 항목부터 해결해 주세요.")
+        return 1
+    if warnings:
+        print(f"요약: 문제 없음, 경고 {warnings}개")
+    else:
+        print("요약: 모든 점검 통과")
+    return 0
 
 
 def command_set_me(args: argparse.Namespace) -> int:
@@ -567,6 +699,10 @@ def build_parser() -> argparse.ArgumentParser:
     read_sample = subparsers.add_parser("read-sample", help="Slack 데이터 하나 읽어서 연결 확인")
     add_workspace_arg(read_sample)
     read_sample.set_defaults(func=command_read_sample)
+
+    doctor = subparsers.add_parser("doctor", help="설정·토큰·identity 상태 일괄 점검")
+    add_workspace_arg(doctor)
+    doctor.set_defaults(func=command_doctor)
 
     set_me = subparsers.add_parser("set-me", help="내 Slack 식별자를 로컬 config에 저장")
     add_workspace_arg(set_me)

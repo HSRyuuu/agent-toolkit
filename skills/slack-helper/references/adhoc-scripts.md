@@ -20,8 +20,8 @@
 - `subprocess.run(...)`에는 항상 `capture_output=True, text=True, timeout=120`을 준다.
 - `returncode != 0`이면 stderr를 포함해 즉시 중단한다. 자동 재시도 루프를 만들지 않는다 (실패 원인은 에이전트가 보고 판단한다).
 - 페이지 순회를 직접 구현하지 않는다. 100건 초과 수집은 `--limit N`(최대 1000)이 대신한다.
-- `--raw` JSON 파싱은 방어적으로 한다: `.get(...) or` 체인으로 접근하고, 필드가 없어도 `KeyError`/`TypeError`로 죽지 않게 한다. Slack 메시지는 `text`가 비어 있거나 `attachments`/`blocks`가 없을 수 있다.
-- `--limit`+`--raw` 조합의 출력은 페이지가 하나면 단일 응답 객체, 여러 개면 `{"ok": true, "responses": [...]}`다. 두 형태를 모두 처리한다 (아래 예제의 `payload.get("responses") or [payload]` 패턴).
+- 파싱 입력은 `--jsonl`을 기본으로 쓴다: 한 줄당 `{"ts","channel","channel_name","user","user_name","text","permalink"}` JSON이고, 본문이 잘리지 않으며 attachment/block 본문도 `text`에 합쳐져 있다(`" · "` 구분).
+- attachment의 세부 구조(fields 등)가 꼭 필요할 때만 `--raw`로 넘어간다. `--raw` 파싱은 방어적으로 한다: `.get(...) or` 체인으로 접근하고, 필드가 없어도 `KeyError`/`TypeError`로 죽지 않게 한다. `--limit`+`--raw` 조합의 출력은 페이지가 하나면 단일 응답 객체, 여러 개면 `{"ok": true, "responses": [...]}`다 (`payload.get("responses") or [payload]` 패턴으로 두 형태 모두 처리).
 
 **출력**
 
@@ -30,7 +30,7 @@
 
 **시작 전 확인**
 
-- 먼저 `--limit`과 compact 출력만으로 충분한지 시도한다. attachment 구조 파싱 등 원본 필드가 필요할 때만 `--raw`로 넘어간다.
+- 먼저 `--limit`과 compact 출력만으로 충분한지 시도한다. 스크립트 파싱이 필요하면 `--jsonl`, 원본 필드 구조까지 필요할 때만 `--raw` 순서로 올린다.
 - `<SKILL_DIR>`는 설치된 스킬의 절대 경로다. cwd 기준 상대 경로를 쓰지 않는다.
 
 ## 좋은 예제
@@ -48,30 +48,36 @@ from collections import Counter
 SEARCH = "<SKILL_DIR>/scripts/slack_search.py"  # 설치된 스킬의 절대 경로로 치환
 
 
-def run_search(*args: str) -> dict:
+def run_search_jsonl(*args: str) -> list[dict]:
     result = subprocess.run(
-        ["python3", SEARCH, "search", *args, "--raw"],
+        ["python3", SEARCH, "search", *args, "--jsonl"],
         capture_output=True, text=True, timeout=120,
     )
     if result.returncode != 0:
         sys.exit(f"slack_search 실패: {result.stderr.strip()}")
-    return json.loads(result.stdout)
+    return [json.loads(line) for line in result.stdout.splitlines() if line.strip()]
 
 
-def alert_title(match: dict) -> str:
-    for attachment in match.get("attachments") or []:
-        for key in ("title", "fallback"):
-            value = attachment.get(key)
-            if isinstance(value, str) and value.strip():
-                return value.strip().splitlines()[0]
-    return (str(match.get("text") or "").strip().splitlines() or ["(내용 없음)"])[0]
+def chunks_of(record: dict) -> list[str]:
+    # --jsonl의 text는 [메시지 본문, attachment 제목, attachment 본문, ...]이 " · "로 합쳐진 값이다.
+    return [c.strip() for c in str(record.get("text") or "").split(" · ") if c.strip()] or ["(내용 없음)"]
 
 
-payload = run_search("--in", "example-alerts", "--on", "2026-07-07", "--limit", "300")
-counter: Counter[str] = Counter()
-for response in payload.get("responses") or [payload]:
-    for match in (response.get("messages") or {}).get("matches") or []:
-        counter[alert_title(match)] += 1
+records = run_search_jsonl("--in", "example-alerts", "--on", "2026-07-07", "--limit", "300")
+chunk_lists = [chunks_of(record) for record in records]
+
+# 알림 봇은 본문 text가 매번 같은 고정 문구(예: "This is a fallback message.")이고
+# 실제 제목은 attachment에 있는 경우가 많다. 첫 조각이 사실상 전부 동일하면 다음 조각을 제목으로 쓴다.
+first_counts = Counter(chunks[0] for chunks in chunk_lists)
+generic_firsts = {value for value, count in first_counts.items() if count >= max(3, len(chunk_lists) * 0.8)}
+
+
+def alert_title(chunks: list[str]) -> str:
+    picked = chunks[1] if chunks[0] in generic_firsts and len(chunks) > 1 else chunks[0]
+    return picked.splitlines()[0]
+
+
+counter: Counter[str] = Counter(alert_title(chunks) for chunks in chunk_lists)
 
 total = sum(counter.values())
 print(f"총 {total}건")
@@ -79,7 +85,7 @@ for title, count in counter.most_common(20):
     print(f"{count:4d}  {title}")
 ```
 
-이 예제가 지키는 것: 진입점은 `slack_search.py` 하나, 페이지 순회는 `--limit`에 위임, timeout·returncode 처리, `or` 체인 방어 파싱, 두 가지 `--raw` 출력 형태 처리, 출력은 집계 결과만.
+이 예제가 지키는 것: 진입점은 `slack_search.py` 하나, 페이지 순회는 `--limit`에 위임, timeout·returncode 처리, `--jsonl` 한 줄 단위 파싱, `or` 체인 방어 파싱, 고정 문구 본문 뒤에 제목이 오는 알림 봇 처리, 출력은 집계 결과만.
 
 ## 잘못된 예제 (이렇게 만들지 않는다)
 
@@ -112,5 +118,6 @@ print(json.dumps(payload, ensure_ascii=False, indent=2))
 - [ ] Slack 접근이 전부 `slack_search.py`/`slack_read.py` subprocess 호출이다
 - [ ] `timeout`과 `returncode` 처리가 있다
 - [ ] 페이지 순회를 직접 만들지 않았다 (`--limit` 사용)
+- [ ] 파싱 입력으로 `--jsonl`을 먼저 검토했다 (`--raw`는 원본 구조가 필요할 때만)
 - [ ] 필드 누락에도 죽지 않는다
 - [ ] stdout이 집계·요약만 출력한다

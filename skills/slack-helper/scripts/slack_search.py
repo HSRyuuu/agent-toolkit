@@ -11,13 +11,17 @@ from typing import Any
 from slack_common import (
     SlackHelperError,
     add_workspace_arg,
+    format_jsonl,
     format_search_results,
     load_workspace,
     load_workspace_identity,
     print_response,
     run_main,
     slack_method,
+    token_for,
     user_token_for,
+    users_for_messages,
+    validate_output_flags,
 )
 
 
@@ -117,6 +121,7 @@ def _identity_user_id(args: argparse.Namespace) -> str | None:
 
 
 def command_search(args: argparse.Namespace) -> int:
+    validate_output_flags(args)
     limit = getattr(args, "limit", None)
     if args.count < 1 or args.count > 100:
         raise SlackHelperError("--count는 1부터 100 사이여야 합니다.")
@@ -173,7 +178,11 @@ def command_search(args: argparse.Namespace) -> int:
     merged = merge_search_matches(responses)
     if limit is not None:
         merged = merged[:limit]
-    text = format_search_results({"ok": True, "messages": {"matches": merged}})
+    users = users_for_messages(merged, token_for(args))
+    if getattr(args, "jsonl", False):
+        text = format_jsonl(merged, users=users)
+    else:
+        text = format_search_results({"ok": True, "messages": {"matches": merged}}, users=users)
     if text:
         print(text)
     return 0
@@ -219,6 +228,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="정렬 방향",
     )
     search.add_argument("--highlight", action="store_true", help="검색어 강조 표시 요청")
+    search.add_argument("--jsonl", action="store_true", help="한 줄당 JSON(ts/channel/user/text/permalink) 출력 — 임시 분석 스크립트용")
     search.add_argument("--raw", action="store_true", help="compact 대신 원본 JSON 출력")
     search.set_defaults(func=command_search, user_id=None)
 

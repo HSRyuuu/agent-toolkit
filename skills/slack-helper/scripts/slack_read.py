@@ -11,13 +11,19 @@ from slack_common import (
     day_bounds,
     format_channels,
     format_history,
+    format_jsonl,
     format_users,
+    parse_permalink,
     print_compact_or_raw,
+    range_bounds,
     resolve_channel,
     run_main,
     slack_method,
     token_for,
+    update_users_cache_from_members,
     user_token_for,
+    users_for_messages,
+    validate_output_flags,
 )
 
 
@@ -91,6 +97,26 @@ def _call_conversation_read(
     return fallback
 
 
+def _print_messages(
+    args: argparse.Namespace,
+    response: dict,
+    *,
+    channel_id: str,
+    enrich_token: str,
+) -> int:
+    if args.raw:
+        return print_compact_or_raw(response, format_history, raw=True)
+    messages = response.get("messages", [])
+    users = users_for_messages(messages, enrich_token)
+    if getattr(args, "jsonl", False):
+        text = format_jsonl(messages, channel=channel_id, users=users)
+    else:
+        text = format_history(response, channel_id, users=users)
+    if text:
+        print(text)
+    return 0
+
+
 def command_users(args: argparse.Namespace) -> int:
     response = slack_method(
         "users.list",
@@ -99,6 +125,7 @@ def command_users(args: argparse.Namespace) -> int:
         http_method="GET",
     )
     _ensure_ok(response, "users.list")
+    update_users_cache_from_members(response.get("members"))
     return print_compact_or_raw(response, format_users, raw=args.raw)
 
 
@@ -118,12 +145,26 @@ def command_channels(args: argparse.Namespace) -> int:
 
 
 def command_channel_history(args: argparse.Namespace) -> int:
+    validate_output_flags(args)
+    on = getattr(args, "on", None)
+    after = getattr(args, "after", None)
+    before = getattr(args, "before", None)
+    tz_name = getattr(args, "tz", None)
+    if on and (after or before):
+        raise SlackHelperError("--on은 --after/--before와 함께 쓸 수 없습니다.")
     token = token_for(args)
     channel_id, user_token = _resolve_channel_for_read(args, token)
     payload: dict = {"channel": channel_id, "limit": args.limit}
-    if getattr(args, "on", None):
-        oldest, latest = day_bounds(args.on)
+    if on:
+        oldest, latest = day_bounds(on, tz_name)
         payload.update({"oldest": oldest, "latest": latest, "inclusive": "true"})
+    elif after or before:
+        oldest, latest = range_bounds(after, before, tz_name)
+        if oldest:
+            payload["oldest"] = oldest
+        if latest:
+            payload["latest"] = latest
+        payload["inclusive"] = "true"
     response = _call_conversation_read(
         args,
         "conversations.history",
@@ -131,14 +172,20 @@ def command_channel_history(args: argparse.Namespace) -> int:
         user_token=user_token,
         payload=payload,
     )
-    return print_compact_or_raw(
-        response,
-        lambda payload: format_history(payload, channel_id),
-        raw=args.raw,
-    )
+    return _print_messages(args, response, channel_id=channel_id, enrich_token=token)
 
 
 def command_thread(args: argparse.Namespace) -> int:
+    validate_output_flags(args)
+    permalink = getattr(args, "permalink", None)
+    if permalink:
+        if args.channel or args.ts:
+            raise SlackHelperError("--permalink는 --channel/--ts와 함께 쓸 수 없습니다.")
+        args.channel, args.ts = parse_permalink(permalink)
+    elif not args.channel or not args.ts:
+        raise SlackHelperError(
+            "--channel과 --ts를 함께 주거나, 메시지 링크를 --permalink로 넘겨 주세요."
+        )
     token = token_for(args)
     channel_id, user_token = _resolve_channel_for_read(args, token)
     response = _call_conversation_read(
@@ -148,11 +195,7 @@ def command_thread(args: argparse.Namespace) -> int:
         user_token=user_token,
         payload={"channel": channel_id, "ts": args.ts, "limit": args.limit},
     )
-    return print_compact_or_raw(
-        response,
-        lambda payload: format_history(payload, channel_id),
-        raw=args.raw,
-    )
+    return _print_messages(args, response, channel_id=channel_id, enrich_token=token)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -187,17 +230,23 @@ def build_parser() -> argparse.ArgumentParser:
     add_workspace_arg(history)
     history.add_argument("--channel", required=True, help="채널 ID 또는 공개 채널 이름 (이름은 conversations.list로 ID를 찾음)")
     history.add_argument("--limit", type=int, default=20)
-    history.add_argument("--on", help="특정 일자(YYYY-MM-DD)의 메시지만 조회 (로컬 타임존 자정 기준)")
+    history.add_argument("--on", help="특정 일자(YYYY-MM-DD)의 메시지만 조회. --after/--before와 함께 쓸 수 없음")
+    history.add_argument("--after", help="이 일자(YYYY-MM-DD) 00:00부터 조회 (해당 일자 포함)")
+    history.add_argument("--before", help="이 일자(YYYY-MM-DD) 자정 직전까지 조회 (해당 일자 포함)")
+    history.add_argument("--tz", help="--on/--after/--before의 자정 기준 타임존 (예: Asia/Seoul). 기본은 로컬 타임존")
+    history.add_argument("--jsonl", action="store_true", help="한 줄당 JSON 출력 — 임시 분석 스크립트용")
     history.add_argument("--raw", action="store_true", help="compact 대신 원본 JSON 출력")
     history.set_defaults(func=command_channel_history)
 
     thread = subparsers.add_parser("thread", help="특정 Slack thread만 on-demand 조회")
     add_workspace_arg(thread)
-    thread.add_argument("--channel", required=True, help="채널 ID 또는 공개 채널 이름 (이름은 conversations.list로 ID를 찾음)")
-    thread.add_argument("--ts", required=True, help="thread_ts 또는 원 메시지 ts")
+    thread.add_argument("--channel", help="채널 ID 또는 공개 채널 이름 (이름은 conversations.list로 ID를 찾음)")
+    thread.add_argument("--ts", help="thread_ts 또는 원 메시지 ts")
+    thread.add_argument("--permalink", help="검색 결과의 메시지 링크. --channel/--ts 대신 사용")
     thread.add_argument("--limit", type=int, default=50)
+    thread.add_argument("--jsonl", action="store_true", help="한 줄당 JSON 출력 — 임시 분석 스크립트용")
     thread.add_argument("--raw", action="store_true", help="compact 대신 원본 JSON 출력")
-    thread.set_defaults(func=command_thread)
+    thread.set_defaults(func=command_thread, channel=None, ts=None)
 
     return parser
 

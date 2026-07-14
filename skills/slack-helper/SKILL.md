@@ -36,17 +36,18 @@ Keep this file as the router. For any real task, first read `~/.config/slack-hel
 
 ## Local Files
 
-`~/.config/slack-helper/`에는 파일이 정확히 두 개만 있다.
+`~/.config/slack-helper/`에는 파일이 정확히 세 개만 있다.
 
 - `config.json` — 앱 자격증명(`app`), 워크스페이스 토큰(`workspaces`), 내 identity(`workspaces.<name>.user_identity`)의 **단일 저장소**. 스크립트만 읽고 쓴다. identity를 다른 곳에 복사하지 않는다.
 - `MEMORY.md` — 에이전트가 Read/Edit로 직접 관리하는 자유형 markdown. 워크플로우 선호와 채널 컨텍스트(별칭·ID·한 줄 요약)를 담는다.
+- `users.json` — 스크립트가 자동 관리하는 user ID → 표시 이름 캐시. compact 출력에서 작성자와 `<@U…>` 멘션을 이름으로 치환하는 데 쓴다. 지워도 다음 조회 때 자동으로 다시 채워진다.
 
 구버전 3분할 config(`oauth-app.json`/`api-key.json`/`context.json`)가 남아 있으면 스크립트가 처음 실행될 때 자동으로 `config.json`+`MEMORY.md`로 합치고 옛 파일을 지운다.
 
 ## Scripts
 
-- `slack_setup.py`: `setup-guide`, `init-oauth`, `oauth-start`, `oauth-finish`, `auth-test`, `team-info`, `read-sample`, `set-me`, `resolve-me`
-- `slack_read.py`: `users`, `channels`, `channel-history`, `thread`
+- `slack_setup.py`: `setup-guide`, `init-oauth`, `oauth-start`, `oauth-finish`, `auth-test`, `team-info`, `read-sample`, `doctor`, `set-me`, `resolve-me`
+- `slack_read.py`: `users`, `channels`, `channel-history`(`--on`/`--after`/`--before`/`--tz`), `thread`(`--permalink` 지원)
 - `slack_search.py`: `search`
 - `slack_common.py`: import-only shared implementation
 
@@ -58,6 +59,8 @@ Keep this file as the router. For any real task, first read `~/.config/slack-hel
 - 채널 작업 전에 `MEMORY.md`의 채널 목록을 먼저 참고한다. 거기 없으면 `slack_read.py channels`로 찾고, 자주 쓸 채널이면 MEMORY에 기록을 제안한다.
 - Prefer compact output. Use `--raw` only when a workflow truly needs full Slack API JSON.
 - For broad work, search compactly first, then read only selected threads with `slack_read.py thread`. 결과가 100건을 넘을 것 같으면 `--page` 수동 반복 대신 `slack_search.py search ... --limit N`을 쓴다.
+- 검색 결과의 스레드를 열 때는 permalink를 그대로 `slack_read.py thread --permalink "<링크>"`로 넘긴다. permalink의 `p...` 숫자를 직접 ts로 변환하지 않는다.
+- 설정·연결 문제가 의심되면 `slack_setup.py doctor`로 config/토큰/identity 상태를 한 번에 점검한다.
 - 집계·통계처럼 기본 스크립트 범위를 넘는 분석은 `references/adhoc-scripts.md`의 임시 스크립트 작성 규칙을 먼저 읽고, scratchpad에 일회용 스크립트를 만들어 처리한다.
 - Slack search runs with the approved user token scope (`search:read`). Direct channel history/thread reads try the bot token first, then retry with the user token when bot access fails. The default user scopes are `search:read`, `channels:read`, `channels:history`, `groups:read`, and `groups:history`.
 
