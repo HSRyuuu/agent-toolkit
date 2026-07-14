@@ -272,6 +272,112 @@ def case_default_limit_is_20() -> bool:
     )
 
 
+def case_errors_from_resolution() -> bool:
+    conflict_blocked = False
+    try:
+        logs.resolve_errors_from("now-1h", 10)
+    except common.DatadogHelperError:
+        conflict_blocked = True
+    return check(
+        "resolve_errors_from honors --from, defaults to 30m, blocks conflicts",
+        logs.resolve_errors_from("now-24h", None) == "now-24h"
+        and logs.resolve_errors_from(None, None) == "now-30m"
+        and logs.resolve_errors_from(None, 10) == "now-10m"
+        and conflict_blocked,
+    )
+
+
+def case_default_limit_clamped_to_wide_limit() -> bool:
+    return check(
+        "profile default_limit cannot bypass the --allow-wide guard",
+        logs._default_limit({"default_limit": 800}) == common.WIDE_LIMIT
+        and logs._default_limit({"default_limit": 100}) == 100,
+    )
+
+
+def case_search_payload_cursor() -> bool:
+    args = _filter_args(cursor="abc123", limit=None, raw=False, allow_wide=False)
+    payload = logs._search_payload(args, {})
+    return check(
+        "_search_payload includes page cursor when given",
+        payload["page"] == {"limit": 20, "cursor": "abc123"},
+        str(payload["page"]),
+    )
+
+
+def case_response_next_cursor() -> bool:
+    return check(
+        "response_next_cursor reads meta.page.after",
+        common.response_next_cursor({"meta": {"page": {"after": "XYZ"}}}) == "XYZ"
+        and common.response_next_cursor({"meta": {"page": {}}}) is None
+        and common.response_next_cursor({}) is None,
+    )
+
+
+def case_timeseries_points() -> bool:
+    bucket = {
+        "computes": {
+            "c0": [
+                {"time": "2026-07-14T01:00:00Z", "value": 12},
+                {"time": "2026-07-14T01:05:00Z", "value": 3},
+            ]
+        }
+    }
+    points = logs._timeseries_points(bucket)
+    return check(
+        "_timeseries_points parses timeseries compute buckets",
+        points == [("2026-07-14T01:00:00Z", 12), ("2026-07-14T01:05:00Z", 3)]
+        and logs._timeseries_points({"computes": {"c0": 5}}) == [],
+        str(points),
+    )
+
+
+def case_parse_time_value() -> bool:
+    iso = common.parse_time_value("2026-07-14 10:03:21", "Asia/Seoul")
+    epoch_ms = common.parse_time_value("1752454800000")
+    invalid_blocked = False
+    try:
+        common.parse_time_value("not-a-time")
+    except common.DatadogHelperError:
+        invalid_blocked = True
+    return check(
+        "parse_time_value handles naive ISO with tz and epoch millis",
+        iso.isoformat() == "2026-07-14T01:03:21+00:00"
+        and epoch_ms.tzname() == "UTC"
+        and invalid_blocked,
+        iso.isoformat(),
+    )
+
+
+def case_normalize_message() -> bool:
+    normalized = common.normalize_message(
+        "Failed order 8f14e45f-ceea-4b67-a4b4-3c9e12ab34cd retry 3 "
+        "after 1500ms at 10.0.3.7:8080 token deadbeefdeadbeef99"
+    )
+    return check(
+        "normalize_message collapses uuid/hex/numbers",
+        normalized == "Failed order <uuid> retry <num> after <num>ms at <num> token <hex>",
+        normalized,
+    )
+
+
+def case_event_show_field() -> bool:
+    event = {
+        "id": "e1",
+        "attributes": {
+            "status": "error",
+            "attributes": {"error": {"kind": "TimeoutError"}, "http": {"status_code": 504}},
+        },
+    }
+    return check(
+        "event_show_field walks dotted custom paths",
+        common.event_show_field(event, "@error.kind") == "TimeoutError"
+        and common.event_show_field(event, "@http.status_code") == "504"
+        and common.event_show_field(event, "@missing.path") == "-"
+        and common.event_show_field(event, "status") == "error",
+    )
+
+
 def case_memory_template_has_alias_sections() -> bool:
     with tempfile.TemporaryDirectory(prefix="datadog-log-helper-test-") as tmp:
         os.environ["DATADOG_LOG_HELPER_CONFIG_DIR"] = tmp
@@ -300,6 +406,14 @@ def main() -> int:
         case_extract_frames,
         case_raw_limit_guard,
         case_default_limit_is_20,
+        case_errors_from_resolution,
+        case_default_limit_clamped_to_wide_limit,
+        case_search_payload_cursor,
+        case_response_next_cursor,
+        case_timeseries_points,
+        case_parse_time_value,
+        case_normalize_message,
+        case_event_show_field,
         case_memory_template_has_alias_sections,
     ]
     results = [case() for case in cases]

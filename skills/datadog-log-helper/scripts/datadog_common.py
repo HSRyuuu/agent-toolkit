@@ -26,7 +26,9 @@ DEFAULT_FROM = "now-15m"
 DEFAULT_TO = "now"
 DEFAULT_LIMIT = 20
 MAX_LIMIT = 1000
+WIDE_LIMIT = 500
 MAX_RETRY_AFTER_SECONDS = 60
+TRANSIENT_RETRY_SLEEP_SECONDS = 2
 
 SITE_ALIASES = {
     "us1": "datadoghq.com",
@@ -286,20 +288,33 @@ def datadog_request(
         headers["DD-APPLICATION-KEY"] = str(profile["app_key"])
 
     attempts_left = retries
+    transient_left = retries
     while True:
-        status, response_headers, body = run_curl(
-            url=url, http_method=http_method, headers=headers, payload=payload
-        )
-        if status != 429:
-            break
-        detail = retry_after_message(response_headers)
-        wait_match = re.search(r"(?:retry-after|x-ratelimit-reset)=(\d+)", detail)
-        wait_seconds = int(wait_match.group(1)) if wait_match else None
-        if attempts_left > 0 and wait_seconds is not None and wait_seconds <= MAX_RETRY_AFTER_SECONDS:
-            attempts_left -= 1
-            time.sleep(wait_seconds)
+        try:
+            status, response_headers, body = run_curl(
+                url=url, http_method=http_method, headers=headers, payload=payload
+            )
+        except DatadogHelperError:
+            # network failure / curl error: retry once before giving up
+            if transient_left > 0:
+                transient_left -= 1
+                time.sleep(TRANSIENT_RETRY_SLEEP_SECONDS)
+                continue
+            raise
+        if status == 429:
+            detail = retry_after_message(response_headers)
+            wait_match = re.search(r"(?:retry-after|x-ratelimit-reset)=(\d+)", detail)
+            wait_seconds = int(wait_match.group(1)) if wait_match else None
+            if attempts_left > 0 and wait_seconds is not None and wait_seconds <= MAX_RETRY_AFTER_SECONDS:
+                attempts_left -= 1
+                time.sleep(wait_seconds)
+                continue
+            raise DatadogHelperError(f"Datadog API rate limited: {detail}")
+        if status >= 500 and transient_left > 0:
+            transient_left -= 1
+            time.sleep(TRANSIENT_RETRY_SLEEP_SECONDS)
             continue
-        raise DatadogHelperError(f"Datadog API rate limited: {detail}")
+        break
 
     data = parse_json_body(body, path)
     if status >= 400:
@@ -378,7 +393,31 @@ def event_trace_id(event: dict[str, Any]) -> str:
     return "-"
 
 
-def format_log_event(event: dict[str, Any], *, tz_name: str | None = None) -> str:
+def event_show_field(event: dict[str, Any], key: str) -> str:
+    """Resolve a --show field. `@a.b.c` walks the custom attribute tree; bare keys
+    use reserved-attribute lookup."""
+    if not key.startswith("@"):
+        return event_field(event, key)
+    node: Any = _custom_attrs(event)
+    for part in key[1:].split("."):
+        if isinstance(node, dict):
+            node = node.get(part)
+        else:
+            node = None
+            break
+    if node is None:
+        return "-"
+    if isinstance(node, (dict, list)):
+        return truncate_text(json.dumps(node, ensure_ascii=False), 120)
+    return truncate_text(str(node), 120)
+
+
+def format_log_event(
+    event: dict[str, Any],
+    *,
+    tz_name: str | None = None,
+    show: list[str] | None = None,
+) -> str:
     attrs = _attrs(event)
     timestamp = format_timestamp(attrs.get("timestamp"), tz_name)
     status = event_field(event, "status")
@@ -393,19 +432,38 @@ def format_log_event(event: dict[str, Any], *, tz_name: str | None = None) -> st
         message,
         f"id={event_id} trace_id={trace_id}",
     ]
+    if show:
+        lines.append(" ".join(f"{key}={event_show_field(event, key)}" for key in show))
     return "\n".join(lines)
 
 
-def format_log_events(response: dict[str, Any], *, tz_name: str | None = None) -> str:
+def format_log_events(
+    response: dict[str, Any],
+    *,
+    tz_name: str | None = None,
+    show: list[str] | None = None,
+) -> str:
     events = response.get("data")
     if not isinstance(events, list):
         return ""
     blocks = [
-        format_log_event(event, tz_name=tz_name)
+        format_log_event(event, tz_name=tz_name, show=show)
         for event in events
         if isinstance(event, dict)
     ]
     return "\n\n".join(blocks)
+
+
+def response_next_cursor(response: dict[str, Any]) -> str | None:
+    """Return meta.page.after when Datadog reports more matching events."""
+    meta = response.get("meta")
+    if not isinstance(meta, dict):
+        return None
+    page = meta.get("page")
+    if not isinstance(page, dict):
+        return None
+    after = page.get("after")
+    return str(after) if after else None
 
 
 SENSITIVE_KEY_PATTERN = re.compile(
@@ -443,6 +501,41 @@ def collect_key_paths(
             else:
                 out.setdefault(path, truncate_text(str(value), 80))
     return out
+
+
+def parse_time_value(value: str, tz_name: str | None = None) -> datetime:
+    """Parse an around-center time: ISO8601 (naive values use tz_name) or epoch seconds/millis."""
+    text = str(value).strip()
+    if re.fullmatch(r"\d{10}", text):
+        return datetime.fromtimestamp(int(text), tz=timezone.utc)
+    if re.fullmatch(r"\d{13}", text):
+        return datetime.fromtimestamp(int(text) / 1000, tz=timezone.utc)
+    try:
+        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise DatadogHelperError(
+            f"시간을 해석할 수 없습니다: {value} (ISO8601 또는 epoch(초/밀리초)를 쓰세요)"
+        ) from exc
+    if dt.tzinfo is None:
+        tz = ZoneInfo(tz_name) if tz_name else datetime.now().astimezone().tzinfo
+        dt = dt.replace(tzinfo=tz)
+    return dt.astimezone(timezone.utc)
+
+
+UUID_PATTERN = re.compile(
+    r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b"
+)
+HEX_PATTERN = re.compile(r"\b(?:0x[0-9a-fA-F]+|[0-9a-fA-F]{16,})\b")
+NUM_PATTERN = re.compile(r"\d+(?:[./:]\d+)*")  # no \b: also catch 1500ms, order-12345
+
+
+def normalize_message(text: str, limit: int = 160) -> str:
+    """Collapse variable parts (uuid/hex/numbers) so similar messages group together."""
+    normalized = re.sub(r"\s+", " ", str(text)).strip()
+    normalized = UUID_PATTERN.sub("<uuid>", normalized)
+    normalized = HEX_PATTERN.sub("<hex>", normalized)
+    normalized = NUM_PATTERN.sub("<num>", normalized)
+    return truncate_text(normalized, limit)
 
 
 def extract_frames(text: str, prefix: str) -> list[str]:

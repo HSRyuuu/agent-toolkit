@@ -48,8 +48,12 @@ Use this file when composing Datadog log search queries.
 - If results are noisy, add one of: `@http.status_code`, `@error.kind`,
   `@trace_id`, `host`, `@version`, an `index`, or a `source:`.
 - Counting or ranking anything → `count`/`agg`, not a wide `search --raw`.
+- "언제부터/얼마나 늘었나" → `timeseries` (스파이크 시점을 한 번에). 배포 비교는
+  `timeseries --by @version`.
+- "어떤 에러가 많은지" 메시지 유형 분포 → `patterns` (facet이 없어도 동작).
+- 특정 필드 한두 개만 더 필요하면 `search --show @facet` (`--raw` 금지 사유가 됨).
 - For deploy checks, include version/build/deployment tags when known.
-- For incident timelines, sort ascending with `timeline`.
+- For incident timelines, sort ascending with `timeline`; 특정 시각 전후는 `around`.
 
 ## Memory Candidates
 

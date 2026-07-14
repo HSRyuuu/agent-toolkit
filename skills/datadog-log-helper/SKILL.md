@@ -38,6 +38,9 @@ commands to the user.
 | First setup, missing config, API key/app key, auth or permission error | `references/setup-guide.md` | `datadog_setup.py` |
 | General log search, service/env/status filters, raw script combinations | `references/scripts-reference.md`, `references/query-patterns.md` | `datadog_logs.py` |
 | Counts, distributions, top-N (경로/코드/로거별 몇 건) | `references/scripts-reference.md` | `datadog_logs.py count`, `agg` |
+| 시간대별 추이, 스파이크 시점, 배포 전후 비교 | `references/scripts-reference.md` | `datadog_logs.py timeseries` |
+| 특정 시각/이벤트 전후 컨텍스트 (그 직전에 무슨 일이) | `references/scripts-reference.md` | `datadog_logs.py around` |
+| 에러 메시지 유형 분포 (어떤 에러가 많은지) | `references/scripts-reference.md` | `datadog_logs.py patterns` |
 | Unknown log schema, which facets exist | `references/scripts-reference.md` | `datadog_logs.py fields` |
 | Stack trace analysis, which app code throws | `references/scripts-reference.md` | `datadog_logs.py frames` |
 | Service errors, exception bursts, recent failures | `references/workflows/error-investigation.md` | `datadog_logs.py` |
@@ -59,12 +62,15 @@ secrets in `MEMORY.md`.
 ## Scripts
 
 - `datadog_setup.py`: `init-keys`, `auth-test`, `logs-test`, `profiles`
-- `datadog_logs.py`: `search`, `errors`, `timeline`, `count`, `agg`, `fields`, `frames`
+- `datadog_logs.py`: `search`, `errors`, `timeline`, `around`, `count`, `agg`,
+  `timeseries`, `fields`, `frames`, `patterns`
 - `datadog_common.py`: import-only shared implementation
 
 건수·분포·top-N이 필요하면 raw 이벤트를 내려받아 세지 말고 `count`/`agg`를 먼저
-쓴다 (서버사이드 집계라 정확하고 싸다). 로그 스키마를 모르면 `--raw` 덤프 대신
-`fields`를 쓴다.
+쓴다 (서버사이드 집계라 정확하고 싸다). "언제부터 늘었나"는 `count` 반복이 아니라
+`timeseries` 한 번으로 본다. 로그 스키마를 모르면 `--raw` 덤프 대신 `fields`를
+쓰고, 특정 필드 한두 개만 더 보고 싶으면 `--raw` 대신 `search --show @facet`을
+쓴다.
 
 ## Memory
 
@@ -131,6 +137,8 @@ Keep entries short and operational. Recommended shape:
   JSON, and keep it to a few events (limit 5 초과는 `--allow-wide` 필요).
 - Search compactly first, then run narrower follow-up queries by service, env,
   status, trace id, host, index, or version.
+- If a search prints a `--cursor` hint, results were truncated; page through with
+  the cursor instead of widening the limit.
 - Treat API errors as setup signals. On missing config, invalid key, forbidden, or
   scope/permission errors, route to `references/setup-guide.md`.
 - Do not write log contents into repo files. Only write durable user-approved
