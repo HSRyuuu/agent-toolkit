@@ -1,0 +1,310 @@
+#!/usr/bin/env python3
+"""Tests for deterministic datadog-log-helper behavior.
+
+Run with: python3 test_datadog_helper.py
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import os
+import stat
+import sys
+import tempfile
+from pathlib import Path
+
+
+SCRIPT_DIR = Path(__file__).parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+
+def load_module(name: str):
+    spec = importlib.util.spec_from_file_location(name, SCRIPT_DIR / f"{name}.py")
+    module = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+common = load_module("datadog_common")
+logs = load_module("datadog_logs")
+
+
+def check(name: str, cond: bool, detail: str = "") -> bool:
+    suffix = f" - {detail}" if detail else ""
+    print(f"[{'PASS' if cond else 'FAIL'}] {name}{suffix}")
+    return cond
+
+
+def case_normalize_site() -> bool:
+    return check(
+        "normalize_site supports aliases and URLs",
+        common.normalize_site("https://app.datadoghq.eu/account") == "datadoghq.eu"
+        and common.normalize_site("api.us3.datadoghq.com") == "us3.datadoghq.com"
+        and common.normalize_site("us1") == "datadoghq.com",
+    )
+
+
+def case_secure_write_permissions() -> bool:
+    with tempfile.TemporaryDirectory(prefix="datadog-log-helper-test-") as tmp:
+        target = Path(tmp) / "nested" / "config.json"
+        common.write_json_secure(target, {"api_key": "abc"})
+        file_mode = stat.S_IMODE(target.stat().st_mode)
+        dir_mode = stat.S_IMODE(target.parent.stat().st_mode)
+        data = common.read_json(target)
+    return check(
+        "write_json_secure writes 600 file under 700 dir",
+        file_mode == 0o600 and dir_mode == 0o700 and data == {"api_key": "abc"},
+        f"file={oct(file_mode)} dir={oct(dir_mode)}",
+    )
+
+
+def case_memory_file_created_securely() -> bool:
+    with tempfile.TemporaryDirectory(prefix="datadog-log-helper-test-") as tmp:
+        os.environ["DATADOG_LOG_HELPER_CONFIG_DIR"] = tmp
+        try:
+            path = common.ensure_memory_file()
+            file_mode = stat.S_IMODE(path.stat().st_mode)
+            text = path.read_text(encoding="utf-8")
+        finally:
+            os.environ.pop("DATADOG_LOG_HELPER_CONFIG_DIR", None)
+    return check(
+        "ensure_memory_file creates expected template",
+        file_mode == 0o600 and "## 로그 접근" in text and "## 자주 쓰는 쿼리" in text,
+    )
+
+
+def case_sensitive_sanitizing() -> bool:
+    profile = {"api_key": "<API_KEY>", "app_key": "<APP_KEY>"}
+    text = common.sanitize_sensitive(
+        "DD-API-KEY: <API_KEY> DD-APPLICATION-KEY: <APP_KEY>",
+        profile,
+    )
+    return check(
+        "sanitize_sensitive masks configured keys",
+        "1234567890abcdef" not in text and "abcdef1234567890" not in text,
+        text,
+    )
+
+
+def case_format_log_events() -> bool:
+    response = {
+        "data": [
+            {
+                "id": "abc",
+                "attributes": {
+                    "timestamp": "2026-07-08T01:02:03Z",
+                    "status": "error",
+                    "service": "payments-api",
+                    "host": "host-1",
+                    "message": "hello\nworld",
+                    "attributes": {"env": "prod", "trace_id": "123"},
+                },
+            }
+        ]
+    }
+    text = common.format_log_events(response, tz_name="UTC")
+    return check(
+        "format_log_events emits compact event",
+        "service=payments-api" in text
+        and "env=prod" in text
+        and "hello world" in text
+        and "trace_id=123" in text,
+        text,
+    )
+
+
+def case_base_query_composes_filters() -> bool:
+    class Args:
+        query = ["timeout"]
+        service = "payments-api"
+        env = "prod"
+        status = "error"
+        host = None
+        trace_id = "123"
+        version = None
+
+    query = logs._base_query(Args())
+    return check(
+        "_base_query composes Datadog filters",
+        query == "timeout service:payments-api env:prod status:error @trace_id:123",
+        query,
+    )
+
+
+def _filter_args(**overrides):
+    class Args:
+        query = ['"ERROR 1 ---"']
+        service = "prd-some-service"
+        env = None
+        status = None
+        host = None
+        trace_id = None
+        version = None
+        index = None
+        from_time = "now-24h"
+        to_time = "now"
+
+    for key, value in overrides.items():
+        setattr(Args, key, value)
+    return Args()
+
+
+def case_aggregate_payload_count() -> bool:
+    payload = logs._aggregate_payload(_filter_args(), {})
+    return check(
+        "_aggregate_payload builds count compute without group_by",
+        payload["compute"] == [{"aggregation": "count"}]
+        and payload["filter"]["from"] == "now-24h"
+        and payload["filter"]["query"] == '"ERROR 1 ---" service:prd-some-service'
+        and "group_by" not in payload,
+        str(payload),
+    )
+
+
+def case_aggregate_payload_group_by() -> bool:
+    group_by = [
+        {
+            "facet": "@request_uri",
+            "limit": 10,
+            "sort": {"type": "measure", "aggregation": "count", "order": "desc"},
+        }
+    ]
+    payload = logs._aggregate_payload(_filter_args(), {}, group_by=group_by)
+    return check(
+        "_aggregate_payload includes group_by facets",
+        payload.get("group_by") == group_by,
+        str(payload.get("group_by")),
+    )
+
+
+def case_bucket_helpers() -> bool:
+    response = {
+        "data": {
+            "buckets": [
+                {"by": {"@request_uri": "/play/element"}, "computes": {"c0": 34}},
+                {"by": {"@request_uri": "/play/main"}, "computes": {"c0": 30}},
+            ]
+        }
+    }
+    buckets = logs._buckets(response)
+    counts = [logs._bucket_count(b) for b in buckets]
+    return check(
+        "_buckets/_bucket_count parse aggregate response",
+        counts == [34, 30] and logs._buckets({"data": None}) == [],
+        str(counts),
+    )
+
+
+def case_collect_key_paths() -> bool:
+    event_attrs = {
+        "timestamp": "2026-07-13T01:02:03Z",
+        "attributes": {
+            "request_uri": "/play/element",
+            "headers": {
+                "x-forwarded-path": "/play/element",
+                "authorization": "Bearer secret-jwt-value",
+                "cookie": "JSESSIONID=abc",
+            },
+            "tags_list": ["env:prd", "team:play"],
+        },
+    }
+    paths = common.collect_key_paths(event_attrs)
+    return check(
+        "collect_key_paths walks nested dicts and redacts sensitive keys",
+        paths.get("attributes.request_uri") == "/play/element"
+        and "attributes.headers.x-forwarded-path" in paths
+        and "attributes.tags_list" in paths
+        and paths.get("attributes.headers.authorization") == "***redacted***"
+        and paths.get("attributes.headers.cookie") == "***redacted***",
+        str(sorted(paths)),
+    )
+
+
+def case_extract_frames() -> bool:
+    trace = (
+        "org.hibernate.NonUniqueResultException: 2 results\n"
+        "\tat org.hibernate.AbstractSelectionQuery.uniqueElement(AbstractSelectionQuery.java:586)\n"
+        "\tat com.example.shop.repository.OrderQueryRepository.get(OrderQueryRepository.java:52)\n"
+        "\tat com.example.shop.service.OrderService.orders(OrderService.java:88)\n"
+        "\tat com.example.shop.repository.OrderQueryRepository.get(OrderQueryRepository.java:52)\n"
+    )
+    frames = common.extract_frames(trace, "com.example")
+    return check(
+        "extract_frames returns unique app frames in order",
+        frames
+        == [
+            "com.example.shop.repository.OrderQueryRepository.get(OrderQueryRepository.java:52)",
+            "com.example.shop.service.OrderService.orders(OrderService.java:88)",
+        ],
+        str(frames),
+    )
+
+
+def case_raw_limit_guard() -> bool:
+    ok_small = ok_wide = blocked = False
+    try:
+        logs._validate_raw(5, False)
+        ok_small = True
+    except common.DatadogHelperError:
+        pass
+    try:
+        logs._validate_raw(50, True)
+        ok_wide = True
+    except common.DatadogHelperError:
+        pass
+    try:
+        logs._validate_raw(6, False)
+    except common.DatadogHelperError:
+        blocked = True
+    return check(
+        "_validate_raw blocks raw over 5 events without --allow-wide",
+        ok_small and ok_wide and blocked,
+    )
+
+
+def case_default_limit_is_20() -> bool:
+    return check(
+        "default limit is 20",
+        common.DEFAULT_LIMIT == 20 and logs._default_limit({}) == 20,
+    )
+
+
+def case_memory_template_has_alias_sections() -> bool:
+    with tempfile.TemporaryDirectory(prefix="datadog-log-helper-test-") as tmp:
+        os.environ["DATADOG_LOG_HELPER_CONFIG_DIR"] = tmp
+        try:
+            text = common.ensure_memory_file().read_text(encoding="utf-8")
+        finally:
+            os.environ.pop("DATADOG_LOG_HELPER_CONFIG_DIR", None)
+    return check(
+        "memory template includes alias and schema sections",
+        "## 서비스 별칭" in text and "## 로그 스키마" in text,
+    )
+
+
+def main() -> int:
+    cases = [
+        case_normalize_site,
+        case_secure_write_permissions,
+        case_memory_file_created_securely,
+        case_sensitive_sanitizing,
+        case_format_log_events,
+        case_base_query_composes_filters,
+        case_aggregate_payload_count,
+        case_aggregate_payload_group_by,
+        case_bucket_helpers,
+        case_collect_key_paths,
+        case_extract_frames,
+        case_raw_limit_guard,
+        case_default_limit_is_20,
+        case_memory_template_has_alias_sections,
+    ]
+    results = [case() for case in cases]
+    return 0 if all(results) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
