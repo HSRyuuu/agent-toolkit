@@ -36,7 +36,7 @@ Real cache state with both local plugins installed:
 
 ```
 ~/.claude/plugins/cache/
-├── agent-toolkit-local/agent-toolkit/0.1.2/
+├── hsryuuu/agent-toolkit/0.1.2/
 └── as-usual-local/as-usual/0.1.0/
 ```
 
@@ -54,14 +54,14 @@ Real cache state:
 
 ```
 ~/.codex/plugins/cache/
-├── agent-toolkit-local/agent-toolkit/0.1.2+codex.20260705013442/
+├── hsryuuu/agent-toolkit/0.1.2+codex.20260705013442/
 └── personal/as-usual/0.1.0/
 ```
 
 And the matching `config.toml` sections:
 
 ```toml
-[marketplaces.agent-toolkit-local]
+[marketplaces.hsryuuu]
 source_type = "local"
 source = "/Users/<user>/dev/personal/agent-toolkit"
 
@@ -69,7 +69,7 @@ source = "/Users/<user>/dev/personal/agent-toolkit"
 source_type = "local"
 source = "/Users/<user>"
 
-[plugins."agent-toolkit@agent-toolkit-local"]
+[plugins."agent-toolkit@hsryuuu"]
 enabled = true
 
 [plugins."as-usual@personal"]

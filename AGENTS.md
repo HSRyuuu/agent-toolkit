@@ -86,7 +86,7 @@ grep -oE '\(\.\./skills/[^)]+/SKILL\.md\)' docs/catalog.md | tr -d '()' | sed 's
 # Plugin validation
 python3 /Users/happyhsryu/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py /Users/happyhsryu/dev/personal/agent-toolkit
 codex plugin marketplace add /Users/happyhsryu/dev/personal/agent-toolkit
-codex plugin list --marketplace agent-toolkit-local --available --json
+codex plugin list --marketplace hsryuuu --available --json
 
 # JSON sanity for plugin metadata
 jq empty .claude-plugin/plugin.json

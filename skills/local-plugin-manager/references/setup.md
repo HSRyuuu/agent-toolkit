@@ -69,7 +69,7 @@ Both keys are top-level objects; create them if missing. Real working example (b
 
 ```json
 "extraKnownMarketplaces": {
-  "agent-toolkit-local": {
+  "hsryuuu": {
     "source": { "source": "directory", "path": "/Users/<user>/dev/personal/agent-toolkit" }
   },
   "as-usual-local": {
@@ -77,7 +77,7 @@ Both keys are top-level objects; create them if missing. Real working example (b
   }
 },
 "enabledPlugins": {
-  "agent-toolkit@agent-toolkit-local": true,
+  "agent-toolkit@hsryuuu": true,
   "as-usual@as-usual-local": true
 }
 ```
@@ -190,11 +190,11 @@ Omit `"hooks"` if there are none. `"skills": "./skills/"` must point at the same
 Registration lands in `~/.codex/config.toml` (Codex writes this — don't hand-edit unless fixing corruption):
 
 ```toml
-[marketplaces.agent-toolkit-local]
+[marketplaces.hsryuuu]
 source_type = "local"
 source = "/Users/<user>/dev/personal/agent-toolkit"
 
-[plugins."agent-toolkit@agent-toolkit-local"]
+[plugins."agent-toolkit@hsryuuu"]
 enabled = true
 ```
 

@@ -7,7 +7,7 @@
 - **개인 큐레이션 베이스** — 직접 만든 것, 외부 OSS에서 가져와 다듬은 것, 실험 중인 것까지 자유롭게 담는다.
 - **단일 plugin, 다중 자산** — Claude Code가 지원하는 자산 종류(`skills/`, `agents/`, `hooks/`, `commands/`)를 한 plugin 안에 섞어 담는다.
 - **공통 스킬 루트** — Claude Code와 Codex 모두 이 저장소의 `skills/`만 플러그인 스킬 루트로 읽는다.
-- **재배포 미고려** — 로컬 directory marketplace(`agent-toolkit-local`)로만 사용.
+- **두 가지 설치 경로** — marketplace 이름은 `hsryuuu`. 개발 머신은 로컬 directory marketplace, 그 외 머신은 GitHub marketplace(`HSRyuuu/agent-toolkit`)로 설치한다. 한 머신에는 한 방식만 쓴다.
 - **편한 게 우선** — 필요하면 추가하고, 안 맞으면 지운다. 단, 로더 구조는 단순하게 유지한다.
 
 ## 디렉토리 구조
@@ -60,12 +60,14 @@ description: 언제 이 스킬을 써야 하는지 검색 가능한 문장으로
 
 ## 등록 상태
 
-`~/.claude/settings.json`:
+`~/.claude/settings.json` (개발 머신 기준):
 
-- `extraKnownMarketplaces.agent-toolkit-local` (directory source → 이 디렉토리)
-- `enabledPlugins["agent-toolkit@agent-toolkit-local"]: true`
+- `extraKnownMarketplaces.hsryuuu` (directory source → 이 디렉토리)
+- `enabledPlugins["agent-toolkit@hsryuuu"]: true`
 
-Claude Code의 plugin manifest와 Codex의 plugin manifest는 모두 `skills/`를 스킬 루트로 가리켜야 한다.
+다른 머신은 `/plugin marketplace add HSRyuuu/agent-toolkit` + `/plugin install agent-toolkit@hsryuuu`로 설치한다 (README 참고).
+
+Claude Code의 plugin manifest와 Codex의 plugin manifest는 모두 `skills/`를 스킬 루트로 가리켜야 한다. GitHub 설치 사용자에게 변경을 전달하려면 두 plugin manifest의 `version`을 같은 값으로 올려야 한다 (버전이 캐시 키다). `marketplace.json`의 `plugins[]`에는 version을 두지 않는다.
 
 ## 문서 갱신
 

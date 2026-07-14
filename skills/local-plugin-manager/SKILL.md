@@ -24,8 +24,8 @@ Resolve these before doing anything. Four names look similar but mean different 
 | Name                 | Example                             | What it identifies                                                                                                   |
 | -------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | **PLUGIN_NAME**      | `agent-toolkit`                     | The plugin itself. From `.claude-plugin/plugin.json` or `.codex-plugin/plugin.json`. Part before `@`.                |
-| **MARKETPLACE_NAME** | `agent-toolkit-local`               | The marketplace exposing it. From `marketplace.json`. Convention: append `-local` to make the local source obvious.  |
-| **PLUGIN_ID**        | `agent-toolkit@agent-toolkit-local` | Composite `<PLUGIN_NAME>@<MARKETPLACE_NAME>` — how the host joins the on/off switch to the source.                   |
+| **MARKETPLACE_NAME** | `hsryuuu`                           | The marketplace exposing it. From `marketplace.json`. The same name can back a local directory source or a GitHub source; appending `-local` (e.g. `as-usual-local`) is a common convention when the marketplace is local-only. |
+| **PLUGIN_ID**        | `agent-toolkit@hsryuuu`             | Composite `<PLUGIN_NAME>@<MARKETPLACE_NAME>` — how the host joins the on/off switch to the source.                   |
 | **PLUGIN_ROOT**      | `~/dev/personal/agent-toolkit`      | Absolute path where the plugin source lives. Registration points here. Always **absolute**, never `~`-prefixed in JSON. |
 
 Also settle **host scope**: `claude`, `codex`, or both. The hosts use separate registration files and separate cache paths, so a successful Claude refresh proves nothing about the Codex snapshot, and vice versa. The same plugin can even have a different `PLUGIN_ID` per host (see the reference installs below).
@@ -38,7 +38,7 @@ Two plugins are set up locally and serve as the canonical examples throughout th
 
 | Plugin          | Source repo                        | Claude PLUGIN_ID                    | Codex PLUGIN_ID     | Codex registration pattern                                  |
 | --------------- | ---------------------------------- | ----------------------------------- | ------------------- | ----------------------------------------------------------- |
-| `agent-toolkit` | `~/dev/personal/agent-toolkit`     | `agent-toolkit@agent-toolkit-local` | `agent-toolkit@agent-toolkit-local` | per-repo marketplace (`.agents/plugins/marketplace.json` in the repo) |
+| `agent-toolkit` | `~/dev/personal/agent-toolkit`     | `agent-toolkit@hsryuuu`             | `agent-toolkit@hsryuuu` | per-repo marketplace (`.agents/plugins/marketplace.json` in the repo) |
 | `as-usual`      | `~/dev/personal/harness-as-usual`  | `as-usual@as-usual-local`           | `as-usual@personal` | shared home marketplace (`~/.agents/plugins/marketplace.json` + `~/plugins/<name>` symlink) |
 
 Note `as-usual`: same plugin, different marketplace per host. Always resolve `PLUGIN_ID` from the host's own state (`claude plugin list` / `codex plugin list` / `~/.codex/config.toml`), never by assumption.

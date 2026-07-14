@@ -1,6 +1,11 @@
 {
   "name": "agent-toolkit",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Personal Claude Code plugin — curated skills toolkit",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit",
   "skills": "./skills/"
 }

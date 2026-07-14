@@ -1,14 +1,27 @@
 {
-  "name": "agent-toolkit-local",
+  "name": "hsryuuu",
   "owner": {
     "name": "happyhsryu"
+  },
+  "metadata": {
+    "description": "hsryuuu 개인 스킬 마켓플레이스",
+    "version": "1.0.0"
   },
   "plugins": [
     {
       "name": "agent-toolkit",
       "source": "./",
       "description": "Personal curated skills toolkit",
-      "version": "0.1.6"
+      "author": {
+        "name": "happyhsryu"
+      },
+      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+      "repository": "https://github.com/HSRyuuu/agent-toolkit",
+      "keywords": [
+        "skills",
+        "agent-toolkit",
+        "personal-toolkit"
+      ]
     }
   ]
 }
