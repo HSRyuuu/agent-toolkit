@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for deterministic datadog-log-helper behavior.
+"""Tests for deterministic datadog-helper behavior.
 
 Run with: python3 test_datadog_helper.py
 """
@@ -30,6 +30,7 @@ def load_module(name: str):
 
 common = load_module("datadog_common")
 logs = load_module("datadog_logs")
+apm = load_module("datadog_apm")
 
 
 def check(name: str, cond: bool, detail: str = "") -> bool:
@@ -48,7 +49,7 @@ def case_normalize_site() -> bool:
 
 
 def case_secure_write_permissions() -> bool:
-    with tempfile.TemporaryDirectory(prefix="datadog-log-helper-test-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="datadog-helper-test-") as tmp:
         target = Path(tmp) / "nested" / "config.json"
         common.write_json_secure(target, {"api_key": "abc"})
         file_mode = stat.S_IMODE(target.stat().st_mode)
@@ -62,7 +63,7 @@ def case_secure_write_permissions() -> bool:
 
 
 def case_memory_file_created_securely() -> bool:
-    with tempfile.TemporaryDirectory(prefix="datadog-log-helper-test-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="datadog-helper-test-") as tmp:
         os.environ["DATADOG_LOG_HELPER_CONFIG_DIR"] = tmp
         try:
             path = common.ensure_memory_file()
@@ -379,7 +380,7 @@ def case_event_show_field() -> bool:
 
 
 def case_memory_template_has_alias_sections() -> bool:
-    with tempfile.TemporaryDirectory(prefix="datadog-log-helper-test-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="datadog-helper-test-") as tmp:
         os.environ["DATADOG_LOG_HELPER_CONFIG_DIR"] = tmp
         try:
             text = common.ensure_memory_file().read_text(encoding="utf-8")
@@ -388,6 +389,175 @@ def case_memory_template_has_alias_sections() -> bool:
     return check(
         "memory template includes alias and schema sections",
         "## 서비스 별칭" in text and "## 로그 스키마" in text,
+    )
+
+
+def _span_args(**overrides):
+    class Args:
+        query = []
+        service = "payments-api"
+        env = "prod"
+        resource = None
+        operation = None
+        host = None
+        trace_id = None
+        version = None
+        errors_only = False
+        index = None
+        from_time = "now-1h"
+        to_time = "now"
+
+    for key, value in overrides.items():
+        setattr(Args, key, value)
+    return Args()
+
+
+def case_apm_base_query_composes_filters() -> bool:
+    args = _span_args(resource="GET /orders", errors_only=True, trace_id="abc123")
+    query = apm._base_query(args)
+    return check(
+        "apm _base_query composes span filters",
+        query
+        == '* service:payments-api env:prod resource_name:"GET /orders" trace_id:abc123 status:error',
+        query,
+    )
+
+
+def case_apm_search_payload_is_wrapped() -> bool:
+    args = _span_args(limit=None, raw=False, allow_wide=False, cursor="CUR", sort=None)
+    payload = apm._search_payload(args, {})
+    attributes = payload.get("data", {}).get("attributes", {})
+    return check(
+        "apm _search_payload wraps request in data.attributes",
+        payload["data"]["type"] == "search_request"
+        and attributes["filter"]["from"] == "now-1h"
+        and attributes["page"] == {"limit": 20, "cursor": "CUR"}
+        and attributes["sort"] == "-timestamp",
+        str(payload),
+    )
+
+
+def case_apm_aggregate_payload_is_wrapped() -> bool:
+    payload = apm._aggregate_payload(
+        _span_args(),
+        {},
+        compute=[{"aggregation": "count", "type": "total"}],
+        group_by=apm._group_by(["resource_name"], 10),
+    )
+    attributes = payload["data"]["attributes"]
+    return check(
+        "apm _aggregate_payload wraps compute/filter/group_by",
+        payload["data"]["type"] == "aggregate_request"
+        and attributes["compute"] == [{"aggregation": "count", "type": "total"}]
+        and attributes["group_by"][0]["facet"] == "resource_name",
+        str(attributes),
+    )
+
+
+def case_apm_buckets_parse_list_response() -> bool:
+    response = {
+        "data": [
+            {
+                "type": "bucket",
+                "attributes": {"by": {"service": "payments-api"}, "computes": {"c0": 42}},
+            },
+            {"type": "bucket", "attributes": {"by": {"service": "orders-api"}, "compute": {"c0": 7}}},
+        ]
+    }
+    buckets = apm._buckets(response)
+    counts = [apm._bucket_count(bucket) for bucket in buckets]
+    return check(
+        "apm _buckets parses spans aggregate list (computes and compute)",
+        counts == [42, 7] and apm._buckets({"data": {}}) == [],
+        str(counts),
+    )
+
+
+def case_format_duration_ns() -> bool:
+    return check(
+        "format_duration_ns picks human units",
+        apm.format_duration_ns(1_500_000_000) == "1.50s"
+        and apm.format_duration_ns(241_700_000) == "241.7ms"
+        and apm.format_duration_ns(3_200) == "3µs"
+        and apm.format_duration_ns(None) == "-",
+        apm.format_duration_ns(241_700_000),
+    )
+
+
+def case_format_span_event() -> bool:
+    event = {
+        "id": "sp1",
+        "attributes": {
+            "start_timestamp": "2026-07-14T01:02:03Z",
+            "status": "error",
+            "service": "payments-api",
+            "resource_name": "POST /orders",
+            "operation_name": "servlet.request",
+            "trace_id": "t-1",
+            "span_id": "s-1",
+            "parent_id": "p-1",
+            "type": "web",
+            "custom": {"duration": 241_700_000, "env": "prod", "http": {"status_code": 500}},
+        },
+    }
+    text = apm.format_span_event(event, tz_name="UTC", show=["@http.status_code"])
+    return check(
+        "format_span_event emits compact span block",
+        "service=payments-api" in text
+        and "duration=241.7ms" in text
+        and "resource=POST /orders" in text
+        and "env=prod" in text
+        and "trace_id=t-1" in text
+        and "@http.status_code=500" in text,
+        text,
+    )
+
+
+def case_apm_timeseries_points() -> bool:
+    bucket = {
+        "computes": {
+            "c0": [
+                {"time": "2026-07-14T01:00:00Z", "value": 12},
+                {"time": "2026-07-14T01:05:00Z", "value": 3},
+            ]
+        }
+    }
+    points = apm._timeseries_points(bucket)
+    return check(
+        "apm _timeseries_points parses timeseries computes",
+        points == [("2026-07-14T01:00:00Z", 12), ("2026-07-14T01:05:00Z", 3)]
+        and apm._timeseries_points({"computes": {"c0": 5}}) == [],
+        str(points),
+    )
+
+
+def case_apm_raw_limit_guard() -> bool:
+    blocked = False
+    try:
+        apm._validate_raw(6, False)
+    except common.DatadogHelperError:
+        blocked = True
+    ok_wide = False
+    try:
+        apm._validate_raw(50, True)
+        ok_wide = True
+    except common.DatadogHelperError:
+        pass
+    return check("apm _validate_raw mirrors the logs raw guard", blocked and ok_wide)
+
+
+def case_config_dir_prefers_new_env_var() -> bool:
+    os.environ["DATADOG_HELPER_CONFIG_DIR"] = "/tmp/new-dir"
+    os.environ["DATADOG_LOG_HELPER_CONFIG_DIR"] = "/tmp/old-dir"
+    try:
+        preferred = str(common.config_dir())
+    finally:
+        os.environ.pop("DATADOG_HELPER_CONFIG_DIR", None)
+        os.environ.pop("DATADOG_LOG_HELPER_CONFIG_DIR", None)
+    return check(
+        "config_dir prefers DATADOG_HELPER_CONFIG_DIR over legacy env var",
+        preferred == "/tmp/new-dir",
+        preferred,
     )
 
 
@@ -415,6 +585,15 @@ def main() -> int:
         case_normalize_message,
         case_event_show_field,
         case_memory_template_has_alias_sections,
+        case_apm_base_query_composes_filters,
+        case_apm_search_payload_is_wrapped,
+        case_apm_aggregate_payload_is_wrapped,
+        case_apm_buckets_parse_list_response,
+        case_format_duration_ns,
+        case_format_span_event,
+        case_apm_timeseries_points,
+        case_apm_raw_limit_guard,
+        case_config_dir_prefers_new_env_var,
     ]
     results = [case() for case in cases]
     return 0 if all(results) else 1

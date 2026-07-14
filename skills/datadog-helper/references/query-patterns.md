@@ -1,6 +1,6 @@
-# Datadog Log Query Patterns
+# Datadog Query Patterns
 
-Use this file when composing Datadog log search queries.
+Use this file when composing Datadog log or span search queries.
 
 ## Core Filters
 
@@ -54,6 +54,27 @@ Use this file when composing Datadog log search queries.
 - 특정 필드 한두 개만 더 필요하면 `search --show @facet` (`--raw` 금지 사유가 됨).
 - For deploy checks, include version/build/deployment tags when known.
 - For incident timelines, sort ascending with `timeline`; 특정 시각 전후는 `around`.
+
+## Span (APM) Filters
+
+`datadog_apm.py`의 쿼리에서 자주 쓰는 조각. 로그와 문법은 같지만 reserved
+attribute가 다르다.
+
+| Need | Query Fragment |
+| --- | --- |
+| Service / Environment | `service:<name>` `env:<env>` |
+| Error spans | `status:error` (스팬 status는 ok/error) |
+| Resource (엔드포인트/쿼리) | `resource_name:"GET /orders"` (와일드카드: `resource_name:GET*`) |
+| Operation | `operation_name:servlet.request` |
+| Trace ID | `trace_id:<trace-id>` (`@` 없음) |
+| HTTP status | `@http.status_code:500`, `@http.status_code:[500 TO 599]` |
+| Slow spans | `@duration:>1000000000` (ns 단위; 1초 = 1000000000) |
+| Version | `version:<version>` |
+
+- `@duration`은 나노초다. "1초 이상"은 `>1000000000`; 스크립트 출력은 ms/s로
+  자동 변환된다.
+- 느린 것 찾기는 raw 검색보다 `latency --by resource_name`이 먼저다.
+- 로그의 `@trace_id` ↔ 스팬의 `trace_id`로 양방향 피벗한다.
 
 ## Memory Candidates
 

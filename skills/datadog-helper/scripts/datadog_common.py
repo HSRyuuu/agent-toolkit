@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared Datadog log helper utilities."""
+"""Shared Datadog helper utilities."""
 
 from __future__ import annotations
 
@@ -18,7 +18,8 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 
-DEFAULT_CONFIG_DIR = Path("~/.config/datadog-log-helper").expanduser()
+DEFAULT_CONFIG_DIR = Path("~/.config/datadog-helper").expanduser()
+LEGACY_CONFIG_DIR = Path("~/.config/datadog-log-helper").expanduser()
 CONFIG_FILE = "config.json"
 MEMORY_FILE = "MEMORY.md"
 DEFAULT_SITE = "datadoghq.com"
@@ -55,8 +56,17 @@ class DatadogHelperError(RuntimeError):
 
 
 def config_dir() -> Path:
-    override = os.environ.get("DATADOG_LOG_HELPER_CONFIG_DIR")
-    return Path(override).expanduser() if override else DEFAULT_CONFIG_DIR
+    override = os.environ.get("DATADOG_HELPER_CONFIG_DIR") or os.environ.get(
+        "DATADOG_LOG_HELPER_CONFIG_DIR"
+    )
+    if override:
+        return Path(override).expanduser()
+    # keep setups created under the old skill name working
+    if not (DEFAULT_CONFIG_DIR / CONFIG_FILE).exists() and (
+        LEGACY_CONFIG_DIR / CONFIG_FILE
+    ).exists():
+        return LEGACY_CONFIG_DIR
+    return DEFAULT_CONFIG_DIR
 
 
 def config_path() -> Path:
@@ -103,7 +113,7 @@ def ensure_memory_file() -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists():
         path.write_text(
-            "# datadog-log-helper memory\n\n"
+            "# datadog-helper memory\n\n"
             "## 서비스 별칭\n\n"
             "## 로그 접근\n\n"
             "## 로그 스키마\n\n"
@@ -193,7 +203,7 @@ def run_curl(
     method = http_method.upper()
     headers = headers or {}
 
-    with tempfile.TemporaryDirectory(prefix="datadog-log-helper-") as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="datadog-helper-") as temp_dir:
         header_path = Path(temp_dir) / "headers.txt"
         body_path = Path(temp_dir) / "body.json"
         config_lines = [f'url = "{curl_config_quote(url)}"', f'request = "{method}"']

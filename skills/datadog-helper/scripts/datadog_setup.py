@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Datadog log helper setup commands."""
+"""Datadog helper setup commands."""
 
 from __future__ import annotations
 
@@ -95,6 +95,33 @@ def command_logs_test(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_apm_test(args: argparse.Namespace) -> int:
+    profile_name, profile = load_profile(args.profile)
+    payload: dict[str, Any] = {
+        "data": {
+            "type": "search_request",
+            "attributes": {
+                "filter": {
+                    "from": args.from_time,
+                    "to": "now",
+                    "query": args.query,
+                },
+                "page": {"limit": 1},
+                "sort": "-timestamp",
+            },
+        }
+    }
+    response = datadog_request(
+        profile,
+        "/api/v2/spans/events/search",
+        http_method="POST",
+        payload=payload,
+    )
+    count = len(response.get("data", [])) if isinstance(response.get("data"), list) else 0
+    print(f"Datadog APM span search works. profile={profile_name} spans={count}")
+    return 0
+
+
 def command_profiles(args: argparse.Namespace) -> int:
     config = load_config()
     profiles = config.get("profiles")
@@ -119,7 +146,7 @@ def command_profiles(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Datadog log helper setup")
+    parser = argparse.ArgumentParser(description="Datadog helper setup")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     init_keys = subparsers.add_parser("init-keys", help="Register Datadog keys locally")
@@ -139,6 +166,12 @@ def build_parser() -> argparse.ArgumentParser:
     logs_test.add_argument("--query", default="*")
     logs_test.add_argument("--index")
     logs_test.set_defaults(func=command_logs_test)
+
+    apm_test = subparsers.add_parser("apm-test", help="Validate APM span search access (apm_read)")
+    add_profile_arg(apm_test)
+    apm_test.add_argument("--from", dest="from_time", default="now-15m")
+    apm_test.add_argument("--query", default="*")
+    apm_test.set_defaults(func=command_apm_test)
 
     profiles = subparsers.add_parser("profiles", help="List configured profiles")
     profiles.set_defaults(func=command_profiles)

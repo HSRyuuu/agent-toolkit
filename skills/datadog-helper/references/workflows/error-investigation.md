@@ -48,4 +48,4 @@ python3 "<SKILL_DIR>/scripts/datadog_logs.py" frames --service <service> "<error
 If the investigation confirmed a service name, alias, `source:` split, or query
 pattern that was not in `MEMORY.md`, propose saving it in your final answer. If
 the user says this is the normal way to inspect the service, update
-`~/.config/datadog-log-helper/MEMORY.md` with the service/env/index/query hint.
+`~/.config/datadog-helper/MEMORY.md` with the service/env/index/query hint.

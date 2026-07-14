@@ -3,13 +3,13 @@
 > `agent-toolkit` 저장소의 현재 플러그인 스킬 목록.
 > 이 문서는 `skills/*/SKILL.md` frontmatter에서 생성한다.
 >
-> Last updated: 2026-07-07
+> Last updated: 2026-07-14
 
 ## 요약
 
 | 항목 | 개수 |
 |---|---:|
-| Physical plugin skills under `skills/` | 39 |
+| Physical plugin skills under `skills/` | 40 |
 
 스킬 카테고리는 이름과 설명에서 읽는 메타데이터다. 플러그인 로더 기준의 활성 스킬 루트는 `skills/` 하나다.
 
@@ -21,6 +21,7 @@
 | [agent-introspection-debugging](../skills/agent-introspection-debugging/SKILL.md) | `agent-introspection-debugging` | Use when an AI agent run is stuck, looping, drifting, hitting max tool calls, overflowing context, retrying without progress, or failing due to tool/environment mismatch. Triggers: "agent stuck", "agent looping", "max tool calls", "context overflow", "self-debug", "introspection report", "why is the agent failing". Do NOT use for ordinary app/runtime debugging. |
 | [create-mermaid-erd](../skills/create-mermaid-erd/SKILL.md) | `create-mermaid-erd` | Use when the user wants an ERD or database relationship diagram from a PRD, domain description, table list, DDL, DB schema, or existing Mermaid ERD. Triggers: "ERD 만들어줘", "테이블 관계도", "DB 설계 시각화", "데이터 모델링", "개념 ERD", "논리 ERD", "물리 ERD", "mermaid ERD", "DB 스키마 그려줘", "ERD HTML 미리보기". |
 | [daily-work-log](../skills/daily-work-log/SKILL.md) | `daily-work-log` | Use when the user wants to create a personal daily work log from Codex/Claude sessions or KB notes, set up a work-log template, or search saved work logs by date, tag, or keyword. Triggers: "daily work log", "오늘 한 일 정리", "어제 한 일 정리", "퇴근 전 회고", "지난주에 뭐 했지", "work log 찾아줘". |
+| [datadog-helper](../skills/datadog-helper/SKILL.md) | `datadog-helper` | Use when the user asks to set up Datadog API keys, search Datadog logs, count or aggregate logs, inspect service errors or stack traces, build incident timelines, investigate deploy regressions, query APM traces or spans, check API latency (p95/p99, 느린 API), inspect a trace by trace_id, or manage local Datadog access context. Triggers: "Datadog 로그", "서비스 에러 로그", "로그 집계", "장애 타임라인", "APM", "트레이스", "느린 API". |
 | [dev-teacher](../skills/dev-teacher/SKILL.md) | `dev-teacher` | Manual-only. Invoke this skill ONLY when the user directly types the "/dev-teacher" slash command. NEVER auto-select or infer this skill from the content of a request — no question, keyword, or topic should ever trigger it. If the user did not type "/dev-teacher", ignore this skill entirely and answer normally. |
 | [excel-doc-updater](../skills/excel-doc-updater/SKILL.md) | `excel-doc-updater` | Use when the user explicitly asks to update or regenerate an existing form-based .xlsx such as an interface spec, program list, or requirements form from markdown, JSON/YAML, DB/API output, or another workbook. Do NOT use for normal code edits, non-Excel docs, or forms with a project-specific updater skill. |
 | [excel-ui-test-doc-creator](../skills/excel-ui-test-doc-creator/SKILL.md) | `excel-ui-test-doc-creator` | Use when the user wants test scenarios or test execution results turned into a unit-test or QA deliverable Excel .xlsx, with or without a provided template. Triggers: "테스트 결과 엑셀로 정리해줘", "단위테스트 산출물 만들어줘", "테스트 시나리오 xlsx로", "QA 테스트 결과서 엑셀", "/excel-ui-test-doc-creator". Do NOT use for running tests, PDF/docx reports, or updating an existing form workbook. |
