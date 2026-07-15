@@ -1,6 +1,6 @@
 interface:
   display_name: "Publish Agent Toolkit"
-  short_description: "Commit, push main, reload Codex and Claude"
-  default_prompt: "Use $publish-agent-toolkit to commit, push main, and reload agent-toolkit for Codex and Claude."
+  short_description: "Commit, bump version, push main, update GitHub-installed plugin"
+  default_prompt: "Use $publish-agent-toolkit to verify, commit, bump the plugin version, push main, and update the GitHub-installed agent-toolkit plugin for Codex and Claude."
 policy:
   allow_implicit_invocation: false
