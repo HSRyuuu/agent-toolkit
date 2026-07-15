@@ -53,8 +53,8 @@ Most writes are small. Do not run the full ritual for a one-line note.
   secondary.
 - If provenance matters, record a safe `source` value in frontmatter or a short
   body note rather than storing raw source copies.
-- Archive retired documents per `kb-manage`: move to top-level `_archived/` at one
-  depth and set `agent_edit_mode: read_only`.
+- Archive retired documents per `kb-manage`: move to top-level `_archived/`, at
+  most one grouping subfolder deep, and set `agent_edit_mode: read_only`.
 
 ## Required First Reads
 

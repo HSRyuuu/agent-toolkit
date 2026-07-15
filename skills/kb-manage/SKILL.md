@@ -176,9 +176,11 @@ active current knowledge.
 
 Rules:
 
-- The archive folder is exactly top-level `_archived/`, one depth deep, such as
-  `_archived/old-project-notes.md`. Do not create subfolders or alternate names
-  such as `_archive/`.
+- The archive folder is top-level `_archived/`, up to two levels deep: a file
+  directly under it, such as `_archived/old-project-notes.md`, or one grouping
+  subfolder, such as `_archived/back-logs/old-note.md`. Do not create alternate
+  top-level names such as `_archive/`, and do not nest more than one subfolder
+  level.
 - Archived documents are still normal Markdown KB documents and may be found by
   search. Links from active documents to them are allowed.
 - Do not add a separate archive-specific edit ban. Set `agent_edit_mode:
@@ -186,8 +188,9 @@ Rules:
 
 When archiving a document:
 
-1. Move it to `_archived/<filename>.md`, preserving the filename unless there is
-   a collision.
+1. Move it to `_archived/<filename>.md`, or `_archived/<subfolder>/<filename>.md`
+   when a grouping subfolder fits the material, preserving the filename unless
+   there is a collision.
 2. Set or update frontmatter `agent_edit_mode: read_only`. The git guard treats
    this editable→read_only transition as an informational note, not a violation.
 3. Update `index.md` and `log.jsonl` when the KB maintains them.

@@ -217,7 +217,7 @@ Suggested next actions:
 ## Do Not
 
 - Do not create `_raw/`, `_archive/`, canonical kinds, or daily-log schemas.
-- Do not treat top-level `_archived/` as an error; it is valid when files are one depth below it and use `agent_edit_mode: read_only`.
+- Do not treat top-level `_archived/` as an error; it is valid when files are one or two levels below it (a direct file or one grouping subfolder) and use `agent_edit_mode: read_only`.
 - Do not silently remove or mask sensitive information.
 - Do not rewrite documents during report mode.
 - Do not bulk-add wikilinks. Suggest candidates first.
