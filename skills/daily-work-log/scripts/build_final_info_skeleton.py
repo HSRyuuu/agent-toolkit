@@ -35,6 +35,23 @@ def default_final_info_path(target_date: str, state_root: Path) -> Path:
     return state_root / target_date[:4] / target_date / "final-info.json"
 
 
+def default_config_path(state_root: Path) -> Path:
+    return state_root / "config.json"
+
+
+def load_impact_items(config_path: Path) -> list[str]:
+    try:
+        data = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    if not isinstance(data, dict):
+        return []
+    items = data.get("impact-items")
+    if not isinstance(items, list):
+        return []
+    return [item for item in items if isinstance(item, str) and item.strip()]
+
+
 def slugify(text: str, fallback: str) -> str:
     value = text.lower()
     value = re.sub(r"[^a-z0-9가-힣]+", "-", value).strip("-")
@@ -104,14 +121,18 @@ def build_item(detail: dict[str, Any], selected_candidate: dict[str, Any]) -> di
     }
 
 
-def build_final_info(digest: dict[str, Any], digest_path: Path | None = None) -> dict[str, Any]:
+def build_final_info(
+    digest: dict[str, Any],
+    digest_path: Path | None = None,
+    impact_items: list[str] | None = None,
+) -> dict[str, Any]:
     by_group = selected_candidate_by_group(digest)
     selected_items = [
         build_item(detail, by_group.get(str(detail.get("group_id")), {}))
         for detail in digest.get("selected_details") or []
         if isinstance(detail, dict)
     ]
-    return {
+    result = {
         "schema_version": SCHEMA_VERSION,
         "date": digest.get("date"),
         "generated_at": now_iso(),
@@ -135,29 +156,35 @@ def build_final_info(digest: dict[str, Any], digest_path: Path | None = None) ->
             "numbered_candidates": digest.get("source_files", {}).get("numbered_candidates"),
             "first_pass": digest.get("source_files", {}).get("first_pass") or [],
         },
-        "selected_candidates": digest.get("selected_candidates") or [],
-        "selected_items": selected_items,
-        "final_markdown_plan": {
-            "target_path_pattern": "<log-root>/YYYY/MM/YYYY-MM-DD.md",
-            "path_resolution_guidance": [
-                "사용자가 특정 저장 폴더를 '여기로' 지정하면 그 폴더를 log-root로 보고 바로 YYYY/MM/YYYY-MM-DD.md를 만든다.",
-                "사용자가 상위 폴더를 주고 '이 아래에 만들어줘'라고 하면 <지정 폴더>/daily-work-log를 log-root로 만든다.",
-                "두 해석이 모호하면 최종 Markdown을 쓰기 전에 사용자에게 확인한다.",
-                "사용자가 명시한 저장 폴더 뒤에 daily-work-log/를 임의로 한 번 더 붙이지 않는다.",
-            ],
-            "frontmatter_required": {
-                "date": digest.get("date"),
-                "type": "daily-work-log",
-                "summary": "",
-                "tags": [],
-            },
-            "write_guidance": [
-                "구체적인 코드나 원시 로그 대신, 사용자가 기억을 되살릴 수 있는 업무 식별 정보와 높은 수준의 요약을 쓴다.",
-                "관련 repo, 모듈, 기술 스택, KB/세션/문서 경로는 남긴다.",
-                "최종 tags는 문서를 다 쓴 뒤 검색 키워드 관점으로 채운다.",
-            ],
-        },
     }
+    if impact_items:
+        result["impact"] = {
+            "impact_items": list(impact_items),
+            "findings": {item: [] for item in impact_items},
+        }
+    result["selected_candidates"] = digest.get("selected_candidates") or []
+    result["selected_items"] = selected_items
+    result["final_markdown_plan"] = {
+        "target_path_pattern": "<log-root>/YYYY/MM/YYYY-MM-DD.md",
+        "path_resolution_guidance": [
+            "사용자가 특정 저장 폴더를 '여기로' 지정하면 그 폴더를 log-root로 보고 바로 YYYY/MM/YYYY-MM-DD.md를 만든다.",
+            "사용자가 상위 폴더를 주고 '이 아래에 만들어줘'라고 하면 <지정 폴더>/daily-work-log를 log-root로 만든다.",
+            "두 해석이 모호하면 최종 Markdown을 쓰기 전에 사용자에게 확인한다.",
+            "사용자가 명시한 저장 폴더 뒤에 daily-work-log/를 임의로 한 번 더 붙이지 않는다.",
+        ],
+        "frontmatter_required": {
+            "date": digest.get("date"),
+            "type": "daily-work-log",
+            "summary": "",
+            "tags": [],
+        },
+        "write_guidance": [
+            "구체적인 코드나 원시 로그 대신, 사용자가 기억을 되살릴 수 있는 업무 식별 정보와 높은 수준의 요약을 쓴다.",
+            "관련 repo, 모듈, 기술 스택, KB/세션/문서 경로는 남긴다.",
+            "최종 tags는 문서를 다 쓴 뒤 검색 키워드 관점으로 채운다.",
+        ],
+    }
+    return result
 
 
 def write_result(result: dict[str, Any], output: str | None, stdout: bool, state_root: Path) -> None:
@@ -176,12 +203,15 @@ def main() -> int:
     parser.add_argument("--state-root", default=str(DEFAULT_STATE_ROOT), help="기본값: ~/.daily-work-log")
     parser.add_argument("--digest", help="기본값: ~/.daily-work-log/YYYY/YYYY-MM-DD/second-pass-digest.json")
     parser.add_argument("--output", help="기본값: ~/.daily-work-log/YYYY/YYYY-MM-DD/final-info.json")
+    parser.add_argument("--config", help="기본값: ~/.daily-work-log/config.json")
     parser.add_argument("--stdout", action="store_true")
     args = parser.parse_args()
 
     state_root = Path(args.state_root).expanduser()
     digest_path = Path(args.digest).expanduser() if args.digest else default_digest_path(args.date, state_root)
-    result = build_final_info(load_json(digest_path), digest_path)
+    config_path = Path(args.config).expanduser() if args.config else default_config_path(state_root)
+    impact_items = load_impact_items(config_path)
+    result = build_final_info(load_json(digest_path), digest_path, impact_items)
     write_result(result, args.output, args.stdout, state_root)
     return 0
 
