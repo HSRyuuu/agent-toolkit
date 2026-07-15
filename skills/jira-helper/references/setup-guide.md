@@ -11,6 +11,8 @@ Jira site is unknown, or issue search returns authentication errors.
 - 한 응답에는 한 단계만 안내한다.
 - API token은 "비밀번호 대신 쓰는 개인용 열쇠"라고 풀어 설명한다.
 - token 값은 채팅창에 붙여넣지 않게 한다. 터미널의 대화형 입력으로만 받는다.
+- 설정 명령은 사용자의 터미널에서 직접 실행하게 한다. 채팅창 `!` prefix 실행을
+  권하지 않는다.
 - `<SKILL_DIR>`은 이 스킬이 실제 설치된 디렉터리의 절대 경로로 바꿔서 실행한다.
 
 ## Required Jira Access
@@ -23,7 +25,7 @@ Jira site is unknown, or issue search returns authentication errors.
 
 ## 진행 방식
 
-아래 1~5단계를 순서대로 진행한다. 이미 완료된 단계는 검증 후 건너뛴다.
+아래 1~4단계를 순서대로 진행한다. 이미 완료된 단계는 검증 후 건너뛴다.
 
 ## 1단계: Jira site 확인
 
@@ -49,36 +51,40 @@ Jira에 로그인할 때 쓰는 Atlassian 계정 email을 알려주세요.
 - 예: yourname@example.com
 ```
 
-답을 받으면 `@`가 포함된 email 형태인지 확인하고, 4단계 명령에 그대로 넣는다.
+답을 받으면 `@`가 포함된 email 형태인지 확인하고, 3단계 명령에 그대로 넣는다.
 
-## 3단계: API token 발급
+## 3단계: API token 발급과 등록
+
+token 발급과 등록 명령을 한 번에 안내한다. 중간에 "완료" 확인을 받지 않는다.
+안내 전에 아래를 실제 값으로 치환한다.
+
+- `<SKILL_DIR>` → 이 스킬이 설치된 디렉터리의 절대 경로
+- `--site`, `--email` → 1~2단계에서 채팅으로 받은 실제 값 (둘 다 필수 인자다)
+
+명령은 반드시 사용자의 터미널에서 직접 실행하게 한다. 채팅창 입력이나 `!`
+prefix 실행(`! python3 ...`)으로 안내하지 않는다.
 
 ```text
-3단계: Atlassian API token 준비
+3단계: Atlassian API token 준비와 등록
 
-API token은 비밀번호 대신 쓰는 개인용 열쇠예요. 아직 없다면 이렇게 만들어요.
+API token은 비밀번호 대신 쓰는 개인용 열쇠예요. 이전에 발급한 token 값을
+복사해둔 게 있다면 그걸 그대로 쓰면 되고, 없다면 새로 만들어요.
 
 1. 브라우저에서 https://id.atlassian.com/manage-profile/security/api-tokens 접속
 2. [Create API token] 버튼 클릭
 3. 이름을 입력하고 (예: jira-helper) 만들기
-4. 표시된 token을 복사해두기 (창을 닫으면 다시 볼 수 없어요)
+4. 표시된 token 복사
+5. 아래 명령을 터미널에 그대로 입력(복사/붙여넣기)
 
-token 값은 이 채팅창에 붙여넣지 마세요. 다음 단계에서 터미널이 안전하게 물어볼
-거예요. 준비되면 "완료"라고 알려주세요.
-```
-
-## 4단계: 로컬에 자격증명 등록
-
-아래 명령을 절대 경로로 바꿔 안내하거나 직접 실행한다. `--site`와 `--email`은
-1~2단계에서 채팅으로 받은 실제 값을 채워 넣는다 (둘 다 필수 인자다). 스크립트는
-API token만 대화형으로 묻는다.
-
-```bash
 python3 "<SKILL_DIR>/scripts/jira_setup.py" init-keys --site your-org.atlassian.net --email yourname@example.com
+
+명령이 API token을 화면에 표시되지 않는 입력으로 물어봐요. 복사한 token을
+붙여넣으면 저장됩니다. token 값은 이 채팅창에 붙여넣지 마세요. 끝나면
+"완료"라고 알려주세요.
 ```
 
-명령은 API token을 화면에 표시되지 않는 입력으로 묻는다. 입력값은
-`~/.config/jira-helper/config.json`에 저장되고 파일 권한은 `600`으로 맞춰진다.
+입력값은 `~/.config/jira-helper/config.json`에 저장되고 파일 권한은 `600`으로
+맞춰진다.
 
 **에이전트 확인:** 사용자가 완료했다고 하면 아래를 실행한다.
 
@@ -87,9 +93,9 @@ python3 "<SKILL_DIR>/scripts/jira_setup.py" profiles
 ```
 
 profile이 보이면 등록된 email이 2단계에서 받은 값과 같은지도 확인한다. 맞으면
-5단계로 간다. 없거나 다르면 어느 지점에서 막혔는지 묻고 다시 안내한다.
+4단계로 간다. 없거나 다르면 어느 지점에서 막혔는지 묻고 다시 안내한다.
 
-## 5단계: 연결과 조회 확인
+## 4단계: 연결과 조회 확인
 
 먼저 자격증명이 유효한지 확인한다. 성공하면 내 계정 이름과 accountId가
 profile에 캐시된다.
@@ -104,7 +110,7 @@ python3 "<SKILL_DIR>/scripts/jira_setup.py" auth-test
 python3 "<SKILL_DIR>/scripts/jira_setup.py" search-test
 ```
 
-401/403이 나오면 email 또는 token이 잘못된 것이다. 2~4단계를 다시 안내한다.
+401/403이 나오면 email 또는 token이 잘못된 것이다. 2~3단계를 다시 안내한다.
 
 성공하면 이렇게 마무리한다.
 
