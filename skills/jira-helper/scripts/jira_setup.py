@@ -26,8 +26,8 @@ from jira_common import (
 
 
 def command_init_keys(args: argparse.Namespace) -> int:
-    site = normalize_site(args.site or input("Jira site (예: your-org.atlassian.net): "))
-    email = (args.email or input("Atlassian 계정 email: ")).strip()
+    site = normalize_site(args.site)
+    email = args.email.strip()
     if not email or "@" not in email:
         raise JiraHelperError("email이 올바르지 않습니다.")
     api_token = getpass.getpass("Jira API token: ").strip()
@@ -116,8 +116,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     init_keys = subparsers.add_parser("init-keys", help="Register Jira credentials locally")
     init_keys.add_argument("--profile", default="default")
-    init_keys.add_argument("--site", help="예: your-org.atlassian.net")
-    init_keys.add_argument("--email", help="Atlassian 계정 email")
+    init_keys.add_argument("--site", required=True, help="예: your-org.atlassian.net")
+    init_keys.add_argument("--email", required=True, help="Atlassian 계정 email")
     init_keys.add_argument("--default-limit", type=int, default=DEFAULT_LIMIT)
     init_keys.set_defaults(func=command_init_keys)
 
