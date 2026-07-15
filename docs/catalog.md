@@ -3,13 +3,13 @@
 > `agent-toolkit` 저장소의 현재 플러그인 스킬 목록.
 > 이 문서는 `skills/*/SKILL.md` frontmatter에서 생성한다.
 >
-> Last updated: 2026-07-14
+> Last updated: 2026-07-15
 
 ## 요약
 
 | 항목 | 개수 |
 |---|---:|
-| Physical plugin skills under `skills/` | 40 |
+| Physical plugin skills under `skills/` | 41 |
 
 스킬 카테고리는 이름과 설명에서 읽는 메타데이터다. 플러그인 로더 기준의 활성 스킬 루트는 `skills/` 하나다.
 
@@ -32,6 +32,7 @@
 | [html-cheat-sheet-creator](../skills/html-cheat-sheet-creator/SKILL.md) | `html-cheat-sheet-creator` | Use when creating a single self-contained HTML cheat sheet, study card set, or reference sheet from learning material, commands, API notes, interview prep, or concept summaries. Triggers: "cheat sheet 만들어줘", "치트시트 HTML", "학습 카드 HTML", "단일 html 레퍼런스 시트", "스터디 시트", "/html-cheat-sheet-creator". Do NOT use for reports/plans, ERDs, PDF, or DOCX. |
 | [html-db-schema-viewer-creator](../skills/html-db-schema-viewer-creator/SKILL.md) | `html-db-schema-viewer-creator` | Use when the user provides DB schema input (DDL/CREATE TABLE, DBML, Mermaid erDiagram, DB MCP output, or plain-text table specs) and wants a multi-page static HTML schema viewer. Triggers: "ERD 사이트 만들어줘", "DB 뷰어 정적 사이트", "테이블별 상세 페이지 포함 ERD", "schema.dbml viewer", "DDL to multi-page HTML", "/html-db-schema-viewer-creator". Do NOT use for a single ERD image/page. |
 | [html-docs-creator](../skills/html-docs-creator/SKILL.md) | `html-docs-creator` | Use when converting user-provided text, meeting notes, plans, specs, reports, bullet lists, or spoken notes into one self-contained HTML document. Triggers: "이 내용 HTML로 정리해줘", "보고서/계획서/설계서 HTML로", "문서 HTML 변환", "회의 내용 HTML 페이지로", "단일 파일 HTML 문서", "self-contained HTML report", "/html-docs-creator". Do NOT use for PDF/DOCX output or framework apps. |
+| [jira-helper](../skills/jira-helper/SKILL.md) | `jira-helper` | Use when the user asks to set up Jira API credentials, search Jira issues, find their own tickets by period or status, look up tickets by keyword, list tickets due soon or overdue, review what they worked on over a period, read an issue's detail or comments, run raw JQL, or count issues. Read-only. Triggers: "지라", "Jira 검색", "내 티켓", "JQL", "기한 얼마 안 남은", "마감 임박", "티켓 찾아줘". |
 | [kb-lint](../skills/kb-lint/SKILL.md) | `kb-lint` | Use when health-checking a personal Markdown Knowledge Base (KB) for metadata gaps, stale uncertainty, duplicate topics, broken links, index/log drift, or sensitive-content candidates. Triggers: "kb 점검/린트해줘", "지식베이스 상태 확인", "인덱스/링크 깨진 데 있나". Read-only unless fixes are explicitly requested. Do NOT use for KB writing or search. |
 | [kb-manage](../skills/kb-manage/SKILL.md) | `kb-manage` | Use when setting up or maintaining a personal Markdown Knowledge Base (KB): resolving the KB root, explaining conventions, migrating an old layout, or maintaining index.md/log.jsonl. Triggers: "kb 만들어줘/셋업", "지식베이스 정리 규칙", "kb 루트 어디", "인덱스 정리". Do NOT use for adding knowledge, search, or health checks. |
 | [kb-search](../skills/kb-search/SKILL.md) | `kb-search` | Use when answering questions from a personal Markdown Knowledge Base (KB), finding related documents, checking whether something is already recorded, or locating source-of-truth notes without editing files. Triggers: "kb에서 찾아줘/검색해줘", "지식베이스에 ~ 있나", "전에 정리해둔 거 어디". Read-only. Do NOT use for KB writes or linting. |
