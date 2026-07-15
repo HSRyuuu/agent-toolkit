@@ -31,8 +31,9 @@ reference files) when running scripts or showing commands to the user.
 ## Identity
 
 - 모든 사용자 안내는 한글로 한다.
-- Jira API token, email, config 내용을 채팅에 붙여넣으라고 요구하지 않는다.
-  token은 `jira_setup.py init-keys`의 터미널 대화형 입력으로만 받는다.
+- Jira site와 email은 설정 단계에서 채팅으로 직접 물어봐 받는다. API token과
+  config 내용은 채팅에 붙여넣으라고 요구하지 않는다. token은
+  `jira_setup.py init-keys`의 터미널 대화형 입력으로만 받는다.
 - 설정 확인을 별도 사전 단계로 만들지 않는다. 요청받은 작업의 스크립트를 바로
   실행하고, 설정 파일/인증 오류가 나왔을 때 `references/setup-guide.md`를 읽어
   안내한다.

@@ -23,7 +23,7 @@ Jira site is unknown, or issue search returns authentication errors.
 
 ## 진행 방식
 
-아래 1~4단계를 순서대로 진행한다. 이미 완료된 단계는 검증 후 건너뛴다.
+아래 1~5단계를 순서대로 진행한다. 이미 완료된 단계는 검증 후 건너뛴다.
 
 ## 1단계: Jira site 확인
 
@@ -37,10 +37,24 @@ Jira site is unknown, or issue search returns authentication errors.
 어느 주소를 쓰는지 알려주세요.
 ```
 
-## 2단계: API token 발급
+## 2단계: Atlassian 계정 email 확인
+
+email은 채팅으로 직접 받는다.
 
 ```text
-2단계: Atlassian API token 준비
+2단계: Atlassian 계정 email 확인
+
+Jira에 로그인할 때 쓰는 Atlassian 계정 email을 알려주세요.
+
+- 예: yourname@example.com
+```
+
+답을 받으면 `@`가 포함된 email 형태인지 확인하고, 4단계 명령에 그대로 넣는다.
+
+## 3단계: API token 발급
+
+```text
+3단계: Atlassian API token 준비
 
 API token은 비밀번호 대신 쓰는 개인용 열쇠예요. 아직 없다면 이렇게 만들어요.
 
@@ -53,10 +67,11 @@ token 값은 이 채팅창에 붙여넣지 마세요. 다음 단계에서 터미
 거예요. 준비되면 "완료"라고 알려주세요.
 ```
 
-## 3단계: 로컬에 자격증명 등록
+## 4단계: 로컬에 자격증명 등록
 
-아래 명령을 절대 경로로 바꿔 안내하거나 직접 실행한다. site와 email은 인자로
-넘길 수 있고, API token은 항상 대화형으로만 묻는다.
+아래 명령을 절대 경로로 바꿔 안내하거나 직접 실행한다. `--site`와 `--email`은
+1~2단계에서 채팅으로 받은 실제 값을 채워 넣는다 (둘 다 필수 인자다). 스크립트는
+API token만 대화형으로 묻는다.
 
 ```bash
 python3 "<SKILL_DIR>/scripts/jira_setup.py" init-keys --site your-org.atlassian.net --email yourname@example.com
@@ -71,9 +86,10 @@ python3 "<SKILL_DIR>/scripts/jira_setup.py" init-keys --site your-org.atlassian.
 python3 "<SKILL_DIR>/scripts/jira_setup.py" profiles
 ```
 
-profile이 보이면 4단계로 간다. 없으면 어느 지점에서 막혔는지 묻고 다시 안내한다.
+profile이 보이면 등록된 email이 2단계에서 받은 값과 같은지도 확인한다. 맞으면
+5단계로 간다. 없거나 다르면 어느 지점에서 막혔는지 묻고 다시 안내한다.
 
-## 4단계: 연결과 조회 확인
+## 5단계: 연결과 조회 확인
 
 먼저 자격증명이 유효한지 확인한다. 성공하면 내 계정 이름과 accountId가
 profile에 캐시된다.
@@ -88,7 +104,7 @@ python3 "<SKILL_DIR>/scripts/jira_setup.py" auth-test
 python3 "<SKILL_DIR>/scripts/jira_setup.py" search-test
 ```
 
-401/403이 나오면 email 또는 token이 잘못된 것이다. 2~3단계를 다시 안내한다.
+401/403이 나오면 email 또는 token이 잘못된 것이다. 2~4단계를 다시 안내한다.
 
 성공하면 이렇게 마무리한다.
 
