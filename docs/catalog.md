@@ -3,13 +3,13 @@
 > `agent-toolkit` 저장소의 현재 플러그인 스킬 목록.
 > 이 문서는 `skills/*/SKILL.md` frontmatter에서 생성한다.
 >
-> Last updated: 2026-07-15
+> Last updated: 2026-07-16
 
 ## 요약
 
 | 항목 | 개수 |
 |---|---:|
-| Physical plugin skills under `skills/` | 41 |
+| Physical plugin skills under `skills/` | 43 |
 
 스킬 카테고리는 이름과 설명에서 읽는 메타데이터다. 플러그인 로더 기준의 활성 스킬 루트는 `skills/` 하나다.
 
@@ -27,6 +27,8 @@
 | [excel-ui-test-doc-creator](../skills/excel-ui-test-doc-creator/SKILL.md) | `excel-ui-test-doc-creator` | Use when the user wants test scenarios or test execution results turned into a unit-test or QA deliverable Excel .xlsx, with or without a provided template. Triggers: "테스트 결과 엑셀로 정리해줘", "단위테스트 산출물 만들어줘", "테스트 시나리오 xlsx로", "QA 테스트 결과서 엑셀", "/excel-ui-test-doc-creator". Do NOT use for running tests, PDF/docx reports, or updating an existing form workbook. |
 | [fastapi-guide](../skills/fastapi-guide/SKILL.md) | `fastapi-guide` | Use when writing, reviewing, or refactoring FastAPI code, APIs, routers, Pydantic models, dependencies, auth, DB sessions, async/sync behavior, middleware, exceptions, BackgroundTasks, deployment, or project structure. Triggers: "FastAPI 코드 리뷰", "APIRouter", "async vs sync", "Pydantic 모델", "FastAPI 엔드포인트", "FastAPI 프로젝트 구조". |
 | [git-actions](../skills/git-actions/SKILL.md) | `git-actions` | Use when the user asks for git work: commit, atomic commit splitting, push, PR/MR creation, pull/merge, conflict resolution, rebase, branch cleanup, or history/blame analysis. Triggers: "커밋해줘", "atomic commit", "PR 만들어줘", "main pull 해줘", "merge conflict 해결", "rebase", "git history", "이 변경 누가 언제 추가했어?", "/git-actions". |
+| [grill-me](../skills/grill-me/SKILL.md) | `grill-me` | Grill the user relentlessly about a plan, decision, or idea. Use when the user wants to stress-test their thinking, or uses any 'grill' trigger phrases. |
+| [handoff](../skills/handoff/SKILL.md) | `handoff` | Compact the current conversation into a handoff document for another agent to pick up. Manual-only (`disable-model-invocation: true`). |
 | [help-agent-toolkit](../skills/help-agent-toolkit/SKILL.md) | `help-agent-toolkit` | Use when the user asks what agent-toolkit skills exist or which agent-toolkit skill fits a task. Triggers: "agent-toolkit 스킬 목록", "어떤 스킬 있어?", "툴킷에 뭐 있어?", "/help-agent-toolkit", "이거 할 때 쓸 스킬 추천", "xxx 하려면 어떤 스킬?". Read-only. Do NOT use for non-agent-toolkit skills or performing the chosen task. |
 | [hsryuuu-writing](../skills/hsryuuu-writing/SKILL.md) | `hsryuuu-writing` | Use when writing or rewriting content in hsryuuu's blog voice from innovation123.tistory.com. Triggers: "hsryuuu처럼 써줘", "내 블로그 말투로", "innovation123 톤으로", "tistory 톤", "/hsryuuu-writing". Covers tone, wording, and sentence style only. Do NOT use for layout, section structure, or file-format decisions. |
 | [html-cheat-sheet-creator](../skills/html-cheat-sheet-creator/SKILL.md) | `html-cheat-sheet-creator` | Use when creating a single self-contained HTML cheat sheet, study card set, or reference sheet from learning material, commands, API notes, interview prep, or concept summaries. Triggers: "cheat sheet 만들어줘", "치트시트 HTML", "학습 카드 HTML", "단일 html 레퍼런스 시트", "스터디 시트", "/html-cheat-sheet-creator". Do NOT use for reports/plans, ERDs, PDF, or DOCX. |
