@@ -211,7 +211,7 @@ Claude/Codex 세션 파일(`~/.claude/projects/...`, `~/.codex/sessions/...`)은
 
 - opt-in이다. `impact-items`가 없거나 빈 배열이면 `## Impact`를 만들지 않고 기존 동작과 완전히 동일하게 작성한다. `log_root`처럼 값이 없다고 매번 물어보지 않는다. 사용자가 먼저 언급하거나 설정을 요청할 때만 config에 저장한다.
 - `impact-items`에 값이 하나라도 있으면 `## Impact`를 제목 바로 아래·`## 한눈에 보기`보다 위에 넣는다. 이 위치와 존재 여부는 사용자의 템플릿 파일 내용과 무관하게 항상 이 규칙을 따른다.
-- 섹션 안 라벨과 순서는 `impact-items` 배열의 `name`과 순서를 그대로 사용한다. 최종 Markdown에는 `description`을 그대로 노출하지 않는다 — `description`은 2차 탐색에서 LLM이 근거를 판단하는 기준으로만 쓴다.
+- 섹션 안 라벨과 순서는 `impact-items` 배열의 `name`과 순서를 그대로 사용한다. 각 라벨은 `- **{name}**` 형태로 굵게 표시한다. 최종 Markdown에는 `description`을 그대로 노출하지 않는다 — `description`은 2차 탐색에서 LLM이 근거를 판단하는 기준으로만 쓴다.
 - 그날 어떤 선택 항목에서도 근거를 찾지 못한 라벨은 생략한다. 빈 그룹을 만들지 않는다. 모든 라벨이 비면 `## Impact` 섹션 자체를 생략한다.
 - 근거가 repo에 종속된 항목(예: PR/MR 기록, git branch)은 repo별로 묶어서 표기한다. 표기 방식은 위 "참조 표기 규칙"을 그대로 따른다(repo 이름은 short-form, 로컬 전용 파일만 full path).
 - 추출은 1차/2차 수집 스크립트에 새 정규식 신호를 추가하지 않는다. 2차 상세 탐색에서 LLM이 선택 후보의 원문을 읽으며 각 `impact-items` 항목의 `description`을 기준으로 해당 근거가 있는지 함께 확인해서 채운다. 근거가 없으면 지어내지 않고 빈 채로 둔다.
@@ -222,12 +222,12 @@ Claude/Codex 세션 파일(`~/.claude/projects/...`, `~/.codex/sessions/...`)은
 ```markdown
 ## Impact
 
-- Jira Ticket
+- **Jira Ticket**
   - PROJ-1234, PROJ-1250
-- PR/MR 기록
+- **PR/MR 기록**
   - `order-api`: `feature/PROJ-1234-refund` → PR #482 (merged)
   - `payment-api`: `fix/PROJ-1250-timeout` → MR !210 (open)
-- 최종 개발 결정 사항
+- **최종 개발 결정 사항**
   - API 응답 정책은 기존 구조를 유지하고 예외 흐름만 추가하기로 결정함
 ```
 
