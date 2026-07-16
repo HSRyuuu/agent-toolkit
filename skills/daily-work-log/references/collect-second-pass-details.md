@@ -130,7 +130,11 @@ python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
     ]
   },
   "impact": {
-    "impact_items": ["Jira Ticket", "PR/MR 기록", "최종 개발 결정 사항"],
+    "impact_items": [
+      {"name": "Jira Ticket", "description": "Jira 이슈 키(예: PROJ-1234)가 언급된 것"},
+      {"name": "PR/MR 기록", "description": "생성/머지/리뷰한 PR 또는 MR"},
+      {"name": "최종 개발 결정 사항", "description": "여러 대안 중 하나로 확정한 기술/설계 결정"}
+    ],
     "findings": {
       "Jira Ticket": [],
       "PR/MR 기록": [],
@@ -197,7 +201,7 @@ python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
 
 `memory_cue`는 최종 Markdown에 그대로 쓰기 위한 문장이 아니라, 초안 작성자가 "이 항목이 무슨 일이었는지" 빠르게 이해하는 회상 단서다. `technical_context`에는 Confluence 링크, repo 이름, 코드베이스 경로, 모듈명, 기술 스택처럼 업무 식별에 도움이 되지만 민감 구현 세부는 아닌 정보를 넣는다.
 
-`impact`는 `~/.daily-work-log/config.json`의 `impact-items`가 설정된 경우에만 skeleton에 존재한다(비어있으면 이 키 자체가 없다). LLM은 각 `selected_items`의 `decisions`, `learnings` 등을 채우는 것과 같은 패스에서 선택 후보 원문(second-pass digest, 필요하면 원본 세션 work unit)을 함께 확인해 `impact.findings`의 각 라벨에 해당하는 근거를 찾아 채운다. 하루치 항목 전체를 가로지르는 day-level 요약이므로 특정 `selected_items` 하나에 종속시키지 않는다. 근거를 찾지 못한 라벨은 빈 배열로 남기고 지어내지 않는다.
+`impact`는 `~/.daily-work-log/config.json`의 `impact-items`가 설정된 경우에만 skeleton에 존재한다(비어있으면 이 키 자체가 없다). `impact.impact_items`의 각 원소는 `{"name": ..., "description": ...}` 객체다. `findings`의 키는 각 원소의 `name`이다. LLM은 각 `selected_items`의 `decisions`, `learnings` 등을 채우는 것과 같은 패스에서 선택 후보 원문(second-pass digest, 필요하면 원본 세션 work unit)을 함께 확인해, 각 항목의 `description`을 판단 기준으로 삼아 `impact.findings`의 해당 `name` 키에 근거를 찾아 채운다. 하루치 항목 전체를 가로지르는 day-level 요약이므로 특정 `selected_items` 하나에 종속시키지 않는다. 근거를 찾지 못한 항목은 빈 배열로 남기고 지어내지 않는다. `description`은 판단 기준일 뿐 최종 Markdown에 그대로 노출하지 않는다.
 
 ## 최종 Markdown 근거 방식
 

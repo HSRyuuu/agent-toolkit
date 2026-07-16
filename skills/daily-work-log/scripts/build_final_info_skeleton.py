@@ -39,7 +39,7 @@ def default_config_path(state_root: Path) -> Path:
     return state_root / "config.json"
 
 
-def load_impact_items(config_path: Path) -> list[str]:
+def load_impact_items(config_path: Path) -> list[dict[str, str]]:
     try:
         data = json.loads(config_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -49,7 +49,26 @@ def load_impact_items(config_path: Path) -> list[str]:
     items = data.get("impact-items")
     if not isinstance(items, list):
         return []
-    return [item for item in items if isinstance(item, str) and item.strip()]
+    result: list[dict[str, str]] = []
+    seen_names: set[str] = set()
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        name = item.get("name")
+        if not isinstance(name, str) or not name.strip():
+            continue
+        name = name.strip()
+        if name in seen_names:
+            continue
+        seen_names.add(name)
+        description = item.get("description")
+        result.append(
+            {
+                "name": name,
+                "description": description.strip() if isinstance(description, str) else "",
+            }
+        )
+    return result
 
 
 def slugify(text: str, fallback: str) -> str:
@@ -124,7 +143,7 @@ def build_item(detail: dict[str, Any], selected_candidate: dict[str, Any]) -> di
 def build_final_info(
     digest: dict[str, Any],
     digest_path: Path | None = None,
-    impact_items: list[str] | None = None,
+    impact_items: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
     by_group = selected_candidate_by_group(digest)
     selected_items = [
@@ -159,8 +178,8 @@ def build_final_info(
     }
     if impact_items:
         result["impact"] = {
-            "impact_items": list(impact_items),
-            "findings": {item: [] for item in impact_items},
+            "impact_items": [dict(item) for item in impact_items],
+            "findings": {item["name"]: [] for item in impact_items},
         }
     result["selected_candidates"] = digest.get("selected_candidates") or []
     result["selected_items"] = selected_items

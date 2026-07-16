@@ -59,11 +59,15 @@ class BuildFinalInfoSkeletonTests(unittest.TestCase):
             ],
         }
 
-        result = build_final_info(digest, impact_items=["Jira Ticket", "PR/MR 기록"])
+        impact_items = [
+            {"name": "Jira Ticket", "description": "Jira 이슈 키가 언급된 것"},
+            {"name": "PR/MR 기록", "description": "생성/머지/리뷰한 PR 또는 MR"},
+        ]
+        result = build_final_info(digest, impact_items=impact_items)
         self.assertEqual(
             result["impact"],
             {
-                "impact_items": ["Jira Ticket", "PR/MR 기록"],
+                "impact_items": impact_items,
                 "findings": {"Jira Ticket": [], "PR/MR 기록": []},
             },
         )
@@ -72,14 +76,32 @@ class BuildFinalInfoSkeletonTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             self.assertEqual(load_impact_items(Path(tmp) / "missing-config.json"), [])
 
-    def test_load_impact_items_reads_hyphenated_field(self) -> None:
+    def test_load_impact_items_reads_name_description_objects(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             config_path = Path(tmp) / "config.json"
             config_path.write_text(
-                json.dumps({"log_root": "/x", "impact-items": ["Jira Ticket", "", 42, "PR/MR 기록"]}),
+                json.dumps(
+                    {
+                        "log_root": "/x",
+                        "impact-items": [
+                            {"name": "Jira Ticket", "description": "이슈 키가 언급된 것"},
+                            {"name": "", "description": "이름 없는 항목"},
+                            {"description": "이름 필드 자체가 없는 항목"},
+                            "PR/MR 기록",
+                            {"name": "TODO", "description": 42},
+                            {"name": "Jira Ticket", "description": "중복 이름은 첫 항목만 유지"},
+                        ],
+                    }
+                ),
                 encoding="utf-8",
             )
-            self.assertEqual(load_impact_items(config_path), ["Jira Ticket", "PR/MR 기록"])
+            self.assertEqual(
+                load_impact_items(config_path),
+                [
+                    {"name": "Jira Ticket", "description": "이슈 키가 언급된 것"},
+                    {"name": "TODO", "description": ""},
+                ],
+            )
 
     def test_load_impact_items_without_field_returns_empty(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
