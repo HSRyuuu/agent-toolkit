@@ -8,7 +8,7 @@ description: >
   "local marketplace 등록", "플러그인 켜/꺼줘", "plugin reload",
   "marketplace refresh", "새 세션에 스킬이 안 보여", "Unknown command",
   "plugin이 로드 안 됨", "local plugin cache". Do NOT use for writing the skills
-  themselves — use writing-skills.
+  themselves — use create-new-skill.
 ---
 
 # Local Plugin Manager

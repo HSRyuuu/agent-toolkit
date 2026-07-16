@@ -147,7 +147,7 @@ awk '/^---$/{c++; if(c==2)exit; next} c==1' "$file"
 
 위 의도에 정확히 맞는 스킬이 없습니다. 가까운 영역의 스킬은 다음과 같습니다:
 - (있으면 약한 관련만 나열)
-- 아무것도 없으면 "agent-toolkit에 해당 스킬이 없습니다. 새 스킬을 만들려면 `writing-skills`를 참고하거나 `skills/<이름>/SKILL.md`를 작성하세요."
+- 아무것도 없으면 "agent-toolkit에 해당 스킬이 없습니다. 새 스킬을 만들려면 `create-new-skill`를 참고하거나 `skills/<이름>/SKILL.md`를 작성하세요."
 
 ### 외부 스킬 (agent-toolkit 밖)
 
@@ -186,7 +186,7 @@ awk '/^---$/{c++; if(c==2)exit; next} c==1' "$file"
 **플러그인 루트:** `<ROOT>`
 
 이 플러그인에 등록된 스킬이 없습니다. 새 스킬을 추가하려면:
-- `writing-skills` 참고 (새 스킬을 만들 때)
+- `create-new-skill` 참고 (새 스킬을 만들 때)
 - 직접 `skills/<이름>/SKILL.md` 작성 후 새 세션 시작
 ```
 

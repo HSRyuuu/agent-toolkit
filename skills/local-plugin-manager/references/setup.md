@@ -240,7 +240,7 @@ If it doesn't show up, use the troubleshooting checklist in [reload.md](reload.m
 
 Once wiring is verified, grow it without touching registration again:
 
-- **New skill** → `skills/<name>/SKILL.md` (frontmatter `name` + `description`). Use writing-skills.
+- **New skill** → `skills/<name>/SKILL.md` (frontmatter `name` + `description`). Use create-new-skill.
 - **Hook** → script + hooks JSON, referenced from the plugin manifest.
 - **Agent** → `agents/<name>/AGENT.md`.
 - **Slash command** → `commands/<name>.md`.

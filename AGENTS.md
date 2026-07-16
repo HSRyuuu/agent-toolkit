@@ -51,7 +51,6 @@ agent-toolkit/
 | `main()` | Python CLI | `skills/excel-ui-test-doc-creator/scripts/verify_test_doc.py` | Output xlsx verifier. |
 | `main()` | Python CLI | `skills/excel-doc-updater/scripts/profile_excel.py` | Form workbook profiler. |
 | `main()` | Python CLI | `skills/excel-doc-updater/scripts/compare_excel.py` | Before/after workbook diff. |
-| `main()` | JS CLI | `skills/writing-skills/render-graphs.js` | Render Graphviz blocks from skill docs. |
 | `main()` | Python CLI | `skills/slack-helper/scripts/slack_setup.py` / `slack_search.py` / `slack_read.py` | Slack Web API OAuth setup and read/search helpers using curl. |
 | `main()` | Python CLI | `skills/datadog-helper/scripts/datadog_setup.py` / `datadog_logs.py` / `datadog_apm.py` | Datadog logs/APM read-only helpers using curl. |
 | `main()` | Python CLI | `skills/jira-helper/scripts/jira_setup.py` / `jira_search.py` | Jira Cloud read-only search helpers using curl. |
