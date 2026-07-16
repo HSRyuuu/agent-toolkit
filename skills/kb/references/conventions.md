@@ -4,22 +4,22 @@ Single source of truth for the rules every KB skill shares: KB identity, root
 resolution, uncertainty markers, frontmatter, `agent_edit_mode`, `index.md` /
 `log.jsonl`, security principles, and the global Do-Not list.
 
-`kb-manage`, `kb-write`, `kb-search`, and `kb-lint` all defer to this file. When
-a rule here conflicts with a skill's own prose, this file wins. When local KB
+The `kb` skill's manage, write, search, and lint modes all defer to this file. When
+a rule here conflicts with a mode reference, this file wins. When local KB
 guidance (`AGENTS.md`, `CLAUDE.md`, `.agents/rules/*.md` at the resolved root)
 conflicts with this file, the local guidance wins.
 
-## Skill Routing
+## Mode Routing
 
-Route cross-skill work by skill name, never by repository layout:
+Route work by mode inside the `kb` skill, never by repository layout:
 
-- `kb-manage` owns setup, root resolution, index maintenance, and edit guards.
-- `kb-search` owns structured metadata search and recent activity.
-- `kb-lint` owns deterministic and judgement lint.
-- `kb-write` owns document mutations.
+- manage mode owns setup, root resolution, index maintenance, and edit guards.
+- search mode owns structured metadata search and recent activity.
+- lint mode owns deterministic and judgement lint.
+- write mode owns document mutations.
 
-Each skill resolves its own bundled `scripts/`, `templates/`, and `references/`
-resources internally. Cross-skill work is always delegated by skill name.
+The skill resolves its bundled `scripts/`, `templates/`, and `references/`
+resources internally. Cross-mode work follows the router in `SKILL.md`.
 
 For first-time setup and Python requirements, read
 [`getting-started.md`](./getting-started.md). Use one isolated virtual-environment
@@ -56,12 +56,12 @@ single source of truth.
 This model uses maintained documents as the foundation. It does not use a
 `sources -> wiki -> schema` shape, `_raw/` source preservation, or required
 `kind: canonical` / `kind: daily-log` document types. Migration away from those
-older shapes is described in `kb-manage`.
+older shapes is described in manage mode.
 
 ## Uncertainty Markers
 
 The only uncertainty markers are these four. Do not invent synonyms; consistency
-is what lets `kb-lint` and search find every uncertain item.
+is what lets lint and search modes find every uncertain item.
 
 - `확인 필요` — needs confirmation
 - `미정` — undecided
@@ -83,7 +83,7 @@ Resolve the KB root from the first matching source:
 3. The configured `default` KB.
 4. The single registered KB, when exactly one is configured.
 
-If the config is missing or empty, route to `kb-manage` config bootstrap. Propose
+If the config is missing or empty, use manage mode's config bootstrap. Propose
 `~/KnowledgeBase` as registration `personal` and default, while allowing the
 user to choose another absolute directory. Create or update the config after
 showing the exact change and receiving approval. Do not accept an unregistered
@@ -110,7 +110,7 @@ Multiple-KB shape:
 }
 ```
 
-For the fastest deterministic check, route to `kb-manage` and run its bundled
+For the fastest deterministic check, use manage mode and run the bundled
 `scripts/resolve_kb_root.py` with no argument, a registered absolute path, or a
 registered name such as `work`.
 
@@ -196,7 +196,7 @@ new documents as `editable` and add the field during the next meaningful update.
 
 ### Git Guard
 
-In a git-backed KB, route to `kb-manage` and run its bundled
+In a git-backed KB, use manage mode and run the bundled
 `scripts/check_agent_edit_mode.py` after changing Markdown and before reporting
 completion or preparing a git action. It accepts `--staged` and
 `--files path/a.md path/b.md`; with neither, it checks all changed Markdown.
@@ -306,8 +306,8 @@ Redaction defaults: mask secrets (`[REDACTED]`), summarize infrastructure by
 role (`internal API server`, `production database`), keep only the minimum
 necessary personal context, and preserve procedural meaning while withholding
 exploit-level detail. If a secret was already committed, recommend rotating the
-value first; rewriting git history is the user's decision. `kb-write` holds the
-operational security gate; `kb-lint` reports candidates without repeating values.
+value first; rewriting git history is the user's decision. Write mode holds the
+operational security gate; lint mode reports candidates without repeating values.
 
 ## Do Not
 

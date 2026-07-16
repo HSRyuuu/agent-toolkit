@@ -1,25 +1,25 @@
-# KB Skills Guide
+# KB Skill Guide
 
 개인 Markdown Knowledge Base 스킬을 처음 사용하는 사람을 위한
 시작점이다. 에이전트 실행 규칙은 `SKILL.md`와
 `references/` 문서가 기준이다.
 
-## 스킬 구성
+## 모드 구성
 
-| 스킬 | 용도 |
+| 모드 | 용도 |
 |---|---|
-| `kb-manage` | 최초 설정, KB 루트 등록, 규칙, index/log 관리, 마이그레이션 |
-| `kb-write` | 문서 생성, 추가, 병합, 정리 |
-| `kb-search` | 읽기 전용 검색과 질의응답 |
-| `kb-lint` | metadata, 링크, index/log, 보안 후보 점검 |
+| manage | 최초 설정, KB 루트 등록, 규칙, index/log 관리, 마이그레이션 |
+| write | 문서 생성, 추가, 병합, 정리 |
+| search | 읽기 전용 검색과 질의응답 |
+| lint | metadata, 링크, index/log, 보안 후보 점검 |
 
 ## 처음 사용할 때
 
-현재 agent host가 네 KB 스킬을 이름으로 제공하는지 확인한 뒤 다음처럼
+현재 agent host가 `kb` 스킬을 제공하는지 확인한 뒤 다음처럼
 요청한다.
 
 ```text
-kb-skills를 처음 설정해줘. 설정이 비어 있으면 ~/KnowledgeBase를 먼저 제안해줘.
+kb를 처음 설정해줘. 설정이 비어 있으면 ~/KnowledgeBase를 먼저 제안해줘.
 Python과 python-frontmatter 사전 준비부터 smoke test까지 확인해줘.
 ```
 
@@ -65,7 +65,7 @@ marketplace, `npx skills add`, Codex/Claude 수동 설치 방법과 별도 runti
 
 ## 상세 문서
 
-- [`SKILL.md`](./SKILL.md) — 에이전트용 `kb-manage` 실행 규칙
+- [`SKILL.md`](./SKILL.md) — 에이전트용 `kb` 모드 라우터
 - [`references/getting-started.md`](./references/getting-started.md) — 최초 설정과 검증
-- [`references/conventions.md`](./references/conventions.md) — 네 KB 스킬의 공통 규칙
+- [`references/conventions.md`](./references/conventions.md) — 네 모드의 공통 규칙
 - [`references/obsidian-skills.md`](./references/obsidian-skills.md) — 선택적 Obsidian 설치와 사용 경계

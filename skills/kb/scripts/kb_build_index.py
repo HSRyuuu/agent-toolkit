@@ -13,7 +13,7 @@ Modes:
     --write     write the result back to index.md
     --check     exit 1 if index.md is out of date (no write); for lint/CI
 
-Uses the frontmatter loader bundled with kb-manage.
+Uses the frontmatter loader bundled with the unified kb skill.
 """
 
 from __future__ import annotations

@@ -5,7 +5,7 @@ Covers only what a machine can decide reliably: frontmatter completeness, valid
 agent_edit_mode, date format, title/H1 match, _archived/ rules, index.md link
 targets, broken relative Markdown links, log.jsonl validity/placeholders, and
 high-confidence secret patterns. Judgement checks (duplicate topics,
-conflicting claims, split candidates) stay with the kb-lint LLM workflow.
+conflicting claims, split candidates) stay with the kb skill's lint workflow.
 
 Exit codes:
     0  no findings
@@ -13,7 +13,7 @@ Exit codes:
     2  high-risk secret candidates present (implies findings)
     3  cannot run (python-frontmatter missing)
 
-Uses the frontmatter loader bundled with kb-lint.
+Uses the frontmatter loader bundled with the unified kb skill.
 """
 
 from __future__ import annotations

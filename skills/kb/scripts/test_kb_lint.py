@@ -59,7 +59,7 @@ def write_log(root: Path) -> None:
 
 
 def new_kb() -> Path:
-    root = Path(tempfile.mkdtemp(prefix="kb-lint-"))
+    root = Path(tempfile.mkdtemp(prefix="kb-check-"))
     write_log(root)
     return root
 
@@ -90,11 +90,15 @@ def case_missing_dependency_exits_3() -> bool:
     stub = Path(tempfile.mkdtemp(prefix="kb-frontmatter-stub-"))
     (stub / "frontmatter.py").write_text('raise ModuleNotFoundError("frontmatter")\n', encoding="utf-8")
     result = run_lint(root, {"PYTHONPATH": str(stub)})
+    if sys.prefix != getattr(sys, "base_prefix", sys.prefix):
+        recovery_hint = f'"{sys.executable}" -m pip install -r'
+    else:
+        recovery_hint = ".venvs/agent-toolkit-kb"
     return check(
         "missing dependency exits 3",
         result.returncode == 3
         and "Missing dependency: python-frontmatter" in result.stderr
-        and ".venvs/agent-toolkit-kb" in result.stderr,
+        and recovery_hint in result.stderr,
         f"exit={result.returncode}",
     )
 
@@ -266,7 +270,7 @@ def case_password_values_detected() -> bool:
 def case_log_template_placeholder_reports() -> bool:
     root = new_kb()
     write_index(root, [])
-    template = Path(__file__).parents[2] / "kb-manage" / "templates" / "log.jsonl"
+    template = Path(__file__).parents[1] / "templates" / "log.jsonl"
     (root / "log.jsonl").write_text(template.read_text(encoding="utf-8"), encoding="utf-8")
     result = run_lint(root)
     return check(

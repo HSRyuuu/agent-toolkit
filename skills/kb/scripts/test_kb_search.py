@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests for deterministic KB search helper behavior.
 
-Runs kb-search scripts against throwaway KB fixtures.
+Runs the kb skill's search scripts against throwaway KB fixtures.
 Run with: python3 test_kb_search.py
 """
 
@@ -45,7 +45,7 @@ def write_doc(
 
 
 def new_kb() -> Path:
-    return Path(tempfile.mkdtemp(prefix="kb-search-"))
+    return Path(tempfile.mkdtemp(prefix="kb-query-"))
 
 
 def run_script(script_name: str, root: Path, *args: str) -> subprocess.CompletedProcess[str]:

@@ -1,26 +1,16 @@
----
-name: kb-write
-description: >
-  Use when the user wants to save, add, file, merge, or organize knowledge in a
-  personal Markdown Knowledge Base (KB), including notes, URLs, meetings,
-  onboarding, procedures, decisions, and project context. Triggers:
-  "kb에 저장/추가/정리해줘", "이거 메모/기록해둬", "지식베이스에 넣어줘". Do NOT use
-  for KB search, setup, migration, or linting.
----
-
-# kb-write
+# Write Mode
 
 ## Overview
 
 Add knowledge to a Markdown KB as curated source-of-truth documents. The
 maintained document is the truth surface.
 
-**REQUIRED SKILL:** Load `kb-manage` by name and follow its shared conventions
-for KB root resolution, frontmatter, `agent_edit_mode`, uncertainty markers,
+**Shared rules:** Read [`conventions.md`](./conventions.md) completely and follow
+its rules for KB root resolution, frontmatter, `agent_edit_mode`, uncertainty markers,
 `index.md` / `log.jsonl`, security, setup, folder structure, and migration.
 
-If this is the user's first KB write or no registered root resolves, route to
-`kb-manage` config bootstrap. Every KB root must be registered before writing.
+If this is the user's first KB write or no registered root resolves, switch to
+the config bootstrap in [`manage.md`](./manage.md). Every KB root must be registered before writing.
 When config is missing or empty, propose `~/KnowledgeBase` and allow the user to
 choose another absolute directory.
 
@@ -53,7 +43,7 @@ Most writes are small. Do not run the full ritual for a one-line note.
   secondary.
 - If provenance matters, record a safe `source` value in frontmatter or a short
   body note rather than storing raw source copies.
-- Archive retired documents per `kb-manage`: move to top-level `_archived/`, at
+- Archive retired documents per [`manage.md`](./manage.md): move to top-level `_archived/`, at
   most one grouping subfolder deep, and set `agent_edit_mode: read_only`.
 
 ## Required First Reads
@@ -61,7 +51,7 @@ Most writes are small. Do not run the full ritual for a one-line note.
 Before writing:
 
 1. Resolve the KB root using the conventions Root Resolution rules; if none
-   resolves, stop and route to `kb-manage` config bootstrap. Do not write to an
+   resolves, stop and switch to [`manage.md`](./manage.md) config bootstrap. Do not write to an
    unregistered absolute path or treat the current directory as a new KB.
 2. Read root guidance from the resolved root (`AGENTS.md`, `CLAUDE.md`,
    `.agents/rules/*.md`), even if the shell directory is elsewhere.
@@ -76,10 +66,11 @@ If the KB has project-local add/search/security/writing rules, follow those over
 ## Optional Obsidian Skill Use
 
 Use Obsidian skills only when they are available and the write task needs
-Obsidian-specific behavior. Route to `kb-manage` for its optional Obsidian
-guidance first. Plain Markdown KB writing must work without these skills.
+Obsidian-specific behavior. Read the optional Obsidian guidance through
+[`manage.md`](./manage.md) first. Plain Markdown KB writing must work without
+these skills.
 
-| Situation during write | Helpful skill | Use it for | Keep `kb-write` responsible for |
+| Situation during write | Helpful skill | Use it for | Keep the write mode responsible for |
 |---|---|---|---|
 | Creating or editing Obsidian-flavored notes | `obsidian-markdown` | wikilinks, embeds, callouts, properties/frontmatter syntax, Obsidian Markdown conventions | document ownership, factual preservation, security gate, washing, index/log updates |
 | User asks to add internal links between notes | `obsidian-markdown` | checking wikilink syntax and suggesting focused links | avoiding bulk links; only adding links that support the document's meaning |
@@ -99,7 +90,7 @@ Do not use Obsidian skills just because a KB has `.obsidian/`. Use them when the
 | URL | Read/extract the useful content if available, then store only the curated result and safe source reference. |
 | Archive request | Move the document to top-level `_archived/<filename>.md`, set `agent_edit_mode: read_only`, and update `index.md`/`log.jsonl` if maintained. |
 | Stub or unfinished document | Move it to `_inbox/stubs/` when it only names a future topic or says "to be written". Do not leave it in a normal topic folder where it may look authoritative. |
-| Broad question | Do not add. Use `kb-search` unless the user explicitly asks to file the answer back. |
+| Broad question | Do not add. Switch to [`search.md`](./search.md) unless the user explicitly asks to file the answer back. |
 | Ambiguous note | Ask only when a wrong document choice would be risky; otherwise choose the most natural location. |
 
 ## Ambiguity Gate
@@ -195,7 +186,7 @@ as `editable` and add the field during the next meaningful update.
 In a git-backed KB, after writing and before completion or any git action, run
 the guard, scoped to the files this task touched:
 
-Route to `kb-manage` and run its bundled edit-mode guard for the target files.
+Use the edit-mode guard described in [`manage.md`](./manage.md) for the target files.
 
 If it reports a `read_only` or `append_only` violation, stop. Name the protected
 file and ask whether the change was intentional. Human edits are allowed; agent
@@ -268,7 +259,7 @@ Use when the document intentionally accumulates dated notes, examples, or change
 
 Use when the user wants to retire a KB document without deleting it.
 
-- Follow the `_archived/` rules from `kb-manage`.
+- Follow the `_archived/` rules from [`manage.md`](./manage.md).
 - Preserve the original filename unless `_archived/` already has that file.
 - Keep the document content intact except for the minimum frontmatter change needed to set `agent_edit_mode: read_only`.
 - Do not invent extra archive metadata unless local KB rules require it or the user asks.

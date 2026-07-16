@@ -32,11 +32,7 @@ def main() -> int:
         for line in requirements.read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.lstrip().startswith("#")
     }
-    skills_root = SCRIPT.parents[2]
-    requirement_copies = [
-        skills_root / skill / "scripts" / "requirements.txt"
-        for skill in ("kb-manage", "kb-search", "kb-lint")
-    ]
+    requirement_copies = list(SCRIPT.parent.glob("requirements.txt"))
     base_python = getattr(sys, "_base_executable", sys.executable)
     system_run = subprocess.run(
         [base_python, str(SCRIPT)],
@@ -65,8 +61,8 @@ def main() -> int:
             requirement_lines == {"python-frontmatter==1.3.0", "PyYAML==6.0.3"},
         ),
         check(
-            "all KB skills bundle the same runtime lock",
-            len({path.read_text(encoding="utf-8") for path in requirement_copies}) == 1,
+            "unified KB skill bundles one runtime lock",
+            requirement_copies == [requirements],
         ),
         check(
             "setup guidance installs the locked requirements into the venv",

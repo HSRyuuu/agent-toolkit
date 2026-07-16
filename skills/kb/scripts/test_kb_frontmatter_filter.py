@@ -10,7 +10,7 @@ from kb_frontmatter import iter_markdown_files
 
 
 def main() -> int:
-    root = Path(tempfile.mkdtemp(prefix="kb-lint-filter-"))
+    root = Path(tempfile.mkdtemp(prefix="kb-filter-"))
     expected = {
         "note.md",
     }

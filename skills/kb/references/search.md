@@ -1,27 +1,18 @@
----
-name: kb-search
-description: >
-  Use when answering questions from a personal Markdown Knowledge Base (KB),
-  finding related documents, checking whether something is already recorded, or
-  locating source-of-truth notes without editing files. Triggers:
-  "kb에서 찾아줘/검색해줘", "지식베이스에 ~ 있나", "전에 정리해둔 거 어디". Read-only.
-  Do NOT use for KB writes or linting.
----
-
-# kb-search
+# Search Mode
 
 ## Overview
 
 Search a curated Markdown KB in read-only mode. The maintained documents are the source-of-truth surface. Do not cite `log.jsonl` as evidence for a fact; it is the primary work-history pointer for locating relevant files and past work, while the documents themselves hold the facts. Do not rely on embeddings or general web knowledge unless the user explicitly asks for outside-KB research.
 
-**REQUIRED SKILL:** Load `kb-manage` by name and follow its shared conventions
-for KB root resolution, frontmatter fields, uncertainty markers, `index.md` /
+**Shared rules:** Read [`conventions.md`](./conventions.md) completely and follow
+its rules for KB root resolution, frontmatter fields, uncertainty markers, `index.md` /
 `log.jsonl` rules, and bundled-resource routing.
 
-**First-time recovery:** if no registered root resolves, route to `kb-manage`
-config bootstrap; never search an unregistered absolute path. If the config is
-missing or empty, propose `~/KnowledgeBase` while allowing another absolute
-directory. For missing runtime packages, follow `kb-manage` first-time setup.
+**First-time recovery:** if no registered root resolves, switch to the config
+bootstrap in [`manage.md`](./manage.md); never search an unregistered absolute
+path. If the config is missing or empty, propose `~/KnowledgeBase` while
+allowing another absolute directory. For missing runtime packages, follow the
+first-time setup in [`manage.md`](./manage.md).
 Do not mutate config or install packages without approval.
 
 ## Core Principles
@@ -48,20 +39,19 @@ Do not mutate config or install packages without approval.
 
 ## Useful Commands
 
-Route root resolution to `kb-manage`, then pass the resolved absolute root to
-`kb-search`. For structured frontmatter search, use the `kb-search` bundled
-helpers:
+Use [`manage.md`](./manage.md) to resolve the root, then pass the resolved absolute root to
+the search helpers bundled with this skill:
 
-- `scripts/kb_meta_search.py <KB_ROOT> --updated 2026-07-01`
-- `scripts/kb_meta_search.py <KB_ROOT> --created 2026-07-01 --tag kafka`
-- `scripts/kb_meta_search.py <KB_ROOT> --updated-since 2026-06-01 --updated-until 2026-06-30`
-- `scripts/kb_recent_activity.py <KB_ROOT> --date 2026-07-01`
-- `scripts/kb_recent_activity.py <KB_ROOT> --since 2026-06-28`
+- `../scripts/kb_meta_search.py <KB_ROOT> --updated 2026-07-01`
+- `../scripts/kb_meta_search.py <KB_ROOT> --created 2026-07-01 --tag kafka`
+- `../scripts/kb_meta_search.py <KB_ROOT> --updated-since 2026-06-01 --updated-until 2026-06-30`
+- `../scripts/kb_recent_activity.py <KB_ROOT> --date 2026-07-01`
+- `../scripts/kb_recent_activity.py <KB_ROOT> --since 2026-06-28`
 
 Use these scripts before `rg` when the query is about structured frontmatter
 fields such as `title`, `summary`, `tags`, `aliases`, `source`, `created`,
 `updated`, or `agent_edit_mode`. They require the locked `python-frontmatter`
-and `PyYAML` runtime from the bundled `scripts/requirements.txt`. Follow the
+and `PyYAML` runtime from the bundled `../scripts/requirements.txt`. Follow the
 first-time recovery guide when it is absent or mismatched; for a read-only
 search that cannot wait for approved installation, fall back to `rg` and
 disclose that structured metadata parsing was unavailable.

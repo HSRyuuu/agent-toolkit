@@ -1,4 +1,4 @@
-# KB Skills: First-Time Setup
+# KB Skill: First-Time Setup
 
 Read this file completely when the user is using the KB skills for the first
 time, no KB root resolves, or a KB Python helper reports a missing dependency.
@@ -11,19 +11,18 @@ The KB workflow has three persistent locations:
 - the absolute KB root path recorded in that config
 - `~/.venvs/agent-toolkit-kb` — isolated Python runtime for KB helpers
 
-All bundled-resource resolution is internal to the active skill. Route work by
-the skill name:
+All bundled-resource resolution is internal to the `kb` skill. Route work by
+mode:
 
-| Task | Route to |
+| Task | Mode |
 |---|---|
-| setup, root resolution, index, edit guard | `kb-manage` |
-| structured search and recent activity | `kb-search` |
-| deterministic and judgement lint | `kb-lint` |
-| first real document write | `kb-write` |
+| setup, root resolution, index, edit guard | manage |
+| structured search and recent activity | search |
+| deterministic and judgement lint | lint |
+| first real document write | write |
 
-When a bundled helper is needed, resolve its `scripts/` resource from that
-skill itself. Never walk through another skill's directory or assume the four
-skills share a parent directory.
+When a bundled helper is needed, resolve it from this skill's `scripts/`
+directory. Never walk through another skill directory.
 
 ## Installation Approval Invariant
 
@@ -46,8 +45,8 @@ The bundled `scripts/requirements.txt` locks both packages. Do not rely on
 
 ## 1. Confirm Skill Availability
 
-Confirm the host exposes `kb-manage`, `kb-write`, `kb-search`, and `kb-lint` by
-those names. If any are missing, report the missing skill name. Do not guess an
+Confirm the host exposes the `kb` skill by that name. If it is missing, report
+the missing skill name. Do not guess an
 installation method or install anything without the approval gate.
 
 ## 2. Check Python
@@ -55,35 +54,35 @@ installation method or install anything without the approval gate.
 Use a dedicated virtual environment so Homebrew/system Python remains
 untouched. The default KB interpreter is
 `~/.venvs/agent-toolkit-kb/bin/python` (`Scripts/python.exe` on Windows).
-Confirm the base Python is 3.10 or newer, then route to `kb-manage` and run its
+Confirm the base Python is 3.10 or newer, then use manage mode and run the
 bundled `scripts/check_kb_prerequisites.py`.
 
 If Python is missing or too old, ask whether the user wants to select an
 existing Python 3.10+ executable or install one. If the default venv is absent,
 or a locked runtime package is missing or mismatched, resolve the bundled
-`kb-manage/scripts/requirements.txt`, show its exact path and these commands,
+`scripts/requirements.txt`, show its exact path and these commands,
 then run them only after approval:
 
 ```bash
 python3 -m venv ~/.venvs/agent-toolkit-kb
-~/.venvs/agent-toolkit-kb/bin/python -m pip install -r <kb-manage-skill>/scripts/requirements.txt
+~/.venvs/agent-toolkit-kb/bin/python -m pip install -r <kb-skill>/scripts/requirements.txt
 ```
 
 Replace the first `python3` with the selected base executable when different.
 Do not activate the venv implicitly; invoke its Python path explicitly for
 deterministic helper runs. Do not use `sudo`, `--user`,
-`--break-system-packages`, or modify a system Python. Rerun the `kb-manage`
+`--break-system-packages`, or modify a system Python. Rerun the manage-mode
 prerequisite check with the venv Python and require exit `0`.
 The check must confirm exact locked versions of both `python-frontmatter` and
 `PyYAML`.
 
-Obsidian Agent Skills are optional. When requested, route to `kb-manage` and
+Obsidian Agent Skills are optional. When requested, use manage mode and
 follow its `references/obsidian-skills.md` confirmation gate.
 
 ## 3. Configure The KB Root First
 
-Every KB root must be registered in `~/.config/kb/kb-config.json` before any KB
-skill uses it. Inspect the config read-only first.
+Every KB root must be registered in `~/.config/kb/kb-config.json` before any
+mode uses it. Inspect the config read-only first.
 
 When the file is missing or contains no registered KB, propose
 `~/KnowledgeBase` with registration name `personal` and make it the default.
@@ -111,7 +110,7 @@ stop: KB search, lint, and writes cannot continue with an unregistered root.
 
 ## 4. Initialize The Root
 
-Route setup to `kb-manage`:
+Use manage mode for setup:
 
 1. Confirm the selected root is already present in `kb-config.json`.
 2. Create the root directory after approval when it does not exist.
@@ -127,15 +126,15 @@ Do not overwrite an existing file without showing the proposed change first.
 Use `~/.venvs/agent-toolkit-kb/bin/python` for every helper below and route each
 check by skill name:
 
-| Check | Skill | Bundled helper and arguments |
+| Check | Mode | Bundled helper and arguments |
 |---|---|---|
-| prerequisite | `kb-manage` | `scripts/check_kb_prerequisites.py` |
-| registered absolute root | `kb-manage` | `scripts/resolve_kb_root.py /absolute/path/to/kb` |
-| registered name | `kb-manage` | `scripts/resolve_kb_root.py personal` |
-| config JSON | `kb-manage` | validate `~/.config/kb/kb-config.json` with the selected Python |
-| index drift | `kb-manage` | `scripts/kb_build_index.py /absolute/path/to/kb --check` |
-| metadata probe | `kb-search` | `scripts/kb_meta_search.py /absolute/path/to/kb --title __kb_setup_probe__` |
-| clean lint | `kb-lint` | `scripts/kb_lint.py /absolute/path/to/kb` |
+| prerequisite | manage | `scripts/check_kb_prerequisites.py` |
+| registered absolute root | manage | `scripts/resolve_kb_root.py /absolute/path/to/kb` |
+| registered name | manage | `scripts/resolve_kb_root.py personal` |
+| config JSON | manage | validate `~/.config/kb/kb-config.json` with the selected Python |
+| index drift | manage | `scripts/kb_build_index.py /absolute/path/to/kb --check` |
+| metadata probe | search | `scripts/kb_meta_search.py /absolute/path/to/kb --title __kb_setup_probe__` |
+| clean lint | lint | `scripts/kb_lint.py /absolute/path/to/kb` |
 
 The no-result metadata probe succeeds when it exits `0`; do not create a fake
 document just to test search. Root/config checks are mandatory because KB work
@@ -143,7 +142,7 @@ never proceeds with an unregistered path.
 
 Setup is complete only when the prerequisite, applicable root/config checks,
 index check, metadata probe, and lint all pass. If the user supplies a real
-first note, route it to `kb-write`, then confirm `kb-search` can find it.
+first note, use write mode, then confirm search mode can find it.
 
 ## Completion Report
 

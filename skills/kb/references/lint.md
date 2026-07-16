@@ -1,29 +1,19 @@
----
-name: kb-lint
-description: >
-  Use when health-checking a personal Markdown Knowledge Base (KB) for metadata
-  gaps, stale uncertainty, duplicate topics, broken links, index/log drift, or
-  sensitive-content candidates. Triggers: "kb 점검/린트해줘", "지식베이스 상태 확인",
-  "인덱스/링크 깨진 데 있나". Read-only unless fixes are explicitly requested. Do
-  NOT use for KB writing or search.
----
-
-# kb-lint
+# Lint Mode
 
 ## Overview
 
 Health-check a curated Markdown KB. This lint model follows a source-of-truth document workflow: frontmatter, document clarity, `index.md`, `log.jsonl`, security hygiene, and search quality are what it checks.
 
-**REQUIRED SKILL:** Load `kb-manage` by name and follow its shared conventions
-for KB root resolution, frontmatter fields, uncertainty markers,
+**Shared rules:** Read [`conventions.md`](./conventions.md) completely and follow
+its rules for KB root resolution, frontmatter fields, uncertainty markers,
 `agent_edit_mode`, `index.md` / `log.jsonl`, security, and bundled-resource
 routing.
 
-**First-time recovery:** if no registered root resolves, route to `kb-manage`
-config bootstrap; never lint an unregistered absolute path. If the config is
-missing or empty, propose `~/KnowledgeBase` while allowing another absolute
-directory. If the helper exits `3`, follow the runtime setup. Do not mutate
-config or install packages without approval.
+**First-time recovery:** if no registered root resolves, switch to the config
+bootstrap in [`manage.md`](./manage.md); never lint an unregistered absolute
+path. If the config is missing or empty, propose `~/KnowledgeBase` while
+allowing another absolute directory. If the helper exits `3`, follow the runtime
+setup. Do not mutate config or install packages without approval.
 
 ## Default Mode
 
@@ -56,13 +46,12 @@ link targets and coverage (`_inbox/` and `_archived/` coverage is optional),
 broken relative Markdown links, absolute Markdown path warnings, `log.jsonl`
 JSON validity/template placeholders, and high-confidence secret candidates.
 
-Route to `kb-lint` and run its bundled `scripts/kb_lint.py` with the absolute KB
-root.
+Run the bundled `../scripts/kb_lint.py` with the absolute KB root.
 
 Exit `0` clean, `1` findings present, `2` high-confidence secret candidates
 present, `3` cannot run because the frontmatter runtime is missing. It needs
 the locked `python-frontmatter` and `PyYAML` versions from the bundled
-`scripts/requirements.txt`; use the prerequisite and installation flow in the
+`../scripts/requirements.txt`; use the prerequisite and installation flow in the
 first-time recovery guide.
 Run it with `~/.venvs/agent-toolkit-kb/bin/python` by default; do not install
 dependencies into Homebrew/system Python.
@@ -147,7 +136,7 @@ The grep below over-matches on purpose; use it as a candidate list, not a verdic
 
 ## Suggested Commands
 
-Resolve the KB root through `kb-manage`, then pass it explicitly to `kb-lint`.
+Resolve the KB root through [`manage.md`](./manage.md), then pass it explicitly to the lint helper.
 
 Inventory:
 
@@ -185,8 +174,8 @@ test -f "$KB_ROOT/index.md" && rg -n "\\.md\\)|\\.md" "$KB_ROOT/index.md"
 test -f "$KB_ROOT/log.jsonl" && tail -100 "$KB_ROOT/log.jsonl"
 ```
 
-For the agent edit-mode guard in git repositories, route to `kb-manage` and run
-its bundled guard.
+For the agent edit-mode guard in git repositories, follow [`manage.md`](./manage.md)
+and run the bundled guard.
 
 ## Report Shape
 

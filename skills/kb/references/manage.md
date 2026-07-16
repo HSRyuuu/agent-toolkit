@@ -1,14 +1,4 @@
----
-name: kb-manage
-description: >
-  Use when setting up or maintaining a personal Markdown Knowledge Base (KB):
-  resolving the KB root, explaining conventions, migrating an old layout, or
-  maintaining index.md/log.jsonl. Triggers: "kb 만들어줘/셋업", "지식베이스 정리 규칙",
-  "kb 루트 어디", "인덱스 정리". Do NOT use for adding knowledge, search, or health
-  checks.
----
-
-# kb-manage
+# Manage Mode
 
 ## Overview
 
@@ -17,13 +7,13 @@ Manage the KB itself: root path, identity, setup files, `index.md`, and
 maintained documents are the truth surface.
 
 Human-facing quickstart and document navigation live in
-[`README.md`](./README.md). Agent workflows must still follow this `SKILL.md`
-and the routed references below.
+[`README.md`](../README.md). Agent workflows must still follow the router and
+the routed references below.
 
 **Shared conventions live in one place:** read
-[`references/conventions.md`](./references/conventions.md) for KB identity, root
+[`conventions.md`](./conventions.md) for KB identity, root
 resolution, uncertainty markers, frontmatter, `agent_edit_mode`, `index.md` /
-`log.jsonl` rules, security principles, and resource routing. This SKILL.md covers
+`log.jsonl` rules, security principles, and resource routing. This reference covers
 only the manage-specific work: setup, templates, folder structure, migration,
 and index/log maintenance.
 
@@ -31,10 +21,10 @@ and index/log maintenance.
 
 When this is the first KB setup, no root resolves, or a Python dependency is
 missing, read
-[`references/getting-started.md`](./references/getting-started.md) completely
+[`getting-started.md`](./getting-started.md) completely
 before changing files. It is the single onboarding flow for skill availability,
 Python requirements, `python-frontmatter`, KB registration, initialization,
-skill-name routing, and smoke tests.
+mode routing, and smoke tests.
 
 Do not treat “templates were copied” as setup completion. First-time setup must
 meet the verification criteria in the getting-started guide.
@@ -68,7 +58,7 @@ Documents should be easy for humans to scan and maintain.
 - Use tables only when comparison or repeated attributes are easier to scan.
 - Do not add unstated background knowledge or stronger conclusions while cleaning.
 - Make the next action or main conclusion easy to find.
-- Follow `kb-write` Related Document Links for selective related-document links.
+- Follow the Related Document Links section in [`write.md`](./write.md) for selective links.
 
 ## Maintenance Defaults
 
@@ -80,19 +70,19 @@ Documents should be easy for humans to scan and maintain.
 - Reduce vague wording; if something is unknown, say so.
 - For large documents, consider whether smaller linked documents maintain better.
 
-## Skill Split
+## Mode Responsibilities
 
-| Skill | Responsibility |
+| Mode | Responsibility |
 |---|---|
-| `kb-manage` | root path, setup, conventions home, migration, index/log identity |
-| `kb-write` | create, append, merge, update, and reorganize knowledge |
-| `kb-search` | read-only search and Q&A |
-| `kb-lint` | health check, drift detection, security candidate reporting |
+| Manage | root path, setup, conventions home, migration, index/log identity |
+| Write | create, append, merge, update, and reorganize knowledge |
+| Search | read-only search and Q&A |
+| Lint | health check, drift detection, security candidate reporting |
 
 ## Root Resolution and Guidance
 
 Resolve the KB root and read local root guidance exactly as described in
-[`references/conventions.md`](./references/conventions.md) (Root Resolution). Do
+[`conventions.md`](./conventions.md) (Root Resolution). Do
 not infer a root from the working directory. After resolving, read the resolved
 root's `AGENTS.md` / `CLAUDE.md` / `.agents/rules/*.md`; local guidance overrides
 generic defaults.
@@ -101,7 +91,7 @@ generic defaults.
 
 If the KB is also an Obsidian vault, or the user asks for Obsidian Markdown,
 Bases, Canvas, CLI, wikilinks, embeds, callouts, or properties, read
-[`references/obsidian-skills.md`](./references/obsidian-skills.md). Do not require
+[`obsidian-skills.md`](./obsidian-skills.md). Do not require
 Obsidian skills for normal KB work.
 
 ## Setup
@@ -113,10 +103,10 @@ After the first-time prerequisite check passes, initialize a KB:
    let the user choose another absolute directory instead.
 3. Show and approve the config change, then write it before root initialization.
 4. Create the registered root directory only after approval if it does not exist.
-5. Create or adapt `AGENTS.md` from `templates/AGENTS.md` if no agent entrypoint
+5. Create or adapt `AGENTS.md` from `../templates/AGENTS.md` if no agent entrypoint
    exists.
-6. Create or adapt `index.md` from `templates/index.md` if missing.
-7. Create `log.jsonl` from `templates/log.jsonl` — it is the primary
+6. Create or adapt `index.md` from `../templates/index.md` if missing.
+7. Create `log.jsonl` from `../templates/log.jsonl` — it is the primary
    work-history trail and must work without git (see conventions). Replace
    placeholders with the setup datetime and a root-specific summary. Skip it
    only when the user explicitly opts out of a work-history file.
@@ -127,8 +117,8 @@ After the first-time prerequisite check passes, initialize a KB:
 
 ### Template Usage
 
-Setup templates live next to this skill: `templates/AGENTS.md`,
-`templates/index.md`, `templates/log.jsonl`. Use them as starting points, not
+Setup templates live next to this skill: `../templates/AGENTS.md`,
+`../templates/index.md`, `../templates/log.jsonl`. Use them as starting points, not
 immutable boilerplate. Replace placeholders, remove irrelevant lines, and
 preserve existing local rules. Do not overwrite an existing setup file without
 showing the intended change first.
@@ -221,14 +211,14 @@ the shape. Keep it content-oriented, not chronological, and do not include every
 heading or long excerpts.
 
 Prefer regenerating the Documents catalog from frontmatter instead of editing
-it by hand. Route to `kb-manage` and use its bundled
-`scripts/kb_build_index.py`: pass the KB root for preview, add `--write` to
+it by hand. Use the bundled
+`../scripts/kb_build_index.py`: pass the KB root for preview, add `--write` to
 apply, or add `--check` for drift verification. The script preserves the
 human-written preamble and rewrites only the generated marker block.
 
 It needs the locked `python-frontmatter` and `PyYAML` runtime from the bundled
-`scripts/requirements.txt`. Use the prerequisite and installation flow in
-[`references/getting-started.md`](./references/getting-started.md); never switch
+`../scripts/requirements.txt`. Use the prerequisite and installation flow in
+[`getting-started.md`](./getting-started.md); never switch
 Python interpreters between installation and script execution. By default, run
 it with `~/.venvs/agent-toolkit-kb/bin/python`, not Homebrew/system Python.
 

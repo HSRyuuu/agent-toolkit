@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared helpers for KB frontmatter search scripts."""
+"""Shared frontmatter helpers for the unified kb skill."""
 
 from __future__ import annotations
 
@@ -42,7 +42,7 @@ def require_frontmatter() -> None:
         recovery = (
             f'  "{sys.executable}" -m venv "{DEFAULT_VENV_PYTHON.parent.parent}"\n'
             f'  "{DEFAULT_VENV_PYTHON}" -m pip install -r "{REQUIREMENTS_FILE}"\n'
-            f'  "{DEFAULT_VENV_PYTHON}" <kb-search-script> [args]'
+            f'  "{DEFAULT_VENV_PYTHON}" <kb-script> [args]'
         )
     print(
         "Missing dependency: python-frontmatter (import name: frontmatter). "

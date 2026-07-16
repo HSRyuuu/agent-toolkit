@@ -83,7 +83,7 @@ codex plugin marketplace upgrade hsryuuu
 전체 스킬 목록과 트리거는 [docs/catalog.md](docs/catalog.md)를 본다. 스킬의 카테고리는 문서상의 메타데이터일 뿐이며, 로더 구조를 나누는 디렉토리 기준이 아니다.
 
 KB 스킬의 최초 설정과 선택적 Obsidian 연동은
-[`skills/kb-manage/README.md`](skills/kb-manage/README.md)를 본다.
+[`skills/kb/README.md`](skills/kb/README.md)를 본다.
 
 ## 갱신
 

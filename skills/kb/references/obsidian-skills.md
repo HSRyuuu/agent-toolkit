@@ -4,8 +4,8 @@ Use this reference when a Markdown KB is also an Obsidian vault, or when the
 user asks for wikilinks, embeds, callouts, properties, Bases, Canvas, or the
 Obsidian CLI.
 
-Obsidian support is optional. Normal `kb-manage`, `kb-write`, `kb-search`, and
-`kb-lint` work must remain usable as plain Markdown workflows.
+Obsidian support is optional. The `kb` skill's manage, write, search, and lint
+modes must remain usable as plain Markdown workflows.
 
 Official source: [`kepano/obsidian-skills`](https://github.com/kepano/obsidian-skills)
 
