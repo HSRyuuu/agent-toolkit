@@ -48,16 +48,10 @@ Use local KB rules if present. Otherwise:
 
 Documents should be easy for humans to scan and maintain.
 
-- Make headings describe the flow of the document.
-- Keep one central idea per paragraph.
 - Split a document when it starts covering multiple topics, systems, procedures,
   or decisions.
-- Use lists for procedures, conditions, checklists, decisions, and action items.
 - Separate background, current state, decisions, next actions, and open questions.
 - Prefer exact dates over relative dates when timing matters.
-- Use tables only when comparison or repeated attributes are easier to scan.
-- Do not add unstated background knowledge or stronger conclusions while cleaning.
-- Make the next action or main conclusion easy to find.
 - Follow the Related Document Links section in [`write.md`](./write.md) for selective links.
 
 ## Maintenance Defaults
@@ -82,10 +76,7 @@ Documents should be easy for humans to scan and maintain.
 ## Root Resolution and Guidance
 
 Resolve the KB root and read local root guidance exactly as described in
-[`conventions.md`](./conventions.md) (Root Resolution). Do
-not infer a root from the working directory. After resolving, read the resolved
-root's `AGENTS.md` / `CLAUDE.md` / `.agents/rules/*.md`; local guidance overrides
-generic defaults.
+[`conventions.md`](./conventions.md) (Root Resolution).
 
 ## Optional Obsidian Support
 
@@ -106,10 +97,10 @@ After the first-time prerequisite check passes, initialize a KB:
 5. Create or adapt `AGENTS.md` from `../templates/AGENTS.md` if no agent entrypoint
    exists.
 6. Create or adapt `index.md` from `../templates/index.md` if missing.
-7. Create `log.jsonl` from `../templates/log.jsonl` — it is the primary
-   work-history trail and must work without git (see conventions). Replace
-   placeholders with the setup datetime and a root-specific summary. Skip it
-   only when the user explicitly opts out of a work-history file.
+7. Create `log.jsonl` from `../templates/log.jsonl` (see conventions Work
+   History). Replace placeholders with the setup datetime and a root-specific
+   summary. Skip it only when the user explicitly opts out of a work-history
+   file.
 8. Do not create `_raw/`.
 9. Create `_inbox/` only if the user explicitly wants a staging area.
 10. Run the getting-started verification sequence. Remove all template
@@ -216,18 +207,13 @@ it by hand. Use the bundled
 apply, or add `--check` for drift verification. The script preserves the
 human-written preamble and rewrites only the generated marker block.
 
-It needs the locked `python-frontmatter` and `PyYAML` runtime from the bundled
-`../scripts/requirements.txt`. Use the prerequisite and installation flow in
-[`getting-started.md`](./getting-started.md); never switch
-Python interpreters between installation and script execution. By default, run
-it with `~/.venvs/agent-toolkit-kb/bin/python`, not Homebrew/system Python.
+Run it with the runtime from [`getting-started.md`](./getting-started.md);
+never switch Python interpreters between installation and script execution.
 
 ## Log Maintenance
 
-`log.jsonl` is the primary work-history trail and must work without git (see
-conventions). Maintain it by default: append entries for setup,
-add/update/merge/append, lint runs with meaningful findings, index rebuilds, and
-migrations. If it is missing in an existing KB, treat that as a maintenance gap
-and offer to start it. Git history, when the KB is git-backed, is a
-supplementary reference only. Do not log routine read-only searches unless the
-user asks for a research trail.
+Maintain `log.jsonl` by default (see conventions Work History): append entries
+for setup, add/update/merge/append, lint runs with meaningful findings, index
+rebuilds, and migrations. If it is missing in an existing KB, treat that as a
+maintenance gap and offer to start it. Do not log routine read-only searches
+unless the user asks for a research trail.

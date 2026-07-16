@@ -11,8 +11,6 @@ its rules for KB root resolution, frontmatter, `agent_edit_mode`, uncertainty ma
 
 If this is the user's first KB write or no registered root resolves, switch to
 the config bootstrap in [`manage.md`](./manage.md). Every KB root must be registered before writing.
-When config is missing or empty, propose `~/KnowledgeBase` and allow the user to
-choose another absolute directory.
 
 ## Fast Path vs Full Path
 
@@ -31,7 +29,7 @@ Most writes are small. Do not run the full ritual for a one-line note.
 
 - Preserve facts, numbers, dates, names, conditions, uncertainty, and user intent.
 - Do not mix confirmed facts with guesses. Use the canonical uncertainty markers
-  (`확인 필요`, `미정`, `추정`, `과거 정보`) from conventions.
+  from conventions.
 - Follow the conventions Security Principles storage restrictions; do not store
   sensitive values without explicit user approval (see Security Gate).
 - Prefer one focused document per topic, system, procedure, decision, or working
@@ -39,47 +37,34 @@ Most writes are small. Do not run the full ritual for a one-line note.
 - Update existing documents when the input changes or extends an existing topic;
   create a new document when the input is a distinct topic someone would search
   for later.
-- Keep the KB readable by humans first; Obsidian links and graph health are
-  secondary.
 - If provenance matters, record a safe `source` value in frontmatter or a short
   body note rather than storing raw source copies.
-- Archive retired documents per [`manage.md`](./manage.md): move to top-level `_archived/`, at
-  most one grouping subfolder deep, and set `agent_edit_mode: read_only`.
+- Archive retired documents per the Archived Documents rules in [`manage.md`](./manage.md).
 
 ## Required First Reads
 
 Before writing:
 
-1. Resolve the KB root using the conventions Root Resolution rules; if none
-   resolves, stop and switch to [`manage.md`](./manage.md) config bootstrap. Do not write to an
-   unregistered absolute path or treat the current directory as a new KB.
-2. Read root guidance from the resolved root (`AGENTS.md`, `CLAUDE.md`,
-   `.agents/rules/*.md`), even if the shell directory is elsewhere.
-3. Read `index.md` if present to find existing topics.
-4. Read relevant directory `README.md` files when choosing a folder (intent, not
+1. Resolve the KB root and read local root guidance per the conventions Root
+   Resolution rules; if no root resolves, stop and switch to the
+   [`manage.md`](./manage.md) config bootstrap.
+2. Read `index.md` if present to find existing topics.
+3. Read relevant directory `README.md` files when choosing a folder (intent, not
    inventory).
-5. Read relevant existing documents before deciding create/append/merge.
-6. Check each target document's `agent_edit_mode` before drafting edits.
+4. Read relevant existing documents before deciding create/append/merge.
+5. Check each target document's `agent_edit_mode` before drafting edits.
 
 If the KB has project-local add/search/security/writing rules, follow those over the generic defaults here.
 
 ## Optional Obsidian Skill Use
 
-Use Obsidian skills only when they are available and the write task needs
-Obsidian-specific behavior. Read the optional Obsidian guidance through
-[`manage.md`](./manage.md) first. Plain Markdown KB writing must work without
-these skills.
-
-| Situation during write | Helpful skill | Use it for | Keep the write mode responsible for |
-|---|---|---|---|
-| Creating or editing Obsidian-flavored notes | `obsidian-markdown` | wikilinks, embeds, callouts, properties/frontmatter syntax, Obsidian Markdown conventions | document ownership, factual preservation, security gate, washing, index/log updates |
-| User asks to add internal links between notes | `obsidian-markdown` | checking wikilink syntax and suggesting focused links | avoiding bulk links; only adding links that support the document's meaning |
-| User asks for a database-like Obsidian view | `obsidian-bases` | `.base` files, table/card views, filters, formulas, summaries | deciding which KB documents are source of truth and whether a view is needed |
-| User asks for a visual map or canvas | `json-canvas` | `.canvas` files, nodes, edges, groups, relationships | preserving the source documents and not replacing them with a canvas-only artifact |
-| User asks to interact with an Obsidian vault directly | `obsidian-cli` | vault search, note creation, note updates, plugin/theme-oriented vault operations | applying KB root guidance, write modes, security review, and completion reporting |
-| User provides a web page to turn into a note | `defuddle` | extracting clean Markdown from a web page | curating the extracted content into a maintained KB document instead of storing raw source |
-
-Do not use Obsidian skills just because a KB has `.obsidian/`. Use them when the requested output or local KB rules actually need Obsidian behavior.
+When a write needs Obsidian-specific behavior (wikilinks, embeds, callouts,
+`.base` views, `.canvas` maps, vault CLI operations, or web-page extraction),
+route the Obsidian-specific part through the skill table in
+[`obsidian-skills.md`](./obsidian-skills.md). The write mode stays responsible
+for document ownership, factual preservation, the security gate, washing, and
+index/log updates. Plain Markdown KB writing must work without these skills;
+do not use them just because a KB has `.obsidian/`.
 
 ## Input Handling
 
@@ -174,23 +159,14 @@ Completion check:
 
 ## Agent Edit Mode Gate
 
-Conventions holds the authoritative `agent_edit_mode` definition. As write
-behavior: `read_only` — do not edit; explain it is protected and ask before any
-change. `append_only` — keep original text exactly, add new content around it
-(prefer `>` blockquotes for commentary), never rewrite/delete/reorder or change
-existing frontmatter values. `editable` — normal writing applies.
-
-If a target file has no `agent_edit_mode`, use local KB rules; if none, treat it
-as `editable` and add the field during the next meaningful update.
+Apply the authoritative `agent_edit_mode` rules from conventions (Agent Edit
+Mode) before drafting edits. Write-specific note: for `append_only` additions,
+prefer `>` blockquotes for commentary.
 
 In a git-backed KB, after writing and before completion or any git action, run
-the guard, scoped to the files this task touched:
-
-Use the edit-mode guard described in [`manage.md`](./manage.md) for the target files.
-
-If it reports a `read_only` or `append_only` violation, stop. Name the protected
-file and ask whether the change was intentional. Human edits are allowed; agent
-protected changes require confirmation.
+the Git Guard from conventions (`scripts/check_agent_edit_mode.py`), scoped with
+`--files` to the documents this task touched. If it reports a violation, stop,
+name the protected file, and ask whether the change was intentional.
 
 In a non-git KB, the guard cannot compare against tracked history. Respect the field directly and ask before any protected change.
 
@@ -293,22 +269,12 @@ After successful writes:
 1. Update `index.md` if present.
    - Add or adjust the document link, one-line summary, and tags/category.
    - Keep it content-oriented, not chronological.
-2. Append one JSON object to `log.jsonl` — it is the primary work-history
-   trail and works without git.
-   - Keep it short and parseable.
-   - Do not include secrets or sensitive raw details.
+2. Append one JSON object to `log.jsonl` using the entry shape and rules in
+   conventions (Work History).
 
-Recommended log shape:
+If `index.md` does not exist, do not create it unless the user asked for KB setup/management or the local rules say it is required. If `log.jsonl` is missing, create it with this write's entry unless local KB rules opt out; mention the creation in the completion report. A log problem should never block the write itself.
 
-```json
-{"datetime":"YYYY-MM-DDTHH:MM:SS+09:00","type":"add|update|merge|append","summary":"짧은 작업 요약","files":["path/to/doc.md"],"source":"user-note","commit":null}
-```
-
-Use timezone-aware ISO 8601 datetimes. Prefer the KB/user local timezone when known; never write a bare date or timezone-less local time.
-
-If `index.md` does not exist, do not create it unless the user asked for KB setup/management or the local rules say it is required. If `log.jsonl` is missing, create it with this write's entry (it is the default work-history file) unless local KB rules opt out; mention the creation in the completion report. A log problem should never block the write itself.
-
-In a git-backed KB, git is a supplementary reference: when the user commits KB work, suggest the `kb: add|update|merge|append <doc> — <summary>` commit-message convention from conventions so git history stays searchable, but never treat a commit as a substitute for the `log.jsonl` entry.
+When the user commits KB work in a git-backed KB, suggest the commit-message convention from conventions (Work History).
 
 ## Completion Report
 

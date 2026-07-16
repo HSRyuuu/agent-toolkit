@@ -2,7 +2,7 @@
 
 ## Overview
 
-Search a curated Markdown KB in read-only mode. The maintained documents are the source-of-truth surface. Do not cite `log.jsonl` as evidence for a fact; it is the primary work-history pointer for locating relevant files and past work, while the documents themselves hold the facts. Do not rely on embeddings or general web knowledge unless the user explicitly asks for outside-KB research.
+Search a curated Markdown KB in read-only mode. The maintained documents are the source-of-truth surface; use `log.jsonl` to locate relevant files and past work, never as evidence for a fact. Do not rely on embeddings or general web knowledge unless the user explicitly asks for outside-KB research.
 
 **Shared rules:** Read [`conventions.md`](./conventions.md) completely and follow
 its rules for KB root resolution, frontmatter fields, uncertainty markers, `index.md` /
@@ -10,10 +10,9 @@ its rules for KB root resolution, frontmatter fields, uncertainty markers, `inde
 
 **First-time recovery:** if no registered root resolves, switch to the config
 bootstrap in [`manage.md`](./manage.md); never search an unregistered absolute
-path. If the config is missing or empty, propose `~/KnowledgeBase` while
-allowing another absolute directory. For missing runtime packages, follow the
-first-time setup in [`manage.md`](./manage.md).
-Do not mutate config or install packages without approval.
+path. For missing runtime packages, follow
+[`getting-started.md`](./getting-started.md). Do not mutate config or install
+packages without approval.
 
 ## Core Principles
 
@@ -27,20 +26,20 @@ Do not mutate config or install packages without approval.
 
 ## Search Order
 
-1. Resolve the KB root using the conventions Root Resolution rules.
-2. Read root guidance files from the resolved KB root, even if the current shell directory is elsewhere.
-3. Read `index.md` first if it exists.
-4. Read relevant directory `README.md` files when folder intent helps narrow the search.
-5. Search frontmatter fields: `title`, `summary`, `tags`, `aliases`, `source`, `created`, `updated`.
-6. Search filenames and headings.
-7. Search body text with exact terms and likely synonyms.
-8. Read the most relevant documents or sections.
-9. Follow only clearly useful related links; avoid broad graph walks.
+1. Resolve the KB root and read local root guidance per the conventions Root
+   Resolution rules.
+2. Read `index.md` first if it exists.
+3. Read relevant directory `README.md` files when folder intent helps narrow the search.
+4. Search frontmatter fields: `title`, `summary`, `tags`, `aliases`, `source`, `created`, `updated`.
+5. Search filenames and headings.
+6. Search body text with exact terms and likely synonyms.
+7. Read the most relevant documents or sections.
+8. Follow only clearly useful related links; avoid broad graph walks.
 
 ## Useful Commands
 
-Use [`manage.md`](./manage.md) to resolve the root, then pass the resolved absolute root to
-the search helpers bundled with this skill:
+Resolve the root per conventions (`scripts/resolve_kb_root.py`), then pass the
+resolved absolute root to the search helpers bundled with this skill:
 
 - `../scripts/kb_meta_search.py <KB_ROOT> --updated 2026-07-01`
 - `../scripts/kb_meta_search.py <KB_ROOT> --created 2026-07-01 --tag kafka`
@@ -50,14 +49,10 @@ the search helpers bundled with this skill:
 
 Use these scripts before `rg` when the query is about structured frontmatter
 fields such as `title`, `summary`, `tags`, `aliases`, `source`, `created`,
-`updated`, or `agent_edit_mode`. They require the locked `python-frontmatter`
-and `PyYAML` runtime from the bundled `../scripts/requirements.txt`. Follow the
-first-time recovery guide when it is absent or mismatched; for a read-only
-search that cannot wait for approved installation, fall back to `rg` and
-disclose that structured metadata parsing was unavailable.
-
-Run bundled Python helpers with `~/.venvs/agent-toolkit-kb/bin/python` by
-default. Do not install dependencies into Homebrew/system Python.
+`updated`, or `agent_edit_mode`. Run them with the getting-started runtime; when
+it is absent or mismatched and a read-only search cannot wait for approved
+installation, fall back to `rg` and disclose that structured metadata parsing
+was unavailable.
 
 Inventory:
 
@@ -79,8 +74,7 @@ rg -n --glob '*.md' --glob '!**/.*/**' --glob '!**/.*' --glob '!**/node_modules/
   "<검색어>|<synonym>" "$KB_ROOT"
 ```
 
-Recent KB activity — check `log.jsonl` first; it is the primary work-history
-trail and works without git:
+Recent KB activity — check `log.jsonl` first:
 
 ```bash
 test -f "$KB_ROOT/log.jsonl" && tail -100 "$KB_ROOT/log.jsonl"
@@ -92,9 +86,9 @@ If `log.jsonl` is absent, note the gap only when the user asked about KB
 maintenance; for a normal search, fall back to git history when available and
 otherwise rely on frontmatter dates.
 
-Git history — a supplementary reference in a git-backed KB (it never replaces
-`log.jsonl`). Use it for diffs, blame, and change archaeology. Commits may
-follow the `kb: add|update|merge|append <doc> — <summary>` convention:
+Git history — a supplementary reference in a git-backed KB. Use it for diffs,
+blame, and change archaeology. Commits may follow the `kb:` convention from
+conventions (Work History):
 
 ```bash
 git log --oneline -- path/to/doc.md          # history of one document
@@ -143,5 +137,5 @@ Example:
 
 - Do not update `index.md` or `log.jsonl` during search.
 - Do not infer missing company/project facts from general knowledge.
-- Do not treat `log.jsonl` as a source of truth for facts; it is the primary work-history pointer for finding relevant files and past work, and maintained documents remain the truth surface.
+- Do not cite `log.jsonl` as evidence for a fact.
 - Do not add bulk Obsidian wikilinks while answering a search question.

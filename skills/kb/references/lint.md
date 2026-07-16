@@ -11,15 +11,15 @@ routing.
 
 **First-time recovery:** if no registered root resolves, switch to the config
 bootstrap in [`manage.md`](./manage.md); never lint an unregistered absolute
-path. If the config is missing or empty, propose `~/KnowledgeBase` while
-allowing another absolute directory. If the helper exits `3`, follow the runtime
-setup. Do not mutate config or install packages without approval.
+path. If the helper exits `3`, follow the runtime setup in
+[`getting-started.md`](./getting-started.md). Do not mutate config or install
+packages without approval.
 
 ## Default Mode
 
 Read-only report. Do not edit files unless the user explicitly asks for a fix and approves the change.
 
-Before checking, resolve the KB root using the conventions Root Resolution rules and read root guidance files from that resolved root, even if the current shell directory is elsewhere.
+Before checking, resolve the KB root and read local root guidance per the conventions Root Resolution rules.
 
 Run the two passes in order:
 
@@ -43,20 +43,17 @@ Never auto-fix sensitive content. Report it and ask.
 `kb_lint.py` reports frontmatter completeness, invalid `agent_edit_mode`, date
 format, title/H1 mismatch, `_archived/` depth and read_only rules, `index.md`
 link targets and coverage (`_inbox/` and `_archived/` coverage is optional),
-broken relative Markdown links, absolute Markdown path warnings, `log.jsonl`
+broken relative Markdown links, broken Obsidian wikilinks (filename/path
+resolution; code blocks excluded), absolute Markdown path warnings, `log.jsonl`
 JSON validity/template placeholders, and high-confidence secret candidates.
 
 Run the bundled `../scripts/kb_lint.py` with the absolute KB root.
 
 Exit `0` clean, `1` findings present, `2` high-confidence secret candidates
-present, `3` cannot run because the frontmatter runtime is missing. It needs
-the locked `python-frontmatter` and `PyYAML` versions from the bundled
-`../scripts/requirements.txt`; use the prerequisite and installation flow in the
-first-time recovery guide.
-Run it with `~/.venvs/agent-toolkit-kb/bin/python` by default; do not install
-dependencies into Homebrew/system Python.
-Treat its output as the factual base for the report, then add the judgement-only
-findings below.
+present, `3` cannot run because the frontmatter runtime is missing (follow
+[`getting-started.md`](./getting-started.md)). Run it with the getting-started
+runtime. Treat its output as the factual base for the report, then add the
+judgement-only findings below.
 
 ## Checks
 
@@ -86,14 +83,12 @@ judgement-heavy review in `[LLM]`.
 
 ### Log
 
-- `[script]` `log.jsonl` missing — it is the primary work-history trail and is expected by default, unless local KB rules opt out
+- `[script]` `log.jsonl` missing — expected by default, unless local KB rules opt out
 - `[script]` malformed `log.jsonl`, when present
 - `[script]` setup template placeholders left in `log.jsonl`
 - `[LLM]` recent changed documents with no approximate log entry
 - `[LLM]` log entries pointing to missing files, when present
 - `[script]` log entries containing sensitive raw values, when present
-
-`log.jsonl` is the primary work-history trail (it must work without git); git history is a supplementary reference. Neither is a source of truth for facts.
 
 ### Content Health
 
@@ -108,7 +103,8 @@ judgement-heavy review in `[LLM]`.
 - `[script]` broken Markdown links
 - `[script]` absolute filesystem Markdown links reported as `absolute-path-link` warnings
   without checking whether the target exists
-- `[LLM]` broken Obsidian wikilinks, if the KB uses them
+- `[script]` broken Obsidian wikilinks (`broken-wikilink`; resolves by filename
+  or vault-relative path, ignores code blocks)
 - `[LLM]` obvious missing related-document links
 - `[LLM]` excessive wikilinks that reduce readability
 
@@ -136,7 +132,7 @@ The grep below over-matches on purpose; use it as a candidate list, not a verdic
 
 ## Suggested Commands
 
-Resolve the KB root through [`manage.md`](./manage.md), then pass it explicitly to the lint helper.
+Resolve the KB root per conventions (`scripts/resolve_kb_root.py`), then pass it explicitly to the lint helper.
 
 Inventory:
 
@@ -174,8 +170,8 @@ test -f "$KB_ROOT/index.md" && rg -n "\\.md\\)|\\.md" "$KB_ROOT/index.md"
 test -f "$KB_ROOT/log.jsonl" && tail -100 "$KB_ROOT/log.jsonl"
 ```
 
-For the agent edit-mode guard in git repositories, follow [`manage.md`](./manage.md)
-and run the bundled guard.
+For the agent edit-mode guard in git repositories, run the Git Guard from
+[`conventions.md`](./conventions.md) (`scripts/check_agent_edit_mode.py`).
 
 ## Report Shape
 
@@ -206,7 +202,7 @@ Suggested next actions:
 ## Do Not
 
 - Do not create `_raw/`, `_archive/`, canonical kinds, or daily-log schemas.
-- Do not treat top-level `_archived/` as an error; it is valid when files are one or two levels below it (a direct file or one grouping subfolder) and use `agent_edit_mode: read_only`.
+- Do not treat a top-level `_archived/` layout that follows the Archived Documents rules in [`manage.md`](./manage.md) as an error.
 - Do not silently remove or mask sensitive information.
 - Do not rewrite documents during report mode.
 - Do not bulk-add wikilinks. Suggest candidates first.

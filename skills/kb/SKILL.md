@@ -1,12 +1,11 @@
 ---
 name: kb
 description: >
-  Use when working with a personal Markdown Knowledge Base (KB). Triggers include
-  "kb에 저장/추가/정리해줘", "이거 메모/기록해둬", "지식베이스에 넣어줘",
-  "kb에서 찾아줘/검색해줘", "지식베이스에 ~ 있나", "전에 정리해둔 거 어디",
-  "kb 점검/린트해줘", "지식베이스 상태 확인", "인덱스/링크 깨진 데 있나",
-  "kb 만들어줘/셋업", "지식베이스 정리 규칙", "kb 루트 어디", and "인덱스 정리".
-  Do not use for ordinary project documentation that is not a registered personal KB.
+  Use when working with a personal Markdown Knowledge Base (KB): saving or
+  organizing knowledge ("kb에 저장해줘", "이거 기록해둬"), finding what is
+  recorded ("kb에서 찾아줘"), health-checking the KB ("kb 점검해줘"), or
+  setting up and managing a KB root ("kb 셋업"). Do not use for ordinary
+  project documentation that is not a registered personal KB.
 ---
 
 # KB
@@ -37,14 +36,10 @@ invoke a secondary mode only when its own gate is satisfied.
 
 ## Shared Invariants
 
-- Read [`references/conventions.md`](references/conventions.md) before acting.
-- Resolve only registered KB roots; never infer one from the working directory.
-- Read root-local `AGENTS.md`, `CLAUDE.md`, and `.agents/rules/*.md` guidance.
-- Search and lint are read-only. Do not edit, install, or change config in them.
-- Respect `agent_edit_mode`: protect `read_only` and preserve `append_only` text.
-- Keep uncertainty explicit with `확인 필요`, `미정`, `추정`, or `과거 정보`.
-- Treat maintained documents—not `log.jsonl` or git history—as factual evidence.
-- Never store or repeat sensitive values merely because they were found.
+Read [`references/conventions.md`](references/conventions.md) before acting in
+any mode. It is the single source of truth for root resolution, local root
+guidance, frontmatter, `agent_edit_mode`, uncertainty markers, `index.md` /
+`log.jsonl`, and security. Search and lint are read-only.
 
 ## Approval Gates
 
@@ -66,4 +61,4 @@ Ask before:
 - Setup starting points: `templates/`
 
 Use bundled Python helpers with the interpreter and locked requirements defined
-by the getting-started guide. Do not install into Homebrew or system Python.
+by the getting-started guide.

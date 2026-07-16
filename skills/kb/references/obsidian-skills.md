@@ -11,8 +11,9 @@ Official source: [`kepano/obsidian-skills`](https://github.com/kepano/obsidian-s
 
 ## Installation Approval Gate
 
-**Never install automatically.** Read-only availability, command, and conflict
-checks do not need confirmation. Before any mutation, show the user:
+**Never install automatically.** Apply the Installation Approval rules from
+[`conventions.md`](./conventions.md). For Obsidian skill installation, the
+disclosed batch must show:
 
 1. source repository and installation method
 2. selected skills (or all skills)
@@ -21,11 +22,8 @@ checks do not need confirmation. Before any mutation, show the user:
 5. prerequisites or additional runtime dependencies
 6. reload/restart and verification plan
 
-Then ask for explicit confirmation. One confirmation may cover one clearly
-enumerated batch. Any newly discovered prerequisite, changed command, different
-target, update, reinstall, enablement, clone, or copy requires a new
-confirmation. A broad request such as “set it up” or “install whatever it
-needs” is not approval for undisclosed actions.
+A broad request such as “set it up” or “install whatever it needs” is not
+approval for undisclosed actions.
 
 If the agent would reload, restart, or close the user's application or agent
 session, disclose that action and ask first. Telling the user to open a fresh

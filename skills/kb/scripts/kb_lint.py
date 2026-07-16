@@ -3,8 +3,8 @@
 
 Covers only what a machine can decide reliably: frontmatter completeness, valid
 agent_edit_mode, date format, title/H1 match, _archived/ rules, index.md link
-targets, broken relative Markdown links, log.jsonl validity/placeholders, and
-high-confidence secret patterns. Judgement checks (duplicate topics,
+targets, broken relative Markdown links, broken Obsidian wikilinks,
+log.jsonl validity/placeholders, and high-confidence secret patterns. Judgement checks (duplicate topics,
 conflicting claims, split candidates) stay with the kb skill's lint workflow.
 
 Exit codes:
@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import unquote
 
-from kb_frontmatter import KbDoc, load_docs, normalize_date  # noqa: E402
+from kb_frontmatter import IGNORED_DIRS, KbDoc, load_docs, normalize_date  # noqa: E402
 
 REQUIRED_FIELDS = ("title", "summary", "tags", "aliases", "created", "updated", "agent_edit_mode")
 # aliases may be an empty list by design; only its absence is a finding.
@@ -36,6 +36,9 @@ ENTRYPOINT_NAMES = {"index.md", "readme.md", "agents.md", "claude.md"}
 VALID_MODES = {"read_only", "append_only", "editable"}
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
+WIKILINK_RE = re.compile(r"\[\[([^\[\]]+)\]\]")
+FENCE_RE = re.compile(r"^\s*(?:```|~~~)")
+INLINE_CODE_RE = re.compile(r"`[^`]*`")
 TEMPLATE_PLACEHOLDER_RE = re.compile(r"\bYYYY-MM-DD(?:THH:MM:SS)?")
 
 # High-confidence secret shapes. Value-form matches, not context keywords.
@@ -207,6 +210,48 @@ def check_links(root: Path, doc: KbDoc) -> list[Finding]:
     return out
 
 
+def build_wikilink_index(root: Path) -> set[str]:
+    """Casefolded lookup keys every wikilink target may resolve to.
+
+    Mirrors Obsidian's shortest-path resolution: a note links by basename or
+    vault-relative path (extension optional for Markdown, required otherwise).
+    """
+    keys: set[str] = set()
+    for path in root.rglob("*"):
+        if not path.is_file():
+            continue
+        rel_parts = path.relative_to(root).parts
+        if any(part.startswith(".") or part in IGNORED_DIRS for part in rel_parts):
+            continue
+        rel_posix = unicodedata.normalize("NFC", path.relative_to(root).as_posix())
+        name = unicodedata.normalize("NFC", path.name)
+        keys.add(rel_posix.casefold())
+        keys.add(name.casefold())
+        if path.suffix.lower() in {".md", ".markdown"}:
+            keys.add(rel_posix[: -len(path.suffix)].casefold())
+            keys.add(name[: -len(path.suffix)].casefold())
+    return keys
+
+
+def check_wikilinks(doc: KbDoc, index_keys: set[str]) -> list[Finding]:
+    out: list[Finding] = []
+    in_fence = False
+    for lineno, line in enumerate(doc.content.splitlines(), 1):
+        if FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        for raw in WIKILINK_RE.findall(INLINE_CODE_RE.sub("", line)):
+            target = raw.split("|", 1)[0].split("#", 1)[0].strip()
+            if not target:
+                continue  # [[#heading]] links inside the same document
+            key = unicodedata.normalize("NFC", target).casefold()
+            if key not in index_keys:
+                out.append(Finding("error", "broken-wikilink", doc.relpath, lineno, f"wikilink target not found: {target}"))
+    return out
+
+
 def scan_secrets_in_text(relpath: str, text: str) -> list[Finding]:
     out: list[Finding] = []
     for lineno, line in enumerate(text.splitlines(), 1):
@@ -256,6 +301,7 @@ def collect(root: Path) -> list[Finding]:
     findings: list[Finding] = []
     docs = load_docs(root)
     listed = {doc.relpath for doc in docs}
+    wikilink_keys = build_wikilink_index(root)
 
     for doc in docs:
         is_entrypoint = doc.path.name.lower() in ENTRYPOINT_NAMES
@@ -265,6 +311,7 @@ def collect(root: Path) -> list[Finding]:
         # index.md links are validated by check_index; avoid double-reporting.
         if doc.relpath != "index.md":
             findings += check_links(root, doc)
+        findings += check_wikilinks(doc, wikilink_keys)
         findings += scan_secrets_in_text(doc.relpath, doc.content)
 
     findings += check_index(root)

@@ -267,6 +267,61 @@ def case_password_values_detected() -> bool:
     )
 
 
+def case_wikilinks_resolve_by_name_path_and_embed() -> bool:
+    root = new_kb()
+    write_doc(root, "notes/alpha.md", title="Alpha")
+    body = "\n".join(
+        [
+            "[[alpha]]",
+            "[[notes/alpha]]",
+            "[[alpha|표시 이름]]",
+            "[[alpha#섹션]]",
+            "![[alpha]]",
+            "[[#같은 문서 헤딩]]",
+        ]
+    )
+    write_doc(root, "source.md", title="Source", body=body)
+    write_index(root, ["notes/alpha.md", "source.md"])
+    result = run_lint(root)
+    return check(
+        "wikilinks resolve by name, path, alias/heading suffix, embed",
+        result.returncode == 0 and "broken-wikilink" not in result.stdout,
+        f"exit={result.returncode}",
+    )
+
+
+def case_broken_wikilink_reports() -> bool:
+    root = new_kb()
+    write_doc(root, "source.md", title="Source", body="[[없는 문서]]")
+    write_index(root, ["source.md"])
+    result = run_lint(root)
+    return check(
+        "broken wikilink reports",
+        result.returncode == 1 and "[broken-wikilink] source.md" in result.stdout,
+        f"exit={result.returncode}",
+    )
+
+
+def case_wikilink_in_code_ignored() -> bool:
+    root = new_kb()
+    body = "\n".join(
+        [
+            "```",
+            "[[코드블록 안]]",
+            "```",
+            "인라인 `[[인라인 코드 안]]` 예시",
+        ]
+    )
+    write_doc(root, "source.md", title="Source", body=body)
+    write_index(root, ["source.md"])
+    result = run_lint(root)
+    return check(
+        "wikilink inside code blocks ignored",
+        result.returncode == 0 and "broken-wikilink" not in result.stdout,
+        f"exit={result.returncode}",
+    )
+
+
 def case_log_template_placeholder_reports() -> bool:
     root = new_kb()
     write_index(root, [])
@@ -294,6 +349,9 @@ def main() -> int:
         case_absolute_path_link_warns,
         case_password_placeholders_not_detected,
         case_password_values_detected,
+        case_wikilinks_resolve_by_name_path_and_embed,
+        case_broken_wikilink_reports,
+        case_wikilink_in_code_ignored,
         case_log_template_placeholder_reports,
     ]
     results = [case() for case in cases]

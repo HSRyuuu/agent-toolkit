@@ -26,10 +26,9 @@ directory. Never walk through another skill directory.
 
 ## Installation Approval Invariant
 
-Every installation-related mutation requires explicit user confirmation after
-the exact source, command, destination, and impact are shown. One confirmation
-may cover one fully enumerated batch; newly discovered actions require a new
-confirmation. Read-only availability and version checks do not require one.
+Follow the Installation Approval rules in
+[`conventions.md`](./conventions.md) for every installation-related mutation in
+this guide.
 
 ## Frontmatter Terms
 

@@ -22,10 +22,9 @@ The skill resolves its bundled `scripts/`, `templates/`, and `references/`
 resources internally. Cross-mode work follows the router in `SKILL.md`.
 
 For first-time setup and Python requirements, read
-[`getting-started.md`](./getting-started.md). Use one isolated virtual-environment
-interpreter for prerequisite checks, package installation, and all KB helpers.
-The default is `~/.venvs/agent-toolkit-kb/bin/python`; do not install KB
-dependencies into Homebrew/system Python.
+[`getting-started.md`](./getting-started.md). Run every prerequisite check,
+package installation, and KB helper with its one dedicated
+virtual-environment interpreter.
 
 ## Installation Approval
 
@@ -83,11 +82,9 @@ Resolve the KB root from the first matching source:
 3. The configured `default` KB.
 4. The single registered KB, when exactly one is configured.
 
-If the config is missing or empty, use manage mode's config bootstrap. Propose
-`~/KnowledgeBase` as registration `personal` and default, while allowing the
-user to choose another absolute directory. Create or update the config after
-showing the exact change and receiving approval. Do not accept an unregistered
-absolute path as a temporary bypass.
+If the config is missing or empty, use manage mode's config bootstrap
+([`getting-started.md`](./getting-started.md), Configure The KB Root First).
+Do not accept an unregistered absolute path as a temporary bypass.
 
 When several KBs are registered with no default and cwd is outside all of them,
 ask which registered KB to use. Never infer a root from an unregistered
