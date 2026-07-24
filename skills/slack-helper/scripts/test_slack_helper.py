@@ -1423,6 +1423,69 @@ def case_setup_doctor_reports_status() -> bool:
     )
 
 
+def case_write_post_and_reply_payloads() -> bool:
+    write = load_module("slack_write")
+    calls: list[tuple[str, dict[str, object]]] = []
+    original = common.slack_method
+
+    def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
+        calls.append((method, payload or {}))
+        if method == "conversations.list":
+            return {"ok": True, "channels": [{"id": "C1", "name": "backend"}]}
+        if method == "chat.getPermalink":
+            return {"ok": True, "permalink": "https://example.test/posted"}
+        return {"ok": True, "channel": "C1", "ts": "1717243200.000200"}
+
+    # --permalink + --channel 동시 지정은 API 호출 전에 거부돼야 한다.
+    conflict_raised = False
+    try:
+        write.command_reply(
+            type("Args", (), {"workspace": None, "channel": "C1", "ts": None,
+                              "permalink": "https://x.slack.com/archives/C1/p1717243200000100",
+                              "text": "hi"})()
+        )
+    except common.SlackHelperError:
+        conflict_raised = True
+
+    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
+        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
+        try:
+            common.write_json_secure(
+                Path(tmp) / "config.json",
+                {
+                    "default_workspace": "default",
+                    "workspaces": {"default": {"token": "t", "authed_user": {"access_token": "u"}}},
+                },
+            )
+            common.slack_method = fake_slack_method
+            write.slack_method = fake_slack_method
+            out = io.StringIO()
+            with redirect_stdout(out):
+                write.command_post(
+                    type("Args", (), {"workspace": None, "channel": "backend", "text": "hello"})()
+                )
+                write.command_reply(
+                    type("Args", (), {"workspace": None, "channel": None, "ts": None,
+                                      "permalink": "https://x.slack.com/archives/C1/p1717243200000100",
+                                      "text": "reply"})()
+                )
+            text = out.getvalue()
+        finally:
+            common.slack_method = original
+            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+
+    post_call = ("chat.postMessage", {"channel": "C1", "text": "hello"})
+    reply_call = ("chat.postMessage", {"channel": "C1", "text": "reply", "thread_ts": "1717243200.000100"})
+    return check(
+        "slack_write post/reply resolve channel, set thread_ts, and reject permalink+channel",
+        conflict_raised
+        and post_call in calls
+        and reply_call in calls
+        and "https://example.test/posted" in text,
+        str(calls),
+    )
+
+
 def main() -> int:
     cases = [
         case_curl_config_quote_escapes_control_chars,
@@ -1467,6 +1530,7 @@ def main() -> int:
         case_read_channel_history_range_payload,
         case_search_jsonl_output,
         case_setup_doctor_reports_status,
+        case_write_post_and_reply_payloads,
     ]
     results = [case() for case in cases]
     print(f"\n{sum(results)}/{len(results)} passed")

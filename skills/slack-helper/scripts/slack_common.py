@@ -29,6 +29,7 @@ DEFAULT_USER_SCOPES = [
     "channels:history",
     "groups:read",
     "groups:history",
+    "chat:write",
 ]
 DEFAULT_REDIRECT_URI = "http://localhost:8765/slack-helper/callback"
 SLACK_API_BASE = "https://slack.com/api"
