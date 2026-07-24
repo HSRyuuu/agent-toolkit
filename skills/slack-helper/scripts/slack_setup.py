@@ -75,17 +75,19 @@ slack-helper 처음 설정 가이드
 
 6. User Token Scopes 추가
    같은 Scopes 화면의 User Token Scopes에서 추가합니다.
-   기본으로 아래 5개를 모두 추가합니다.
+   기본으로 아래 6개를 모두 추가합니다.
    search:read: 메시지 검색
    channels:read: 공개 채널 목록 읽기
    channels:history: 공개 채널 대화와 스레드 직접 읽기
    groups:read: 사용자가 들어간 비공개 채널 목록 읽기
    groups:history: 사용자가 들어간 비공개 채널 대화와 스레드 직접 읽기
+   chat:write: 본인 이름으로 메시지 보내기(채널 게시·스레드 답글)
    참고: search.messages는 User token을 사용합니다. Bot Token Scopes만으로는 검색할 수 없습니다.
-   결론: 기본 권한은 Bot 4개 + User 5개입니다.
-   안내: 이 스킬은 여기서 등록한 권한까지만 Slack을 조회할 수 있습니다.
-   전부 읽기 권한이므로 메시지 전송, 수정, 삭제는 불가능하고,
-   등록하지 않은 권한이 필요한 조회(예: DM 읽기)도 되지 않습니다.
+   결론: 기본 권한은 Bot 4개 + User 6개입니다.
+   안내: 이 스킬은 여기서 등록한 권한까지만 Slack에서 동작합니다.
+   검색·조회는 위 권한들로 되고, 메시지 전송(채널 게시·스레드 답글)은 chat:write가 있어야 합니다.
+   등록하지 않은 권한이 필요한 일(예: DM 읽기, 메시지 수정·삭제)은 되지 않습니다.
+   (권한별로 무엇이 되는지는 references/setup-guide.md의 '권한과 할 수 있는 일' 표를 보여주세요.)
 
 7. Slack 승인 화면 열기
    python3 "{script}" oauth-start --open

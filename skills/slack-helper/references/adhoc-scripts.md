@@ -13,7 +13,7 @@
 
 - Slack 접근은 **반드시 이 스킬의 스크립트를 `subprocess`로 호출**해서 한다. `slack_search.py`·`slack_read.py`만 진입점이다.
 - 토큰 로딩·인증·Slack API 호출을 재구현하지 않는다. `~/.config/slack-helper/config.json`을 직접 읽지 않는다. `urllib`/`requests`로 `slack.com`을 직접 호출하지 않는다.
-- 조회 전용이다. 어떤 경우에도 전송·수정·삭제 동작을 넣지 않는다.
+- 임시 분석 스크립트는 **조회·집계 전용**이다. 여기에는 전송·수정·삭제 동작을 넣지 않는다. 메시지 전송이 필요하면 임시 스크립트가 아니라 `slack_write.py`(post/reply)를 직접 호출한다.
 
 **안정성**
 

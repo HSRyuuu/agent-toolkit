@@ -4,14 +4,15 @@ description: >
   Use when the user asks to search, read, summarize, or organize Slack messages,
   triage mentions or missed requests, build incident timelines, prepare weekly
   reports, run a daily review of a specific date, inspect project history,
-  search by person/channel, monitor keywords, or manage channel context cache.
+  search by person/channel, monitor keywords, manage channel context cache, or
+  send a Slack message — post to a channel or reply inside a thread.
   Triggers: "내 멘션 정리", "Slack 검색", "장애 회고", "이번 주 내가 한 일",
-  "데일리 리뷰", "그날/어제 슬랙 정리".
+  "데일리 리뷰", "그날/어제 슬랙 정리", "채널에 메시지 보내줘", "이 스레드에 답글 달아줘".
 ---
 
 # Slack Helper
 
-This skill exists to avoid Slack MCP and its token cost. Slack MCP tool definitions and raw responses consume a large amount of context; this helper replaces them with local scripts that return compact, pre-trimmed output. For Slack work, prefer this skill over Slack MCP tools even when MCP is available. The helper is read-first: it supports OAuth setup, compact Slack search/read commands, user/channel context caching, and workflow prompts for common Slack analysis tasks.
+This skill exists to avoid Slack MCP and its token cost. Slack MCP tool definitions and raw responses consume a large amount of context; this helper replaces them with local scripts that return compact, pre-trimmed output. For Slack work, prefer this skill over Slack MCP tools even when MCP is available. The helper is read-first with an explicit send capability: it supports OAuth setup, compact Slack search/read commands, sending messages (channel post / thread reply via `chat:write`), user/channel context caching, and workflow prompts for common Slack analysis tasks.
 
 Keep this file as the router. For any real task, first read `~/.config/slack-helper/MEMORY.md` if it exists and honor the user's recorded preferences; then read only the routed reference file(s) needed for that request, and call the Python scripts from this skill's `scripts/` directory. Always use the absolute path of the installed skill directory (`<SKILL_DIR>` in the reference files) — both when running scripts yourself and in any command shown to the user. Never use cwd-relative `skills/...` paths; the user's terminal and your working directory can be anywhere.
 
@@ -32,6 +33,7 @@ Keep this file as the router. For any real task, first read `~/.config/slack-hel
 | First setup, OAuth, scopes, missing config, auth check | `references/setup-guide.md` | `slack_setup.py` |
 | Mentions triage("내 멘션 정리"), incident timeline(장애 회고), weekly report("이번 주 내가 한 일"), daily review("데일리 리뷰", "어제/그날 내 슬랙 정리") | `references/workflows.md` | `slack_search.py`, `slack_read.py` |
 | 집계·통계·대량 파싱 등 기본 스크립트 범위를 넘는 분석 ("전부 세줘", "종류별로 묶어줘") | `references/adhoc-scripts.md` | scratchpad 일회용 스크립트 → `slack_search.py`, `slack_read.py` |
+| 메시지 전송 — 채널에 새 글, 스레드에 답글("채널에 보내줘", "이 스레드에 답글") | `references/scripts-reference.md` | `slack_write.py` |
 | Project history, person/channel search, keyword monitoring, other combinations | `references/scripts-reference.md` | compose scripts as needed |
 
 ## Local Files
@@ -49,11 +51,15 @@ Keep this file as the router. For any real task, first read `~/.config/slack-hel
 - `slack_setup.py`: `setup-guide`, `init-oauth`, `oauth-start`, `oauth-finish`, `auth-test`, `team-info`, `read-sample`, `doctor`, `set-me`, `resolve-me`
 - `slack_read.py`: `users`, `channels`, `channel-history`(`--on`/`--after`/`--before`/`--tz`), `thread`(`--permalink` 지원)
 - `slack_search.py`: `search`
+- `slack_write.py`: `post`(채널에 새 메시지), `reply`(스레드에 답글, `--permalink` 지원)
 - `slack_common.py`: import-only shared implementation
 
 ## Rules
 
-- **이 스킬은 조회 전용이다.** 메시지 전송·수정·삭제·리액션 기능을 제공하지 않으며, OAuth scope도 읽기 권한만 요청하므로 API 차원에서 불가능하다. 사용자가 전송류 작업을 요청하면 이 스킬의 범위 밖임을 안내한다.
+- **읽기가 기본, 쓰기는 전송만 지원한다.** 새 메시지 게시(`slack_write.py post`)와 스레드 답글(`slack_write.py reply`)만 가능하고, 메시지 수정·삭제·리액션은 제공하지 않는다.
+- **메시지를 보내기 전에는 대상과 본문을 사용자에게 그대로 보여주고 확인을 받는다.** 채널 이름/ID, 스레드 여부, 보낼 문구 전체를 먼저 확인시킨 뒤 전송한다. 확인 없이 바로 보내지 않는다.
+- 전송은 사용자 토큰(`chat:write`)으로 본인 이름으로 게시된다. `chat:write` User scope이 없으면 스크립트가 에러를 내니, 그때 `references/setup-guide.md`로 scope 추가와 OAuth 재승인을 안내한다.
+- **권한 부족으로 작업이 실패하면**(`missing_scope`, `not_in_channel`, "User token이 없습니다" 등) `references/setup-guide.md`의 `## 권한과 할 수 있는 일` 표를 사용자에게 보여주고, 실패한 작업에 필요한 권한 줄을 짚어 Slack App 추가 + OAuth 재승인을 안내한다. 온보딩 3단계에서도 같은 표를 보여준다.
 - Never ask the user to paste Slack tokens or `Client Secret` into chat. `Client Secret` is accepted only through the interactive `slack_setup.py init-oauth` prompt.
 - Config lives outside the repo at `~/.config/slack-helper`; files should be `600` and the directory `700`.
 - 채널 작업 전에 `MEMORY.md`의 채널 목록을 먼저 참고한다. 거기 없으면 `slack_read.py channels`로 찾고, 자주 쓸 채널이면 MEMORY에 기록을 제안한다.
