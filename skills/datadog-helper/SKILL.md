@@ -9,7 +9,8 @@ description: >
   queries, or manage local Datadog access context. Triggers: "Datadog 로그",
   "datadog api", "서비스 에러 로그", "로그 집계", "몇 건이야", "장애 타임라인",
   "배포 후 에러", "APM", "트레이스", "trace_id", "스팬", "느린 API", "레이턴시",
-  and in Datadog context: "기억해", "기억해줘", "memory", "MEMORY".
+  and in Datadog context: "기억해", "기억해줘", "memory", "MEMORY",
+  "빨리 찾아줘", "빠르게", "fast 모드", "max 모드", "깊게 파봐".
 ---
 
 # Datadog Helper
@@ -22,10 +23,10 @@ access memory.
 
 Keep this file as the router. For any real task, first read
 `~/.config/datadog-helper/MEMORY.md` if it exists and honor saved service,
-environment, index, and query preferences. Then read only the routed reference
-file(s), and call the Python scripts from this skill's `scripts/` directory.
-Always use the absolute installed skill directory when running scripts or showing
-commands to the user.
+environment, index, and query preferences. Then pick an execution mode
+(`## Execution Modes`), read only the routed reference file(s), and call the
+Python scripts from this skill's `scripts/` directory. Always use the absolute
+installed skill directory when running scripts or showing commands to the user.
 
 ## Identity
 
@@ -52,6 +53,85 @@ commands to the user.
 | Service errors, exception bursts, recent failures | `references/workflows/error-investigation.md` | `datadog_logs.py` |
 | Incident timeline, outage reconstruction | `references/workflows/incident-timeline.md` | `datadog_logs.py` |
 | Deploy regression, release-related errors | `references/workflows/deploy-regression.md` | `datadog_logs.py` |
+
+## Execution Modes
+
+조사 속도와 깊이를 세 모드로 조절한다. 기본은 `normal`이다.
+
+| 모드 | 탐색 subagent 모델 | 병렬 폭 | 라운드 | 쓰는 때 |
+| --- | --- | --- | --- | --- |
+| `max` | `opus` | 가설별 전개 + 교차 검증 | 필요한 만큼 | 원인을 확정해야 할 때, 장애 리포트 |
+| `normal` (기본) | `sonnet` | 2~3개 동시 | 보통 2라운드 | 일상적인 조사 |
+| `fast` | `haiku` | 3~5개 동시 | 1라운드로 끊음 | "일단 빨리 원인 후보만" |
+
+모드 선택:
+
+- 사용자가 "빠르게", "빨리 찾아줘", "fast" 라고 하면 `fast`.
+- "정확히", "깊게", "제대로", "max" 라고 하면 `max`.
+- 아무 말 없으면 `normal`. 모드를 되묻지 않는다.
+- 조사 도중 사용자가 모드를 바꾸면 다음 라운드부터 적용한다.
+
+이 스킬은 **메인 세션 모델을 바꾸지 못한다.** 위 표의 모델은 subagent에만 적용된다.
+메인까지 가볍게 쓰고 싶다는 요청을 받으면 `/model sonnet`을 직접 실행하라고 한 줄로
+안내하고 넘어간다.
+
+`fast` 모드는 1라운드 결과를 보고한 뒤 마지막에 한 문장으로 되묻는다:
+"여기까지가 빠른 탐색 결과입니다. max 모드로 추가 탐색할까요?" 사용자가 답하기 전에
+2라운드를 시작하지 않는다.
+
+## Parallel Investigation
+
+독립적인 가설이 2개 이상일 때만 subagent로 위임한다. 위임의 목적은 싼 모델을 쓰는 것이
+아니라 **순차 라운드를 폭으로 펼쳐 라운드 수를 줄이는 것**이다.
+
+위임하지 않는 경우 — 이때는 메인이 직접 스크립트를 실행하는 쪽이 항상 빠르다:
+
+- 단일 쿼리로 끝나는 요청 (subagent 기동 비용이 쿼리 비용보다 크다)
+- 앞선 결과가 있어야 다음 쿼리를 만들 수 있는 순차 의존 조사
+- 설정/인증 오류 처리, `MEMORY.md` 읽기·쓰기
+
+위임하는 경우 — 한 응답에 Agent 호출을 여러 개 넣어 동시에 띄운다:
+
+- 에러 분포 / 배포 전후 비교 / APM 레이턴시처럼 서로 다른 각도를 함께 봐야 할 때
+- 서비스가 여러 개이고 각 서비스에 같은 조사를 반복할 때
+- 후보 시간대가 여러 개라 각각 `around`로 파봐야 할 때
+
+Agent 호출 시 `model`을 위 표에 맞춰 명시한다. subagent 프롬프트는 아래 템플릿을 쓴다.
+
+```text
+[Datadog 조사 · <mode> 모드]
+
+목표: <한 문장. 이 subagent가 확인할 것 하나만>
+
+아래 명령을 그대로 실행한다. 명령을 바꾸거나 범위를 넓히지 않는다.
+
+python3 "<SKILL_DIR>/scripts/datadog_logs.py" <subcommand> --service <service> --env <env> ...
+
+컨텍스트: service=<service> env=<env> index=<index> 기간=<from~to>
+
+반환 형식:
+1. 실행한 명령 (그대로)
+2. 출력의 핵심 수치를 원문 그대로 (요약·반올림·해석 금지)
+3. 상위 <N>건까지만
+4. 결과가 비었으면 "결과 없음" 한 줄
+
+금지: 추가 쿼리로 범위 확장, 원인 결론 도출, MEMORY.md 읽기/쓰기,
+로그 원문 전체 붙여넣기, 파일 생성
+```
+
+위임 규칙:
+
+- `<SKILL_DIR>`는 설치된 스킬의 절대 경로로 치환해서 넘긴다. subagent는 상대 경로를 풀 수 없다.
+- subagent는 메인 컨텍스트를 물려받지 않는다. `MEMORY.md`에서 읽은 service/env/index 값을
+  프롬프트 안에 직접 써 넣는다. subagent에게 `MEMORY.md`를 읽게 하지 않는다.
+- subagent는 **수집만** 한다. 원인 판단, 가설 채택, 사용자 보고 문장은 메인이 쓴다.
+- 각 subagent에는 명령을 완성된 형태로 준다. 쿼리를 스스로 만들게 하면 모드와 무관하게 느려진다.
+- `fast` 모드에서는 subagent당 명령 1~2개로 제한한다.
+- 병렬 폭은 5개를 넘기지 않는다. 그 이상은 조정 비용이 이득을 넘는다.
+- 한 subagent가 실패해도 나머지 결과로 보고한다. 실패한 축은 "확인 못 함"으로 명시한다.
+
+메인은 결과를 모아 시간창, 지배적 패턴과 정확한 건수, 영향 범위, 다음 쿼리 후보를 정리한다.
+축별로 나눠 쓰지 말고 하나의 결론으로 합친다.
 
 ## Local Files
 
