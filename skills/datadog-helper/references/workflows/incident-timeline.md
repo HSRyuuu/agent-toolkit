@@ -4,6 +4,10 @@ Use this workflow for outage reconstruction, 장애 회고, or "언제부터 무
 
 ## Steps
 
+이 워크플로우는 2번 결과(스파이크 시각)가 나와야 3번 명령을 만들 수 있는 순차 의존이다.
+병렬 위임 이득이 없으니 메인이 직접 실행한다. 스파이크 후보가 여러 개로 갈릴 때만
+`around`를 시각별 subagent로 나눈다 (SKILL.md `## Parallel Investigation`).
+
 1. Read `MEMORY.md`.
 2. Find when it started with a server-side timeseries first — cheaper and more
    precise than reading events:

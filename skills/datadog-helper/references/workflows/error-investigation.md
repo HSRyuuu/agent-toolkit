@@ -4,6 +4,10 @@ Use this workflow for recent service errors, exception bursts, or "왜 에러가
 
 ## Steps
 
+3번의 세 명령(`agg`/`count`/`timeseries`)과 4번 `patterns`는 서로 의존하지 않는다.
+`normal`·`fast` 모드에서는 subagent로 한 번에 동시 실행해 라운드를 하나로 줄인다
+(SKILL.md `## Parallel Investigation`).
+
 1. Read `MEMORY.md` for service aliases, env defaults, and known index names.
 2. Search recent errors first:
 

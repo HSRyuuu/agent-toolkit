@@ -4,6 +4,10 @@ Use this workflow when the user suspects a deploy, release, version, or rollout 
 
 ## Steps
 
+2~4번은 서로 의존하지 않는다. `normal`·`fast` 모드에서는 추이 비교 / 배포 후 에러 /
+버전 한정 조회를 subagent 셋으로 동시에 돌린다 (SKILL.md `## Parallel Investigation`).
+배포 시각과 버전 태그는 위임 전에 확정해서 각 프롬프트에 값으로 넣는다.
+
 1. Read `MEMORY.md` for service/env/version tag conventions.
 2. See the error-rate shift around the deploy in one call — a timeseries spanning
    before and after the deploy time:
