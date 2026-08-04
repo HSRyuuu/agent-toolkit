@@ -148,7 +148,7 @@ secrets in `MEMORY.md`.
 
 ## Scripts
 
-- `datadog_setup.py`: `init-keys`, `auth-test`, `logs-test`, `apm-test`, `profiles`
+- `datadog_setup.py`: `init-keys`, `set-defaults`, `auth-test`, `logs-test`, `apm-test`, `profiles`
 - `datadog_logs.py`: `search`, `errors`, `timeline`, `around`, `count`, `agg`,
   `timeseries`, `fields`, `frames`, `patterns`
 - `datadog_apm.py`: `search`, `trace`, `count`, `agg`, `latency`, `timeseries`,

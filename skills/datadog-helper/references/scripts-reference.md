@@ -20,7 +20,7 @@ Use this file for general Datadog log/APM reads or when combining scripts freely
 
 | Script | Use For | Key Commands |
 | --- | --- | --- |
-| `datadog_setup.py` | API key/app key setup and checks | `init-keys`, `auth-test`, `logs-test`, `apm-test`, `profiles` |
+| `datadog_setup.py` | API key/app key setup and checks | `init-keys`, `set-defaults`, `auth-test`, `logs-test`, `apm-test`, `profiles` |
 | `datadog_logs.py` | Datadog Logs API reads | `search`, `errors`, `timeline`, `around`, `count`, `agg`, `timeseries`, `fields`, `frames`, `patterns` |
 | `datadog_apm.py` | Datadog APM Spans API reads (read-only) | `search`, `trace`, `count`, `agg`, `latency`, `timeseries`, `services`, `fields` |
 | `datadog_common.py` | Shared implementation | import-only; do not call as CLI |

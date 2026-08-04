@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import argparse
 import getpass
+import re
 from typing import Any
 
 from datadog_common import (
     DEFAULT_FROM,
     DEFAULT_LIMIT,
     DEFAULT_SITE,
+    WIDE_LIMIT,
     DatadogHelperError,
     add_profile_arg,
     config_path,
@@ -122,6 +124,36 @@ def command_apm_test(args: argparse.Namespace) -> int:
     return 0
 
 
+TIME_RANGE_PATTERN = re.compile(r"^now(-\d+[smhdwMy])?$|^\d+$|^\d{4}-\d{2}-\d{2}")
+
+
+def command_set_defaults(args: argparse.Namespace) -> int:
+    if args.default_from is None and args.default_limit is None:
+        raise DatadogHelperError("--default-from 또는 --default-limit 중 하나는 지정해야 합니다.")
+    if args.default_from is not None and not TIME_RANGE_PATTERN.match(args.default_from):
+        raise DatadogHelperError(
+            f"--default-from 형식이 올바르지 않습니다: {args.default_from} "
+            "(예: now-15m, now-1h, now-24h, epoch millis, ISO8601)"
+        )
+    if args.default_limit is not None and not (1 <= args.default_limit <= WIDE_LIMIT):
+        raise DatadogHelperError(f"--default-limit은 1~{WIDE_LIMIT} 범위여야 합니다.")
+
+    profile_name, profile = load_profile(args.profile)
+    config = load_config()
+    if args.default_from is not None:
+        profile["default_from"] = args.default_from
+    if args.default_limit is not None:
+        profile["default_limit"] = args.default_limit
+    config.setdefault("profiles", {})[profile_name] = profile
+    save_config(config)
+    print(
+        f"기본값을 저장했습니다. profile={profile_name} "
+        f"default_from={profile.get('default_from', DEFAULT_FROM)} "
+        f"default_limit={profile.get('default_limit', DEFAULT_LIMIT)}"
+    )
+    return 0
+
+
 def command_profiles(args: argparse.Namespace) -> int:
     config = load_config()
     profiles = config.get("profiles")
@@ -172,6 +204,14 @@ def build_parser() -> argparse.ArgumentParser:
     apm_test.add_argument("--from", dest="from_time", default="now-15m")
     apm_test.add_argument("--query", default="*")
     apm_test.set_defaults(func=command_apm_test)
+
+    set_defaults = subparsers.add_parser(
+        "set-defaults", help="Update default_from/default_limit for an existing profile"
+    )
+    add_profile_arg(set_defaults)
+    set_defaults.add_argument("--default-from", dest="default_from", default=None)
+    set_defaults.add_argument("--default-limit", dest="default_limit", type=int, default=None)
+    set_defaults.set_defaults(func=command_set_defaults)
 
     profiles = subparsers.add_parser("profiles", help="List configured profiles")
     profiles.set_defaults(func=command_profiles)

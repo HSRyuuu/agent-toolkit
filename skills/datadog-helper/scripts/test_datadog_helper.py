@@ -6,6 +6,7 @@ Run with: python3 test_datadog_helper.py
 
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import os
 import stat
@@ -31,6 +32,7 @@ def load_module(name: str):
 common = load_module("datadog_common")
 logs = load_module("datadog_logs")
 apm = load_module("datadog_apm")
+setup = load_module("datadog_setup")
 
 
 def check(name: str, cond: bool, detail: str = "") -> bool:
@@ -561,6 +563,59 @@ def case_config_dir_prefers_new_env_var() -> bool:
     )
 
 
+def case_set_defaults_partial_update_and_validation() -> bool:
+    with tempfile.TemporaryDirectory(prefix="datadog-helper-test-") as tmp:
+        os.environ["DATADOG_HELPER_CONFIG_DIR"] = tmp
+        try:
+            common.save_config(
+                {
+                    "default_profile": "default",
+                    "profiles": {
+                        "default": {
+                            "site": "datadoghq.com",
+                            "api_key": "k",
+                            "app_key": "a",
+                            "default_from": "now-15m",
+                            "default_limit": 20,
+                        }
+                    },
+                }
+            )
+
+            args = argparse.Namespace(profile=None, default_from=None, default_limit=50)
+            setup.command_set_defaults(args)
+            _, profile = common.load_profile(None)
+            no_clobber = (
+                profile["default_limit"] == 50
+                and profile["default_from"] == "now-15m"
+                and profile["api_key"] == "k"
+            )
+
+            no_flags_rejected = False
+            try:
+                setup.command_set_defaults(argparse.Namespace(profile=None, default_from=None, default_limit=None))
+            except common.DatadogHelperError:
+                no_flags_rejected = True
+
+            bad_from_rejected = False
+            try:
+                setup.command_set_defaults(argparse.Namespace(profile=None, default_from="1h", default_limit=None))
+            except common.DatadogHelperError:
+                bad_from_rejected = True
+
+            bad_limit_rejected = False
+            try:
+                setup.command_set_defaults(argparse.Namespace(profile=None, default_from=None, default_limit=0))
+            except common.DatadogHelperError:
+                bad_limit_rejected = True
+        finally:
+            os.environ.pop("DATADOG_HELPER_CONFIG_DIR", None)
+    return check(
+        "set-defaults updates without clobbering and rejects bad input",
+        no_clobber and no_flags_rejected and bad_from_rejected and bad_limit_rejected,
+    )
+
+
 def main() -> int:
     cases = [
         case_normalize_site,
@@ -594,6 +649,7 @@ def main() -> int:
         case_apm_timeseries_points,
         case_apm_raw_limit_guard,
         case_config_dir_prefers_new_env_var,
+        case_set_defaults_partial_update_and_validation,
     ]
     results = [case() for case in cases]
     return 0 if all(results) else 1

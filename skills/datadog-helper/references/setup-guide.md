@@ -26,8 +26,8 @@ or log/APM search returns authentication/permission errors.
 
 ## 진행 방식
 
-아래 1~4단계를 순서대로 진행한다. 이미 완료된 단계는 검증 후 건너뛴다.
-APM 권한 오류만 해결하러 왔다면 4단계의 `apm-test`부터 실행한다.
+아래 1~5단계를 순서대로 진행한다. 이미 완료된 단계는 검증 후 건너뛴다.
+APM 권한 오류만 해결하러 왔다면 5단계의 `apm-test`부터 실행한다.
 
 ## 1단계: Datadog site 확인
 
@@ -91,7 +91,45 @@ python3 "<SKILL_DIR>/scripts/datadog_setup.py" profiles
 
 profile이 보이면 4단계로 간다. 없으면 어느 지점에서 막혔는지 묻고 다시 안내한다.
 
-## 4단계: 연결과 조회 확인
+## 4단계: 기본 조회 범위 추천
+
+`init-keys`는 `default_from=now-15m`, `default_limit=20`으로 이미 등록되어 있다.
+이 값이 사용자의 평소 조회 습관과 맞는지 확인하고, 필요하면 바꾼다.
+
+```text
+4단계: 기본 조회 범위 정하기
+
+앞으로 별다른 기간/건수 지정 없이 물어보면 아래 범위로 조회해요. 평소 쓰는
+패턴에 맞는 걸 골라주세요.
+
+1. 최근 15분 · 20건 (기본값, 추천) — 방금 무슨 일이 있었는지 빠르게 볼 때
+2. 최근 1시간 · 50건 — 장애 대응처럼 조금 더 넓게 봐야 할 때
+3. 최근 24시간 · 100건 — 하루 단위로 몰아서 확인하는 경우가 많을 때
+4. 직접 값 입력
+
+평소 어떤 식으로 조회하실지 알려주시면 그걸 기준으로 추천드릴게요. 잘
+모르겠으면 1번(기본값)을 추천해요. 나중에 언제든 이 단계를 다시 진행해서
+바꿀 수 있어요.
+```
+
+사용자가 1번(기본값)을 고르거나 답하지 않으면 이 단계를 건너뛰고 5단계로 간다.
+2~4번을 고르면 값을 반영한다.
+
+```bash
+python3 "<SKILL_DIR>/scripts/datadog_setup.py" set-defaults --default-from <범위> --default-limit <건수>
+```
+
+예) 2번을 고른 경우: `--default-from now-1h --default-limit 50`
+(`--profile`을 생략하면 `default_profile`에 적용된다. 여러 profile을 쓰는 사용자면 `--profile <이름>`을 붙인다.)
+
+**에이전트 확인:** 반영 후 `profiles` 명령으로 `default_from`/`default_limit`이
+바뀐 값으로 보이는지 확인하고 5단계로 넘어간다.
+
+`default_limit`을 20보다 크게 올리면, 이후 `search --raw`를 `--limit` 없이 쓸 때
+`--allow-wide` 요구 오류가 날 수 있다. 그럴 땐 `--raw`에 `--limit`을 직접 지정하라고
+안내한다.
+
+## 5단계: 연결과 조회 확인
 
 먼저 API key가 유효한지 확인한다.
 
