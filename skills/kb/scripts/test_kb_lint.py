@@ -211,6 +211,26 @@ def case_archived_not_in_index_has_no_coverage_warn() -> bool:
     )
 
 
+def case_reserved_paths_skip_structural_checks() -> bool:
+    root = new_kb()
+    write_doc(root, "alpha.md", title="Alpha")
+    write_index(root, ["alpha.md"])
+    # no frontmatter, nested deep, broken link, not read_only — all exempt
+    for relpath in ("_inbox/batch-01/raw.md", "_archived/personal/deep/note.md"):
+        path = root / relpath
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# Raw\n[gone](./missing.md)\n[[nowhere]]\n", encoding="utf-8")
+    clean = run_lint(root)
+
+    (root / "_inbox/leak.md").write_text("key: AKIA" + "1234567890ABCDEF\n", encoding="utf-8")
+    leaky = run_lint(root)
+    return check(
+        "reserved underscore paths skip structural checks but keep secret scan",
+        clean.returncode == 0 and leaky.returncode == 2 and "[secret:aws-access-key-id] _inbox/leak.md" in leaky.stdout,
+        f"clean={clean.returncode} leaky={leaky.returncode}\n{clean.stdout}",
+    )
+
+
 def case_absolute_path_link_warns() -> bool:
     root = new_kb()
     write_doc(root, "alpha.md", title="Alpha", body="[abs](/etc/foo.md)")
@@ -346,6 +366,7 @@ def main() -> int:
         case_nfd_filename_matches_nfc_link,
         case_index_coverage_exact_match,
         case_archived_not_in_index_has_no_coverage_warn,
+        case_reserved_paths_skip_structural_checks,
         case_absolute_path_link_warns,
         case_password_placeholders_not_detected,
         case_password_values_detected,

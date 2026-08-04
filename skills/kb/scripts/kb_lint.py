@@ -2,10 +2,14 @@
 """Deterministic KB lint checks.
 
 Covers only what a machine can decide reliably: frontmatter completeness, valid
-agent_edit_mode, date format, title/H1 match, _archived/ rules, index.md link
+agent_edit_mode, date format, title/H1 match, index.md link
 targets, broken relative Markdown links, broken Obsidian wikilinks,
 log.jsonl validity/placeholders, and high-confidence secret patterns. Judgement checks (duplicate topics,
 conflicting claims, split candidates) stay with the kb skill's lint workflow.
+
+Underscore-prefixed paths (_inbox/, _archived/, ...) are reserved staging or
+frozen areas and are exempt from every structural check; only the secret scan
+still runs on them.
 
 Exit codes:
     0  no findings
@@ -95,16 +99,9 @@ def check_frontmatter(doc: KbDoc) -> list[Finding]:
     return out
 
 
-def check_archived(doc: KbDoc) -> list[Finding]:
-    parts = doc.relpath.split("/")
-    if parts[0] != "_archived":
-        return []
-    out: list[Finding] = []
-    if len(parts) != 2:
-        out.append(Finding("error", "archived-depth", doc.relpath, None, "_archived/ files must be exactly one level deep"))
-    if doc.metadata.get("agent_edit_mode") != "read_only":
-        out.append(Finding("error", "archived-not-read-only", doc.relpath, None, "_archived/ documents must be agent_edit_mode: read_only"))
-    return out
+def is_reserved_path(relpath: str) -> bool:
+    """Reserved area: any path component starting with `_` (_inbox/, _archived/, ...)."""
+    return any(part.startswith("_") for part in relpath.split("/"))
 
 
 def normalize_link_target(target: str, allowed_exts: tuple[str, ...]) -> str | None:
@@ -304,10 +301,12 @@ def collect(root: Path) -> list[Finding]:
     wikilink_keys = build_wikilink_index(root)
 
     for doc in docs:
+        if is_reserved_path(doc.relpath):
+            findings += scan_secrets_in_text(doc.relpath, doc.content)
+            continue
         is_entrypoint = doc.path.name.lower() in ENTRYPOINT_NAMES
         if not is_entrypoint:
             findings += check_frontmatter(doc)
-            findings += check_archived(doc)
         # index.md links are validated by check_index; avoid double-reporting.
         if doc.relpath != "index.md":
             findings += check_links(root, doc)
@@ -323,8 +322,7 @@ def collect(root: Path) -> list[Finding]:
         index_text = index_path.read_text(encoding="utf-8")
         indexed, _ = index_link_targets(root, index_text)
         for doc in docs:
-            top = doc.relpath.split("/", 1)[0]
-            if top in {"_inbox", "_archived"} or doc.path.name.lower() in {"index.md", "readme.md", "agents.md", "claude.md"}:
+            if is_reserved_path(doc.relpath) or doc.path.name.lower() in ENTRYPOINT_NAMES:
                 continue
             if unicodedata.normalize("NFC", doc.relpath) not in indexed:
                 findings.append(Finding("warn", "index-missing-entry", doc.relpath, None, "not listed in index.md"))

@@ -41,8 +41,7 @@ Never auto-fix sensitive content. Report it and ask.
 ## Deterministic Checks
 
 `kb_lint.py` reports frontmatter completeness, invalid `agent_edit_mode`, date
-format, title/H1 mismatch, `_archived/` depth and read_only rules, `index.md`
-link targets and coverage (`_inbox/` and `_archived/` coverage is optional),
+format, title/H1 mismatch, `index.md` link targets and coverage,
 broken relative Markdown links, broken Obsidian wikilinks (filename/path
 resolution; code blocks excluded), absolute Markdown path warnings, `log.jsonl`
 JSON validity/template placeholders, and high-confidence secret candidates.
@@ -55,17 +54,32 @@ present, `3` cannot run because the frontmatter runtime is missing (follow
 runtime. Treat its output as the factual base for the report, then add the
 judgement-only findings below.
 
+## Reserved Paths Are Out of Scope
+
+Any document whose path has an underscore-prefixed component (`_inbox/`,
+`_archived/`, and any future `_*` area) is **not a lint target**. These are
+staging or frozen areas, not maintained source of truth, so missing frontmatter,
+depth/`read_only` violations, broken links, and index coverage are not findings
+there — for the script pass or the judgement pass.
+
+The one exception is the secret scan: it still runs on reserved paths, and a
+high-confidence hit is still reported and still exits `2`.
+
+Do not offer to "clean up" reserved-path findings. If the user wants a document
+promoted out of `_inbox/`, that is a write/manage task, not lint.
+
 ## Checks
 
 If a machine can decide a check reliably, keep it in `[script]`; leave only
 judgement-heavy review in `[LLM]`.
+
+All checks below apply only outside reserved paths.
 
 ### Metadata
 
 - `[script]` missing YAML frontmatter where the KB requires it
 - `[script]` missing `title`, `summary`, `tags`, `aliases`, `created`, `updated`, `agent_edit_mode`
 - `[script]` invalid `agent_edit_mode`; expected `read_only`, `append_only`, or `editable`
-- `[script]` files under `_archived/` that are nested deeper than one level or do not use `agent_edit_mode: read_only`
 - `[script]` title/H1 mismatch
 - `[script]` invalid or inconsistent date format
 - `[LLM]` weak `summary`, sparse `tags`, missing likely aliases
@@ -75,7 +89,7 @@ judgement-heavy review in `[LLM]`.
 ### Index
 
 - `[LLM]` `index.md` missing when the KB expects it
-- `[script]` documents absent from `index.md` (`_inbox/` and `_archived/` are optional;
+- `[script]` documents absent from `index.md` (reserved `_*` paths are exempt;
   the build script can still include them when desired)
 - `[script]` index entries pointing to missing files
 - `[LLM]` stale summaries or categories
@@ -202,7 +216,7 @@ Suggested next actions:
 ## Do Not
 
 - Do not create `_raw/`, `_archive/`, canonical kinds, or daily-log schemas.
-- Do not treat a top-level `_archived/` layout that follows the Archived Documents rules in [`manage.md`](./manage.md) as an error.
+- Do not report findings for underscore-prefixed paths (`_inbox/`, `_archived/`, ...) other than secret candidates.
 - Do not silently remove or mask sensitive information.
 - Do not rewrite documents during report mode.
 - Do not bulk-add wikilinks. Suggest candidates first.
