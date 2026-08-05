@@ -12,6 +12,10 @@ or log/APM search returns authentication/permission errors.
 - API key는 "조직을 식별하는 열쇠", application key는 "내 계정 또는 서비스 계정 권한으로 API를 쓰게 해주는 열쇠"라고 풀어 설명한다.
 - 키 값은 채팅창에 붙여넣지 않게 한다. 터미널의 대화형 입력으로만 받는다.
 - `<SKILL_DIR>`은 이 스킬이 실제 설치된 디렉터리의 절대 경로로 바꿔서 실행한다.
+- `init-keys`처럼 키를 입력받는 명령은 에이전트가 대신 실행하지 않는다. Bash 도구 실행과
+  이 세션 프롬프트의 `!` 접두사 실행 둘 다 진짜 대화형 터미널이 아니라서 `getpass` 입력이
+  막히거나 빈 값으로 넘어간다. 사용자가 자신의 터미널 앱(macOS 터미널/iTerm 등)을 직접 열어
+  명령을 붙여넣고 실행하도록 안내한다.
 
 ## Required Datadog Access
 
@@ -72,16 +76,25 @@ scoped application key를 만들 수 있다면 이 세 가지 읽기 스코프�
 
 ## 3단계: 로컬에 키 등록
 
-아래 명령을 절대 경로로 바꿔 안내하거나 직접 실행한다.
+이 명령은 API key/application key를 대화형(`getpass`)으로 입력받는다. 에이전트가
+Bash 도구로 대신 실행하지 않고, 이 세션 프롬프트에 `!`를 붙여 실행하라고도 안내하지
+않는다 — 둘 다 진짜 대화형 터미널이 아니라서 입력 프롬프트가 막히거나 빈 값으로
+넘어간다. 사용자가 자신의 터미널 앱(macOS 터미널, iTerm 등)을 열어 아래 명령을
+직접 입력하고 실행하도록 안내한다. `<SKILL_DIR>`은 절대 경로로 바꿔서 안내한다.
 
-```bash
+```text
+아래 명령을 이 채팅이 아니라 사용자님의 터미널 앱(예: macOS 터미널, iTerm)을 열어
+직접 입력해주세요. 이 채팅창에 `!`를 붙여 실행하는 방식으로는 키 입력이 정상적으로
+되지 않아요.
+
 python3 "<SKILL_DIR>/scripts/datadog_setup.py" init-keys --profile default --site datadoghq.com
+
+실행하면 API key와 application key를 화면에 표시되지 않는 상태로 순서대로 물어봐요.
+입력한 값은 ~/.config/datadog-helper/config.json에 저장되고 파일 권한은 600으로
+맞춰집니다. 완료되면 "완료"라고 알려주세요.
 ```
 
-명령은 API key와 application key를 대화형으로 묻는다. 입력값은
-`~/.config/datadog-helper/config.json`에 저장되고 파일 권한은 `600`으로
-맞춰진다. (예전 이름으로 만든 `~/.config/datadog-log-helper/config.json`도
-그대로 인식한다.)
+(예전 이름으로 만든 `~/.config/datadog-log-helper/config.json`도 그대로 인식한다.)
 
 **에이전트 확인:** 사용자가 완료했다고 하면 아래를 실행한다.
 
