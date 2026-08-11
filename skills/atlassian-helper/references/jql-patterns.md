@@ -1,7 +1,7 @@
-# JQL Patterns
+# JQL / CQL Patterns
 
-Use this file when composing raw JQL for `jira_search.py search` / `count`,
-or when adding conditions via `--and`.
+Use this file when composing raw JQL for `jira.py search` / `count`, raw CQL
+for `confluence.py search`, or when adding conditions via `--and`.
 
 ## Core Filters
 
@@ -60,6 +60,31 @@ or when adding conditions via `--and`.
 - 잘못된 필드/상태 이름은 HTTP 400으로 돌아온다. 에러 본문의 메시지를 읽고
   이름을 교정한다 — 설정 문제(401/403)와 혼동하지 않는다.
 
+## CQL (Confluence)
+
+`confluence.py search`의 전용 플래그(`--space`, `--title`, `--mine`,
+`--updated-from`)로 안 되는 조건만 `--and "<CQL 조각>"`에 넣는다.
+
+| Need | CQL Fragment |
+| --- | --- |
+| 페이지만 | `type = page` (기본값; 블로그는 `--type blogpost`) |
+| 스페이스 | `space = "DEV"` |
+| 본문/제목 텍스트 | `text ~ "결제 오류"` / `title ~ "회의록"` |
+| 내가 만든 문서 | `creator = currentUser()` |
+| 내가 최근 고친 문서 | `contributor = currentUser()` |
+| 특정 사람이 만든 | `creator = "5f59...accountId"` |
+| 기간 | `lastmodified >= "2026-07-01"` / `created >= now("-30d")` |
+| 라벨 | `label = "runbook"` |
+| 특정 페이지 하위 | `ancestor = 1234567890` |
+| 정렬 | `ORDER BY lastmodified DESC` (스크립트 기본값) |
+
+- CQL은 JQL과 문법이 비슷하지만 필드 이름이 다르다 (`lastmodified`,
+  `creator`, `ancestor`).
+- 값에 공백/한글이 있으면 따옴표로 감싼다. 스크립트의 전용 플래그는 자동으로
+  처리한다.
+- 사람 조건은 email이 아니라 accountId를 요구할 때가 많다. `--mine`으로
+  대체할 수 있으면 그렇게 한다.
+
 ## Memory Candidates
 
 When a search confirms a reusable pattern, save only the access hint:
@@ -67,6 +92,7 @@ When a search confirms a reusable pattern, save only the access hint:
 ```markdown
 - 스프린트 리뷰 — project = ABC AND sprint in openSprints() AND assignee = currentUser()
 - 백엔드 버그 큐 — project = ABC AND issuetype = Bug AND statusCategory != Done
+- 팀 런북 — type = page AND space = "DEV" AND label = "runbook"
 ```
 
 Do not save issue bodies or private data.
