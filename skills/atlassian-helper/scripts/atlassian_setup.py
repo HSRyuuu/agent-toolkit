@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
-"""Jira helper setup commands (interactive key registration + checks)."""
+"""Atlassian helper setup commands (interactive key registration + checks)."""
 
 from __future__ import annotations
 
 import argparse
 import getpass
 
-from jira_common import (
+from atlassian_common import (
     DEFAULT_LIMIT,
     SEARCH_PATH,
-    JiraHelperError,
+    SPACES_PATH,
+    AtlassianHelperError,
     add_profile_arg,
+    api_request,
     config_path,
     ensure_memory_file,
-    jira_request,
     load_config,
     load_profile,
     mask_secret,
@@ -29,10 +30,10 @@ def command_init_keys(args: argparse.Namespace) -> int:
     site = normalize_site(args.site)
     email = args.email.strip()
     if not email or "@" not in email:
-        raise JiraHelperError("email이 올바르지 않습니다.")
-    api_token = getpass.getpass("Jira API token: ").strip()
+        raise AtlassianHelperError("email이 올바르지 않습니다.")
+    api_token = getpass.getpass("Atlassian API token: ").strip()
     if not api_token:
-        raise JiraHelperError("API token이 비어 있습니다.")
+        raise AtlassianHelperError("API token이 비어 있습니다.")
 
     profile_name = args.profile or "default"
     config = load_config(required=False)
@@ -49,22 +50,23 @@ def command_init_keys(args: argparse.Namespace) -> int:
     config["default_profile"] = profile_name
     save_config(config)
     ensure_memory_file()
-    print("Jira API 설정을 저장했습니다.")
+    print("Atlassian API 설정을 저장했습니다.")
     print(f"profile={profile_name} site={site} config={config_path()}")
     return 0
 
 
 def command_auth_test(args: argparse.Namespace) -> int:
     profile_name, profile = load_profile(args.profile)
-    response = jira_request(profile, "/rest/api/3/myself")
+    response = api_request(profile, "/rest/api/3/myself")
     account_id = str(response.get("accountId") or "")
     display_name = str(response.get("displayName") or "")
     if not account_id:
-        raise JiraHelperError(f"myself 응답에 accountId가 없습니다: {response}")
-    # cache identity so search commands can show who currentUser() is
+        raise AtlassianHelperError(f"myself 응답에 accountId가 없습니다: {response}")
+    # cache identity so search commands can show who currentUser() is and so the
+    # modify/delete ownership guard can compare without an extra API call
     update_profile(profile_name, {"account_id": account_id, "display_name": display_name})
     print(
-        f"Jira 인증 성공. profile={profile_name} site={profile['site']} "
+        f"Atlassian 인증 성공. profile={profile_name} site={profile['site']} "
         f"me={display_name} ({account_id})"
     )
     return 0
@@ -72,7 +74,7 @@ def command_auth_test(args: argparse.Namespace) -> int:
 
 def command_search_test(args: argparse.Namespace) -> int:
     profile_name, profile = load_profile(args.profile)
-    response = jira_request(
+    response = api_request(
         profile,
         SEARCH_PATH,
         query={
@@ -87,11 +89,20 @@ def command_search_test(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_confluence_test(args: argparse.Namespace) -> int:
+    profile_name, profile = load_profile(args.profile)
+    response = api_request(profile, SPACES_PATH, query={"limit": 1})
+    results = response.get("results") if isinstance(response, dict) else None
+    count = len(results) if isinstance(results, list) else 0
+    print(f"Confluence 접근이 동작합니다. profile={profile_name} sample_spaces={count}")
+    return 0
+
+
 def command_profiles(args: argparse.Namespace) -> int:
     config = load_config()
     profiles = config.get("profiles")
     if not isinstance(profiles, dict):
-        raise JiraHelperError("config.json에 profiles 설정이 없습니다.")
+        raise AtlassianHelperError("config.json에 profiles 설정이 없습니다.")
     rows = []
     for name, profile in sorted(profiles.items()):
         if not isinstance(profile, dict):
@@ -111,10 +122,10 @@ def command_profiles(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Jira helper setup")
+    parser = argparse.ArgumentParser(description="Atlassian helper setup")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    init_keys = subparsers.add_parser("init-keys", help="Register Jira credentials locally")
+    init_keys = subparsers.add_parser("init-keys", help="Register Atlassian credentials locally")
     init_keys.add_argument("--profile", default="default")
     init_keys.add_argument("--site", required=True, help="예: your-org.atlassian.net")
     init_keys.add_argument("--email", required=True, help="Atlassian 계정 email")
@@ -125,9 +136,15 @@ def build_parser() -> argparse.ArgumentParser:
     add_profile_arg(auth_test)
     auth_test.set_defaults(func=command_auth_test)
 
-    search_test = subparsers.add_parser("search-test", help="Validate issue search access")
+    search_test = subparsers.add_parser("search-test", help="Validate Jira issue search access")
     add_profile_arg(search_test)
     search_test.set_defaults(func=command_search_test)
+
+    confluence_test = subparsers.add_parser(
+        "confluence-test", help="Validate Confluence space access"
+    )
+    add_profile_arg(confluence_test)
+    confluence_test.set_defaults(func=command_confluence_test)
 
     profiles = subparsers.add_parser("profiles", help="List configured profiles")
     profiles.set_defaults(func=command_profiles)

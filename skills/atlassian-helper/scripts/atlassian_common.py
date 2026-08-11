@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Shared Jira helper utilities."""
+"""Shared Atlassian (Jira + Confluence) helper utilities."""
 
 from __future__ import annotations
 
 import base64
+import html
 import json
 import os
 import re
@@ -19,7 +20,8 @@ from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
-DEFAULT_CONFIG_DIR = Path("~/.config/jira-helper").expanduser()
+DEFAULT_CONFIG_DIR = Path("~/.config/atlassian-helper").expanduser()
+LEGACY_CONFIG_DIR = Path("~/.config/jira-helper").expanduser()
 CONFIG_FILE = "config.json"
 MEMORY_FILE = "MEMORY.md"
 DEFAULT_LIMIT = 20
@@ -29,6 +31,10 @@ TRANSIENT_RETRY_SLEEP_SECONDS = 2
 
 SEARCH_PATH = "/rest/api/3/search/jql"
 COUNT_PATH = "/rest/api/3/search/approximate-count"
+MYSELF_PATH = "/rest/api/3/myself"
+CQL_SEARCH_PATH = "/wiki/rest/api/search"
+PAGES_PATH = "/wiki/api/v2/pages"
+SPACES_PATH = "/wiki/api/v2/spaces"
 
 DEFAULT_FIELDS = [
     "summary",
@@ -46,14 +52,19 @@ DEFAULT_FIELDS = [
 ]
 
 
-class JiraHelperError(RuntimeError):
+class AtlassianHelperError(RuntimeError):
     pass
 
 
 def config_dir() -> Path:
-    override = os.environ.get("JIRA_HELPER_CONFIG_DIR")
+    override = os.environ.get("ATLASSIAN_HELPER_CONFIG_DIR") or os.environ.get(
+        "JIRA_HELPER_CONFIG_DIR"
+    )
     if override:
         return Path(override).expanduser()
+    # keep working for installs created before the jira-helper -> atlassian-helper rename
+    if not DEFAULT_CONFIG_DIR.exists() and LEGACY_CONFIG_DIR.exists():
+        return LEGACY_CONFIG_DIR
     return DEFAULT_CONFIG_DIR
 
 
@@ -68,15 +79,15 @@ def memory_path() -> Path:
 def read_json(path: Path, *, required: bool = True) -> dict[str, Any]:
     if not path.exists():
         if required:
-            raise JiraHelperError(f"Missing config file: {path}")
+            raise AtlassianHelperError(f"Missing config file: {path}")
         return {}
     try:
         with path.open("r", encoding="utf-8") as handle:
             data = json.load(handle)
     except json.JSONDecodeError as exc:
-        raise JiraHelperError(f"Invalid JSON in {path}: {exc}") from exc
+        raise AtlassianHelperError(f"Invalid JSON in {path}: {exc}") from exc
     if not isinstance(data, dict):
-        raise JiraHelperError(f"Expected a JSON object in {path}")
+        raise AtlassianHelperError(f"Expected a JSON object in {path}")
     return data
 
 
@@ -101,10 +112,11 @@ def ensure_memory_file() -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists():
         path.write_text(
-            "# jira-helper memory\n\n"
-            "## 프로젝트 별칭\n\n"
+            "# atlassian-helper memory\n\n"
+            "## 프로젝트/스페이스 별칭\n\n"
             "## 팀/사람\n\n"
             "## 자주 쓰는 JQL\n\n"
+            "## 자주 쓰는 CQL\n\n"
             "## 선호\n",
             encoding="utf-8",
         )
@@ -126,19 +138,35 @@ def save_config(data: dict[str, Any]) -> None:
 
 ISSUE_KEY_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]*-\d+$")
 PROJECT_KEY_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
+NUMERIC_ID_PATTERN = re.compile(r"^\d+$")
+SPACE_KEY_PATTERN = re.compile(r"^[A-Za-z0-9_~][A-Za-z0-9_~.-]*$")
 
 
 def validate_issue_key(value: str) -> str:
     key = str(value or "").strip()
     if not ISSUE_KEY_PATTERN.fullmatch(key):
-        raise JiraHelperError(f"이슈 키 형식이 아닙니다: {value} (예: ABC-123)")
+        raise AtlassianHelperError(f"이슈 키 형식이 아닙니다: {value} (예: ABC-123)")
     return key
 
 
 def validate_project_key(value: str) -> str:
     key = str(value or "").strip()
     if not PROJECT_KEY_PATTERN.fullmatch(key):
-        raise JiraHelperError(f"프로젝트 키 형식이 아닙니다: {value} (예: ABC)")
+        raise AtlassianHelperError(f"프로젝트 키 형식이 아닙니다: {value} (예: ABC)")
+    return key
+
+
+def validate_id(value: str, label: str = "ID") -> str:
+    text = str(value or "").strip()
+    if not NUMERIC_ID_PATTERN.fullmatch(text):
+        raise AtlassianHelperError(f"{label} 형식이 아닙니다: {value} (숫자만 가능)")
+    return text
+
+
+def validate_space_key(value: str) -> str:
+    key = str(value or "").strip()
+    if not SPACE_KEY_PATTERN.fullmatch(key):
+        raise AtlassianHelperError(f"스페이스 키 형식이 아닙니다: {value} (예: DEV)")
     return key
 
 
@@ -146,10 +174,10 @@ def normalize_site(value: str) -> str:
     """Accept 'your-org.atlassian.net' or a full URL; return 'https://<host>'."""
     raw = (value or "").strip()
     if not raw:
-        raise JiraHelperError("Jira site가 비어 있습니다. 예: your-org.atlassian.net")
+        raise AtlassianHelperError("Atlassian site가 비어 있습니다. 예: your-org.atlassian.net")
     raw = re.sub(r"^https?://", "", raw, flags=re.I).split("/", 1)[0].strip().lower()
     if not raw or "." not in raw:
-        raise JiraHelperError(f"Jira site를 해석할 수 없습니다: {value}")
+        raise AtlassianHelperError(f"Atlassian site를 해석할 수 없습니다: {value}")
     return f"https://{raw}"
 
 
@@ -158,13 +186,13 @@ def load_profile(name: str | None = None) -> tuple[str, dict[str, Any]]:
     profile_name = name or config.get("default_profile") or "default"
     profiles = config.get("profiles")
     if not isinstance(profiles, dict) or profile_name not in profiles:
-        raise JiraHelperError(f"Profile not found in config.json ({profile_name})")
+        raise AtlassianHelperError(f"Profile not found in config.json ({profile_name})")
     profile = profiles[profile_name]
     if not isinstance(profile, dict):
-        raise JiraHelperError(f"Profile must be an object: {profile_name}")
+        raise AtlassianHelperError(f"Profile must be an object: {profile_name}")
     for key in ("site", "email", "api_token"):
         if not profile.get(key):
-            raise JiraHelperError(f"Profile '{profile_name}' has no {key}")
+            raise AtlassianHelperError(f"Profile '{profile_name}' has no {key}")
     return profile_name, profile
 
 
@@ -172,7 +200,7 @@ def update_profile(profile_name: str, updates: dict[str, Any]) -> None:
     config = load_config()
     profiles = config.get("profiles")
     if not isinstance(profiles, dict) or profile_name not in profiles:
-        raise JiraHelperError(f"Profile not found in config.json ({profile_name})")
+        raise AtlassianHelperError(f"Profile not found in config.json ({profile_name})")
     profiles[profile_name].update(updates)
     save_config(config)
 
@@ -222,7 +250,7 @@ def run_curl(
     method = http_method.upper()
     headers = headers or {}
 
-    with tempfile.TemporaryDirectory(prefix="jira-helper-") as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="atlassian-helper-") as temp_dir:
         header_path = Path(temp_dir) / "headers.txt"
         body_path = Path(temp_dir) / "body.json"
         config_lines = [f'url = "{curl_config_quote(url)}"', f'request = "{method}"']
@@ -263,11 +291,11 @@ def run_curl(
         body_text = body_path.read_text(encoding="utf-8", errors="replace")
 
     if result.returncode != 0:
-        raise JiraHelperError(result.stderr.strip() or "curl failed")
+        raise AtlassianHelperError(result.stderr.strip() or "curl failed")
     try:
         status_code = int(result.stdout.strip()[-3:])
     except ValueError as exc:
-        raise JiraHelperError(f"Could not parse curl HTTP status: {result.stdout}") from exc
+        raise AtlassianHelperError(f"Could not parse curl HTTP status: {result.stdout}") from exc
     return status_code, headers_text, body_text
 
 
@@ -277,7 +305,9 @@ def parse_json_body(body: str, label: str) -> Any:
     try:
         return json.loads(body)
     except json.JSONDecodeError as exc:
-        raise JiraHelperError(f"Jira API {label} returned non-JSON body: {body[:500]}") from exc
+        raise AtlassianHelperError(
+            f"Atlassian API {label} returned non-JSON body: {body[:500]}"
+        ) from exc
 
 
 def retry_after_seconds(headers: str) -> int | None:
@@ -285,7 +315,7 @@ def retry_after_seconds(headers: str) -> int | None:
     return int(match.group(1)) if match else None
 
 
-def jira_request(
+def api_request(
     profile: dict[str, Any],
     path: str,
     *,
@@ -314,7 +344,7 @@ def jira_request(
             status, response_headers, body = run_curl(
                 url=url, http_method=http_method, headers=headers, payload=payload
             )
-        except JiraHelperError:
+        except AtlassianHelperError:
             # network failure / curl error: retry once before giving up
             if transient_left > 0:
                 transient_left -= 1
@@ -329,7 +359,7 @@ def jira_request(
                 attempts_left -= 1
                 time.sleep(wait_seconds)
                 continue
-            raise JiraHelperError("Jira API rate limited: retry later")
+            raise AtlassianHelperError("Atlassian API rate limited: retry later")
         if status >= 500 and transient_left > 0:
             transient_left -= 1
             time.sleep(TRANSIENT_RETRY_SLEEP_SECONDS)
@@ -339,16 +369,20 @@ def jira_request(
     data = parse_json_body(body, path)
     if status >= 400:
         if status in (401, 403):
-            hint = " (인증 실패: email/API token을 확인하세요. setup-guide 참조)"
+            hint = " (인증/권한 실패: email/API token 또는 쓰기 권한을 확인하세요. setup-guide 참조)"
         elif status == 404:
-            hint = " (경로 또는 이슈 키가 없거나 볼 권한이 없습니다)"
+            hint = " (경로 또는 대상이 없거나 볼 권한이 없습니다)"
         else:
             hint = ""
         detail = json.dumps(data, ensure_ascii=False) if data else body[:500]
-        raise JiraHelperError(
-            sanitize_sensitive(f"Jira API {path} HTTP {status}{hint}: {detail}", profile)
+        raise AtlassianHelperError(
+            sanitize_sensitive(f"Atlassian API {path} HTTP {status}{hint}: {detail}", profile)
         )
     return data
+
+
+def site_url(profile: dict[str, Any]) -> str:
+    return normalize_site(str(profile.get("site")))
 
 
 def print_response(response: Any) -> int:
@@ -371,7 +405,7 @@ def resolve_tz(tz_name: str | None):
     try:
         return ZoneInfo(tz_name)
     except (ZoneInfoNotFoundError, ValueError) as exc:
-        raise JiraHelperError(
+        raise AtlassianHelperError(
             f"알 수 없는 타임존입니다: {tz_name} (예: Asia/Seoul, UTC)"
         ) from exc
 
@@ -411,7 +445,67 @@ def due_label(value: Any, tz_name: str | None = None) -> str:
     return f"{text}({marker})"
 
 
-# --- JQL helpers ---------------------------------------------------------
+# --- Ownership guard ------------------------------------------------------
+
+
+def my_account_id(profile: dict[str, Any]) -> str:
+    """Current user's accountId (cached in the profile by auth-test)."""
+    cached = str(profile.get("account_id") or "").strip()
+    if cached:
+        return cached
+    response = api_request(profile, MYSELF_PATH)
+    account_id = str(response.get("accountId") or "") if isinstance(response, dict) else ""
+    if not account_id:
+        raise AtlassianHelperError(
+            "내 accountId를 확인할 수 없습니다. atlassian_setup.py auth-test를 먼저 실행하세요."
+        )
+    profile["account_id"] = account_id  # in-memory cache for this run
+    return account_id
+
+
+def assert_owner(
+    profile: dict[str, Any],
+    owner_id: Any,
+    owner_name: Any,
+    target: str,
+) -> None:
+    """Block modify/delete unless the current user authored the target.
+
+    Fails closed: an unknown author is treated as "not mine".
+    """
+    owner = str(owner_id or "").strip()
+    if not owner:
+        raise AtlassianHelperError(
+            f"{target}의 작성자를 확인할 수 없어 수정/삭제를 중단합니다."
+        )
+    me = my_account_id(profile)
+    if owner != me:
+        raise AtlassianHelperError(
+            f"{target}의 작성자가 본인이 아닙니다 (작성자: {owner_name or owner}). "
+            "수정/삭제는 본인이 작성한 항목에만 허용됩니다."
+        )
+
+
+def confirm_destructive(yes: bool, target: str) -> None:
+    if not yes:
+        raise AtlassianHelperError(f"{target} 삭제는 --yes 를 붙여야 실행됩니다.")
+
+
+def read_body(text: str | None, path: str | None, *, label: str = "본문") -> str:
+    """Body from --body or --body-file (exactly one; '-' reads stdin)."""
+    if (text is None) == (path is None):
+        raise AtlassianHelperError(f"{label}은 --body 또는 --body-file 중 하나만 지정하세요.")
+    if path is not None:
+        if path == "-":
+            return sys.stdin.read()
+        file_path = Path(path).expanduser()
+        if not file_path.exists():
+            raise AtlassianHelperError(f"파일을 찾을 수 없습니다: {path}")
+        return file_path.read_text(encoding="utf-8")
+    return text or ""
+
+
+# --- JQL / CQL helpers ----------------------------------------------------
 
 JQL_RELATIVE_PATTERN = re.compile(r"^-?\d+[mhdw]$")  # -7d, 4h, 30m, 2w
 JQL_FUNCTION_PATTERN = re.compile(r"^\w+\(.*\)$")  # startOfWeek(), endOfDay("-1")
@@ -420,6 +514,10 @@ JQL_FUNCTION_PATTERN = re.compile(r"^\w+\(.*\)$")  # startOfWeek(), endOfDay("-1
 def jql_quote(value: str) -> str:
     escaped = str(value).replace("\\", "\\\\").replace('"', '\\"')
     return f'"{escaped}"'
+
+
+# CQL uses the same quoting rules as JQL.
+cql_quote = jql_quote
 
 
 def jql_time_value(value: str) -> str:
@@ -490,6 +588,134 @@ def adf_summary(node: Any, limit: int = 800) -> str:
     if len(cleaned) <= limit:
         return cleaned
     return cleaned[: limit - 3] + "..."
+
+
+def _adf_paragraph(lines: list[str]) -> dict[str, Any]:
+    content: list[dict[str, Any]] = []
+    for index, line in enumerate(lines):
+        if index:
+            content.append({"type": "hardBreak"})
+        content.append({"type": "text", "text": line})
+    return {"type": "paragraph", "content": content} if content else {"type": "paragraph"}
+
+
+def text_to_adf(text: str) -> dict[str, Any]:
+    """Plain text -> ADF doc.
+
+    Blank line starts a new block; `- ` / `* ` lines become a bullet list;
+    `# `..`### ` lines become headings. Everything else stays plain text.
+    """
+    blocks: list[dict[str, Any]] = []
+    paragraph: list[str] = []
+    bullets: list[str] = []
+
+    def flush() -> None:
+        if bullets:
+            blocks.append(
+                {
+                    "type": "bulletList",
+                    "content": [
+                        {"type": "listItem", "content": [_adf_paragraph([item])]}
+                        for item in bullets
+                    ],
+                }
+            )
+            bullets.clear()
+        if paragraph:
+            blocks.append(_adf_paragraph(list(paragraph)))
+            paragraph.clear()
+
+    for raw in str(text).splitlines():
+        line = raw.rstrip()
+        stripped = line.strip()
+        if not stripped:
+            flush()
+            continue
+        heading = re.match(r"^(#{1,3})\s+(.*)$", stripped)
+        if heading:
+            flush()
+            blocks.append(
+                {
+                    "type": "heading",
+                    "attrs": {"level": len(heading.group(1))},
+                    "content": [{"type": "text", "text": heading.group(2)}],
+                }
+            )
+            continue
+        if stripped.startswith(("- ", "* ")):
+            if paragraph:
+                flush()
+            bullets.append(stripped[2:].strip())
+            continue
+        if bullets:
+            flush()
+        paragraph.append(line)
+
+    flush()
+    if not blocks:
+        blocks = [{"type": "paragraph"}]
+    return {"type": "doc", "version": 1, "content": blocks}
+
+
+# --- Confluence storage format -------------------------------------------
+
+
+def storage_to_text(value: Any, limit: int | None = None) -> str:
+    """Flatten Confluence storage XHTML to readable plain text."""
+    text = str(value or "")
+    text = re.sub(r"(?is)<(script|style)\b.*?</\1>", "", text)
+    text = re.sub(r"(?i)<li[^>]*>", "\n- ", text)
+    text = re.sub(r"(?i)<br\s*/?>", "\n", text)
+    text = re.sub(r"(?i)</(p|div|h[1-6]|li|tr|table|ul|ol)>", "\n", text)
+    text = re.sub(r"(?i)</t[dh]>", " | ", text)
+    text = re.sub(r"(?s)<[^>]+>", "", text)
+    text = html.unescape(text)
+    lines = [line.rstrip() for line in text.splitlines()]
+    cleaned = "\n".join(line for line in lines if line.strip())
+    if limit is not None and len(cleaned) > limit:
+        return cleaned[: limit - 3] + "..."
+    return cleaned
+
+
+def text_to_storage(text: str) -> str:
+    """Plain text -> Confluence storage XHTML (paragraphs, bullets, headings)."""
+    blocks: list[str] = []
+    paragraph: list[str] = []
+    bullets: list[str] = []
+
+    def flush() -> None:
+        if bullets:
+            items = "".join(f"<li><p>{html.escape(item)}</p></li>" for item in bullets)
+            blocks.append(f"<ul>{items}</ul>")
+            bullets.clear()
+        if paragraph:
+            body = "<br />".join(html.escape(line) for line in paragraph)
+            blocks.append(f"<p>{body}</p>")
+            paragraph.clear()
+
+    for raw in str(text).splitlines():
+        line = raw.rstrip()
+        stripped = line.strip()
+        if not stripped:
+            flush()
+            continue
+        heading = re.match(r"^(#{1,3})\s+(.*)$", stripped)
+        if heading:
+            flush()
+            level = len(heading.group(1)) + 1  # page title is h1
+            blocks.append(f"<h{level}>{html.escape(heading.group(2))}</h{level}>")
+            continue
+        if stripped.startswith(("- ", "* ")):
+            if paragraph:
+                flush()
+            bullets.append(stripped[2:].strip())
+            continue
+        if bullets:
+            flush()
+        paragraph.append(line)
+
+    flush()
+    return "".join(blocks) or "<p />"
 
 
 # --- Issue formatting -----------------------------------------------------
@@ -567,7 +793,7 @@ def run_main(parser_builder: Any) -> int:
     args = parser.parse_args()
     try:
         return args.func(args)
-    except JiraHelperError as exc:
+    except AtlassianHelperError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     except (EOFError, KeyboardInterrupt):
