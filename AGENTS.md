@@ -53,7 +53,7 @@ agent-toolkit/
 | `main()` | Python CLI | `skills/excel-doc-updater/scripts/compare_excel.py` | Before/after workbook diff. |
 | `main()` | Python CLI | `skills/slack-helper/scripts/slack_setup.py` / `slack_search.py` / `slack_read.py` | Slack Web API OAuth setup and read/search helpers using curl. |
 | `main()` | Python CLI | `skills/datadog-helper/scripts/datadog_setup.py` / `datadog_logs.py` / `datadog_apm.py` | Datadog logs/APM read-only helpers using curl. |
-| `main()` | Python CLI | `skills/jira-helper/scripts/jira_setup.py` / `jira_search.py` | Jira Cloud read-only search helpers using curl. |
+| `main()` | Python CLI | `skills/atlassian-helper/scripts/atlassian_setup.py` / `jira.py` / `confluence.py` | Jira + Confluence Cloud read/write helpers using curl; modify/delete guarded by an author check. |
 | `parse_docx()` / `parse_pdf()` | Python helpers | `skills/ui-feature-spec-docs/scripts/parse_design_doc.py` | Screen-doc parser. |
 
 ## CONVENTIONS
