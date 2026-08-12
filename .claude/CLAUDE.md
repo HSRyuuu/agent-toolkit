@@ -18,18 +18,21 @@ agent-toolkit/
 │   ├── plugin.json         # Claude Code plugin 메타
 │   └── marketplace.json    # 로컬 marketplace 메타
 ├── .claude/skills/
-│   └── verify-secrets/     # 이 저장소 전용 로컬 검증 스킬
+│   ├── verify-secrets/     # 이 저장소 전용 로컬 검증 스킬
+│   └── publish-workflow/   # 검증→커밋→푸시→배포 라우터
 ├── .codex-plugin/
 │   └── plugin.json         # Codex plugin 메타
 ├── .codex/skills/
-│   └── verify-secrets/     # 이 저장소 전용 로컬 검증 스킬
+│   ├── verify-secrets/     # 이 저장소 전용 로컬 검증 스킬
+│   └── publish-workflow/   # 검증→커밋→푸시→배포 라우터
 ├── .agents/plugins/
 │   └── marketplace.json    # Codex 로컬 marketplace 메타
 ├── skills/                 # 단일 활성 plugin skill root
 │   └── <name>/SKILL.md
 ├── templates/              # 스킬이 대상 프로젝트에 복사하거나 참고하는 템플릿
 ├── docs/
-│   └── catalog.md          # skills inventory에서 생성한 사람용 카탈로그
+│   ├── catalog.md          # skills inventory에서 생성한 사람용 카탈로그
+│   └── how-to-install.md   # 설치·업데이트·배포·문제 해결
 └── .claude/CLAUDE.md       # 이 파일
 ```
 
@@ -46,6 +49,12 @@ agent-toolkit/
 - 이 스킬은 회사 식별자, secret, token, API key, private value, few-shot 예시의 민감값 유입을 막는 최종 게이트다.
 - `verify-secrets`가 하나라도 이슈를 보고하면 커밋하지 않는다. 수정하거나 사용자의 명시적 예외 승인을 받은 뒤 재검증한다.
 - 이 로컬 검증 스킬은 플러그인 배포용 `skills/`로 옮기지 않는다. 로컬 검증 스킬의 회사/secret 예시는 `skills/` 아래 어떤 파일에도 복사하지 않는다.
+
+## 배포
+
+검증부터 배포까지는 프로젝트 로컬 `publish-workflow` 스킬이 소유한다 — 문서 동기화 → verify-secrets → 커밋 → 두 manifest 버전 동시 범프 → `git push origin main` → 설치 플러그인 업데이트. 어느 단계든 실패하면 멈춘다.
+
+두 호스트 모두 플러그인 `version`을 캐시 키로 쓰므로 범프 없는 push는 설치된 머신에서 아무 변화가 없다. 호스트 CLI 명령, 캐시 경로, 문제 해결은 `docs/how-to-install.md`에 있다.
 
 필수 frontmatter:
 
