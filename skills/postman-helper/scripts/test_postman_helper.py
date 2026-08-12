@@ -83,6 +83,8 @@ def case_env_classification() -> bool:
         and c("http://[::1]:8080/x") == "local"
         and c("http://dev.example.com/x") == "local"
         and c("http://api.dev.example.com/x") == "remote"
+        and c("http://localhost.prod.example.com/x") == "remote"
+        and c("http://LOCAL.corp-stage.example.com/x") == "remote"
         and c("https://svc.local/x") == "local"
         and c("https://api.example.com/x") == "remote"
         and c("{{base_url}}/x") == "unknown",
@@ -101,6 +103,20 @@ def case_gate() -> bool:
         and g("confirm", "local", False)[0] is False
         and g("confirm", "local", True)[0] is True
         and g("blocked", "local", True)[0] is False,
+    )
+
+
+def case_gate_no_remote_writes() -> bool:
+    """POST outside local/dev is a hard block — --confirm must not open it."""
+    g, hb = common.execution_gate, common.is_hard_block
+    return check(
+        "execution_gate: data-changing methods never run outside local/dev",
+        g("confirm", "remote", True)[0] is False
+        and g("confirm", "unknown", True)[0] is False
+        and hb("confirm", "remote") is True
+        and hb("confirm", "local") is False
+        and hb("blocked", "local") is True
+        and hb("safe", "remote") is False,  # remote GET stays --confirm-able
     )
 
 
@@ -204,6 +220,7 @@ def main() -> int:
         case_method_classification,
         case_env_classification,
         case_gate,
+        case_gate_no_remote_writes,
         case_iter_requests,
         case_redaction,
         case_var_resolution,

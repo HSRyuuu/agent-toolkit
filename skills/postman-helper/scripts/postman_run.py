@@ -6,9 +6,10 @@ Safety is enforced HERE, not in prose. Two independent gates:
 1. Nothing is EVER transmitted without --send. The default is a preview.
    --send exists so that transmission only happens when the user explicitly
    asked to execute — the agent must not pass it otherwise.
-2. Method/env gate: GET/HEAD/OPTIONS are safe, POST needs --confirm,
-   PUT/PATCH/DELETE are blocked (even with --send --confirm). Safe methods
-   against a non-local host also need --confirm.
+2. Method/env gate: GET/HEAD/OPTIONS are safe, POST needs --confirm and only
+   against local/dev, PUT/PATCH/DELETE are blocked everywhere. Neither block
+   is escapable with --send --confirm. Safe methods against a non-local host
+   (which may be production) still need --confirm.
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ from postman_common import (
     classify_method,
     execution_gate,
     format_response_headers,
+    is_hard_block,
     iter_requests,
     match_request,
     redact_url,
@@ -92,7 +94,7 @@ def command_run(args: argparse.Namespace) -> int:
     print(f"사유: {reason}")
 
     if not allowed:
-        return 0 if method_class == "blocked" else 2
+        return 0 if is_hard_block(method_class, env_class) else 2
 
     headers = _resolve_headers(request, varmap)
     body, ctype = _resolve_body(request, varmap)

@@ -36,6 +36,9 @@ BLOCKED_METHODS = {"PUT", "PATCH", "DELETE"}
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0", "::1"}
 LOCAL_SUFFIXES = (".local", ".localhost", ".test")
 LOCAL_LABELS = {"dev", "development", "local", "localhost"}
+# a local-looking FIRST label does not promote a host that also carries one of
+# these anywhere else (localhost.prod.example.com was a gate bypass)
+PROD_HINTS = ("prod", "stage")
 # body modes we can faithfully replay through curl
 EXECUTABLE_BODY_MODES = {"", "none", "raw", "urlencoded"}
 
@@ -449,15 +452,31 @@ def classify_env(resolved_url: str) -> str:
         return "local"
     # only the FIRST label counts: dev.example.com is local,
     # api.dev.evil.com is not (any-label matching was a gate bypass)
-    if host.split(".", 1)[0] in LOCAL_LABELS:
+    first, _, rest = host.partition(".")
+    if first in LOCAL_LABELS and not any(hint in rest for hint in PROD_HINTS):
         return "local"
     return "remote"
 
 
+def is_hard_block(method_class: str, env_class: str) -> bool:
+    """True when the request can never be sent, not even with --confirm.
+
+    Two rules: destructive verbs anywhere, and ANY data-changing verb outside
+    local/dev. `remote` covers production — the classifier cannot tell
+    api.example.com (prod) from a sandbox, so it must assume the worse one.
+    """
+    return method_class == "blocked" or (method_class == "confirm" and env_class != "local")
+
+
 def execution_gate(method_class: str, env_class: str, confirmed: bool) -> tuple[bool, str]:
-    """Return (allowed, reason). Auto-run only for safe+local; blocked never runs."""
+    """Return (allowed, reason). Auto-run only for safe+local; hard blocks never run."""
     if method_class == "blocked":
         return False, "PUT/PATCH/DELETE는 이 스킬에서 실행할 수 없습니다 (파괴적 요청)."
+    if is_hard_block(method_class, env_class):
+        return False, (
+            f"local/dev 외 환경(env={env_class})에서는 데이터 변경 요청(POST 등)을 "
+            "실행하지 않습니다 — 운영 데이터일 수 있습니다. 조회만 지원합니다."
+        )
     if method_class == "safe" and env_class == "local":
         return True, "safe method + local/dev env → 자동 실행 가능"
     if confirmed:

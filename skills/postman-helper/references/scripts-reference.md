@@ -68,9 +68,12 @@ python3 postman_run.py run --file ~/exports/orders.json "List orders" --var base
 # 사용자가 실행을 요청한 경우: safe(GET) + local host → --send 만으로 전송
 python3 postman_run.py run --file ~/exports/orders.json "List orders" --var base_url=http://localhost:8080 --send
 
-# POST 또는 remote GET → 사용자 동의까지 받은 뒤 --send --confirm
+# local POST 또는 remote GET → 사용자 동의까지 받은 뒤 --send --confirm
 python3 postman_run.py run --file ~/exports/orders.json "Create order" --var base_url=http://localhost:8080 --send --confirm
 ```
+
+**local/dev가 아닌 환경의 POST는 `--confirm`으로도 실행되지 않는다** (하드 블록).
+분류기는 운영 host와 샌드박스를 구분할 수 없으므로 remote/unknown은 운영으로 가정한다.
 
 동작:
 
@@ -80,8 +83,8 @@ python3 postman_run.py run --file ~/exports/orders.json "Create order" --var bas
    redact) + 본문(기본 2000자로 절단)을 출력한다. 리다이렉트(3xx)는 따라가지 않고
    상태와 Location 헤더만 보여준다. URL 쿼리의 민감 파라미터 값도 출력에서 redact된다.
 4. 전송하지 않는 경우 판정/사유만 출력한다.
-   - blocked(PUT/PATCH/DELETE) → exit 0, 실행 불가 안내.
-   - `--send` 없음(미리보기) 또는 확인 필요(POST, remote/unknown GET) → exit 2.
+   - 하드 블록(PUT/PATCH/DELETE 전부, remote/unknown POST) → exit 0, 실행 불가 안내.
+   - `--send` 없음(미리보기) 또는 확인 필요(local POST, remote/unknown GET) → exit 2.
      사용자에게 사유를 전하고 동의를 받은 뒤에만 필요한 플래그를 붙여 재실행한다.
 
 옵션: `--send`, `--confirm`, `--var key=value`(반복 가능), `--first`, `--max-body <n>`.

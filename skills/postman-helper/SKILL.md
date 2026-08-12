@@ -47,16 +47,28 @@ running scripts or showing commands — never cwd-relative `skills/...` paths.
   (blocked는 `--send --confirm`을 줘도 절대 실행되지 않는다).
 - **환경 분류**: host가 localhost·127.x·`*.local`·`*.test`이거나 **첫 라벨**이
   `dev`/`local`(예: `dev.example.com`)이면 local, 미해결 `{{변수}}` → unknown,
-  그 외 → remote. `api.dev.example.com`처럼 중간 라벨은 local로 치지 않는다.
+  그 외 → remote. `api.dev.example.com`처럼 중간 라벨은 local로 치지 않고,
+  `localhost.prod.example.com`처럼 `prod`/`stage`가 섞인 host도 local로 승격하지 않는다.
   리다이렉트(3xx)는 따라가지 않는다 — 게이트 판정 후 다른 host로 넘어가는 것을 막기 위함.
-- **`--send`만으로 전송되는 것은 `safe method + local/dev env`뿐.** 그 외는 추가로
-  `--confirm`이 필요하다.
+- **운영 데이터 가정**: 분류기는 `api.example.com`(운영)과 샌드박스를 구분할 수 없다.
+  따라서 **local/dev가 아닌 모든 환경은 운영일 수 있다고 가정한다.**
+- **`--send`만으로 전송되는 것은 `safe method + local/dev env`뿐.**
   - POST는 local이어도 사용자에게 먼저 질의하고, 동의하면 `--send --confirm`으로 재실행한다.
-  - safe 메서드라도 remote/unknown 환경이면 먼저 질의한다.
-  - PUT/PATCH/DELETE 요청은 실행하지 않는다. 검색·조회만 제공한다고 안내한다.
+  - **local/dev가 아닌 환경(remote/unknown)의 POST는 실행하지 않는다.** `--confirm`으로도
+    열리지 않는 하드 블록이다. 필요하면 `--var base_url=...`로 local/dev를 가리키게 한다.
+  - safe 메서드는 remote/unknown이어도 사용자 동의 후 `--send --confirm`으로 실행할 수 있다
+    (조회는 데이터를 변경하지 않으므로 허용).
+  - PUT/PATCH/DELETE 요청은 어느 환경에서도 실행하지 않는다. 검색·조회만 제공한다고 안내한다.
+
 - 실행 요청이라도 내용이 확실치 않으면 먼저 `--send` 없이 미리보기를 보여주고 진행한다.
-- 스크립트는 전송 불가 상황에서 판정/사유만 출력한다 (blocked→exit 0,
+- 스크립트는 전송 불가 상황에서 판정/사유만 출력한다 (하드 블록→exit 0,
   확인 필요/미리보기→exit 2). 이때 사용자에게 사유를 그대로 전하고 진행 여부를 묻는다.
+
+| | local/dev | remote (운영 가능) | unknown |
+| --- | --- | --- | --- |
+| GET/HEAD/OPTIONS | 자동 (`--send`) | `--send --confirm` | `--send --confirm` |
+| POST | `--send --confirm` | **차단** | **차단** |
+| PUT/PATCH/DELETE | **차단** | **차단** | **차단** |
 
 ## Routing
 
