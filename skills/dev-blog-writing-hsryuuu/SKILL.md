@@ -1,14 +1,15 @@
 ---
-name: hsryuuu-writing
+name: dev-blog-writing-hsryuuu
 description: >
-  Use when writing or rewriting content in hsryuuu's blog voice from
-  innovation123.tistory.com. Triggers: "hsryuuu처럼 써줘", "내 블로그 말투로",
-  "innovation123 톤으로", "tistory 톤", "/hsryuuu-writing". Covers tone,
-  wording, and sentence style only. Do NOT use for layout, section structure, or
-  file-format decisions.
+  Use when writing or rewriting personal dev-blog content in hsryuuu's voice
+  from innovation123.tistory.com. Triggers: "hsryuuu처럼 써줘", "내 블로그
+  말투로", "innovation123 톤으로", "tistory 톤", "/dev-blog-writing-hsryuuu".
+  Covers tone, wording, and sentence style only. Do NOT use for layout, section
+  structure, or file-format decisions, and do NOT use for work documents shared
+  with colleagues or leaders (use `docs-writing`).
 ---
 
-# hsryuuu-writing
+# dev-blog-writing-hsryuuu
 
 > hsryuuu의 tistory 블로그(innovation123.tistory.com)에서 추출한 **목소리(voice)** 가이드.
 > 글의 형식·레이아웃·섹션 구조는 이 스킬이 정하지 않는다. 글을 어떤 말투로 쓸지만 다룬다.
