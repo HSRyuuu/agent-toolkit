@@ -2,6 +2,17 @@
 
 **Load this reference when:** creating or editing skills, before deployment, to verify they work under pressure and resist rationalization.
 
+## Contents
+
+- Overview · When to Use · TDD Mapping for Skill Testing
+- **RED Phase** — baseline testing, watch it fail
+- **GREEN Phase** — write the minimal skill
+- **VERIFY GREEN** — pressure testing
+- **REFACTOR Phase** — close loopholes
+- Red Flags — STOP · Meta-Testing (when GREEN isn't working) · When a Skill is Bulletproof
+- Example: TDD skill bulletproofing · Testing checklist · Common mistakes · Quick reference
+- Worked example: [`examples/CLAUDE_MD_TESTING.md`](examples/CLAUDE_MD_TESTING.md) · Pressure design: [`persuasion-principles.md`](persuasion-principles.md)
+
 ## Overview
 
 **Testing skills is just TDD applied to process documentation.**
@@ -139,7 +150,7 @@ Forces explicit choice.
 
 **Best tests combine 3+ pressures.**
 
-**Why this works:** See persuasion-principles.md (in create-new-skill directory) for research on how authority, scarcity, and commitment principles increase compliance pressure.
+**Why this works:** See persuasion-principles.md (same directory) for research on how authority, scarcity, and commitment principles increase compliance pressure.
 
 ### Key Elements of Good Scenarios
 

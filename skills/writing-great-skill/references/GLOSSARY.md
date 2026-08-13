@@ -1,10 +1,20 @@
 # Glossary — Building Great Skills
 
-The domain model for what makes a skill great. A skill exists to wrangle determinism out of a stochastic system; the root virtue is **Predictability**, and every term below is a lever on it. This is the disclosed reference for [`writing-great-skills`](SKILL.md).
+The domain model for what makes a skill great. A skill exists to wrangle determinism out of a stochastic system; the root virtue is **Predictability**, and every term below is a lever on it. This is the disclosed reference for [`principles.md`](principles.md), which the [`writing-great-skill`](../SKILL.md) skill reads.
 
 The terms are grouped by axis: **Invocation** (how a skill is reached), **Information Hierarchy** (how its content is arranged), **Steering** (how the agent's runtime behaviour is shaped), and **Pruning** (how it is kept lean). Each **failure mode** lives beside the lever that cures it, tagged _failure mode_.
 
 **Bold terms** in any definition are themselves defined in this glossary; find them by their heading.
+
+## Contents
+
+- **Predictability** — the root virtue
+- **Invocation** — Model-Invoked · User-Invoked · Description · Context Pointer · Context Load · Cognitive Load · Router Skill · Granularity
+- **Information Hierarchy** — Information Hierarchy · Steps · Reference · Executable Script · External Reference · Progressive Disclosure · Co-location · _Sprawl_
+- **Steering** — Branch · Leading Word · Completion Criterion · Legwork · Post-Completion Steps · _Premature Completion_ · _Negation_
+- **Pruning** — Single Source of Truth · _Duplication_ · Relevance · _Sediment_ · _No-Op_
+
+_italic_ = failure mode.
 
 ## Predictability
 
@@ -91,6 +101,12 @@ _Avoid_: workflow, instructions, choreography
 Material the agent refers to on demand — definitions, facts, parameters, examples, conditional instructions. When a skill has **steps** it is secondary to them; when a skill has none it is the entire content; or it lives outside any skill entirely — see **External Reference**. Reached via **context pointers**, and the prime candidate for **progressive disclosure**.
 
 _Avoid_: supporting material, docs, background
+
+### Executable Script
+
+A bundled script (`scripts/*.py|js|ts|sh`) that the agent **runs rather than reads**. It sits off the reading ladder: its body never enters context, so only its _output_ costs tokens — a large script is nearly free where the equivalent **reference** is not. Alone among the rungs it delivers **predictability** directly instead of steering toward it, because the same input produces the same output with no sampling in between. Choose it by the task's _fragility_ and _variability_, not its recurrence: deterministic checks, fragile sequences, batch or destructive or high-stakes operations. Its opposite pole is high-freedom prose, correct where several approaches are valid and context picks the path — scripting that turf costs the skill its reusability. Always mark whether the agent should execute it (the default) or read it as reference.
+
+_Avoid_: helper, utility, code, automation
 
 ### External Reference
 

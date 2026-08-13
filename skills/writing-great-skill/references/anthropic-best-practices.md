@@ -4,6 +4,21 @@
 
 Good Skills are concise, well-structured, and tested with real usage. This guide provides practical authoring decisions to help you write Skills that Claude can discover and use effectively.
 
+## Contents
+
+1150행. 통독하지 말고 해당 절만 읽는다.
+
+- **Core principles** — concise is key, degrees of freedom (high/medium/low), testing across models
+- **Skill structure** — frontmatter rules, naming, writing descriptions, progressive disclosure patterns, one-level-deep references, table of contents for long files
+- **Workflows and feedback loops** — checklists for complex tasks, validator→fix→repeat loops
+- **Content guidelines** — avoiding time-sensitive info, consistent terminology
+- **Common patterns** — template, examples, conditional workflow
+- **Evaluation and iteration** — build evals first, Claude A/Claude B loop, observing navigation
+- **Anti-patterns to avoid** — Windows paths, too many options
+- **Advanced: Skills with executable code** — solve don't defer, utility scripts, execute-vs-reference, visual analysis, plan-validate-execute, dependencies, runtime environment, MCP tool names
+- **Technical notes** — frontmatter validation, token budgets (500-line SKILL.md)
+- **Checklist for effective Skills** — core quality / code and scripts / testing
+
 For conceptual background on how Skills work, see the [Skills overview](/en/docs/agents-and-tools/agent-skills/overview).
 
 ## Core principles

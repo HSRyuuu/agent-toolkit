@@ -2,6 +2,12 @@
 
 Testing different documentation variants to find what actually makes agents discover and use skills under pressure.
 
+## Contents
+
+- Test Scenarios · Documentation Variants to Test
+- Skills Library (두 변형) · Working with Skills
+- Testing Protocol · Success Criteria · Expected Results · Next Steps
+
 Scope note: the `~/.claude/skills/` paths below are Claude user-level/ad-hoc examples for testing CLAUDE.md behavior, not this repository's active plugin loader topology. In this plugin, Claude Code and Codex share `./skills/` as the canonical plugin skill root.
 
 ## Test Scenarios
