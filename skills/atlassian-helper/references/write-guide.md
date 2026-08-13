@@ -109,6 +109,49 @@ python3 "<SKILL_DIR>/scripts/confluence.py" comment 1234567890 --body "표 하�
 python3 "<SKILL_DIR>/scripts/confluence.py" delete 1234567890 --yes
 ```
 
+## 이미지 / 첨부 파일 업로드
+
+현재 첨부 목록부터 확인한다 (파일명·버전·크기):
+
+```bash
+python3 "<SKILL_DIR>/scripts/confluence.py" attachments 1234567890
+```
+
+새 파일 올리기 (생성 = 안전 작업):
+
+```bash
+python3 "<SKILL_DIR>/scripts/confluence.py" attach 1234567890 \
+  --file ~/Desktop/flow.png --comment "발송 플로우 다이어그램"
+```
+
+같은 이름이 이미 있으면 실행을 멈춘다. 의도적으로 갈아끼우는 경우에만
+`--replace`를 붙인다 (수정 = 작성자 확인, 첨부 버전이 +1 된다):
+
+```bash
+python3 "<SKILL_DIR>/scripts/confluence.py" attach 1234567890 \
+  --file /tmp/flow-v2.png --replace
+```
+
+`--replace`는 본문의 `ri:version-at-save`도 새 버전으로 맞춰준다. Confluence는
+본문에 박힌 버전을 렌더하므로 이 갱신이 없으면 파일만 바뀌고 화면은 옛 이미지가
+그대로 보인다. 다른 이름으로 올리고 싶으면 `--name new-name.png`을 쓴다.
+
+새로 올린 이미지는 첨부만 된 상태다. 본문에 노출하려면 출력에 나온 조각을
+`update --storage`로 원하는 위치에 넣는다:
+
+```xml
+<ac:image ac:align="center" ac:custom-width="true" ac:width="900" ac:alt="발송 플로우"><ri:attachment ri:filename="flow.png" ri:version-at-save="1" /></ac:image>
+```
+
+Jira 이슈 첨부 (생성 = 안전 작업, 남의 티켓에도 가능):
+
+```bash
+python3 "<SKILL_DIR>/scripts/jira.py" attach ABC-123 --file ~/Desktop/error.png
+```
+
+빈 파일·없는 경로·디렉터리·경로 구분자가 섞인 `--name`은 업로드 전에 거절한다.
+상한은 100MB이고, 그보다 작은 실제 상한은 사이트 설정을 따른다 (Jira는 보통 10MB).
+
 ## 실행 전 체크리스트
 
 1. 대상이 맞는가 — 프로젝트 키/스페이스 키, 이슈 키/페이지 ID를 조회로 먼저 확인.

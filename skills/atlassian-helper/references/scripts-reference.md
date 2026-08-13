@@ -23,8 +23,8 @@ scripts freely. 쓰기(생성·수정·삭제)는 `write-guide.md`를 읽는다.
 | Script | Use For | Key Commands |
 | --- | --- | --- |
 | `atlassian_setup.py` | Credential setup and checks | `init-keys`, `auth-test`, `search-test`, `confluence-test`, `profiles` |
-| `jira.py` | Jira issues (read + write) | `search`, `mine`, `worked`, `due`, `text`, `count`, `issue`, `projects`, `statuses`, `transitions`, `create`, `comment`, `edit`, `transition`, `delete`, `comment-edit`, `comment-delete` |
-| `confluence.py` | Confluence pages (read + write) | `search`, `page`, `spaces`, `create`, `update`, `delete`, `comment` |
+| `jira.py` | Jira issues (read + write) | `search`, `mine`, `worked`, `due`, `text`, `count`, `issue`, `projects`, `statuses`, `transitions`, `create`, `comment`, `attach`, `edit`, `transition`, `delete`, `comment-edit`, `comment-delete` |
+| `confluence.py` | Confluence pages (read + write) | `search`, `page`, `spaces`, `attachments`, `create`, `update`, `delete`, `comment`, `attach` |
 | `atlassian_common.py` | Shared implementation | import-only; do not call as CLI |
 
 ## Command Selection
@@ -44,6 +44,8 @@ scripts freely. 쓰기(생성·수정·삭제)는 `write-guide.md`를 읽는다.
 | 내가 쓴 문서 목록 | `confluence.py search --mine` |
 | 문서 하나 읽기 (+코멘트) | `confluence.py page <id> --comments 5` |
 | 스페이스 키 목록 | `confluence.py spaces` (선택: `--query 이름`) |
+| 문서 첨부 목록 (파일명/버전/크기) | `confluence.py attachments <id>` |
+| 이미지·첨부 업로드/교체 | `write-guide.md` 참조 (`attach`) |
 | 티켓/문서 만들기·고치기·지우기 | `write-guide.md` 참조 |
 
 ## Common Flags (mine / worked / due / text)
@@ -121,6 +123,12 @@ python3 "<SKILL_DIR>/scripts/confluence.py" page 1234567890 --storage   # 원본
 
 ```bash
 python3 "<SKILL_DIR>/scripts/confluence.py" spaces --query 개발
+```
+
+첨부 목록 (`id  파일명  v버전  크기`):
+
+```bash
+python3 "<SKILL_DIR>/scripts/confluence.py" attachments 1234567890
 ```
 
 ## Output

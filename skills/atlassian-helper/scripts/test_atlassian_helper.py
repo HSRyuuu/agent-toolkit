@@ -695,6 +695,135 @@ def case_confluence_search_needs_a_filter() -> bool:
         return check("confluence search refuses an unbounded query", "검색어" in str(exc))
 
 
+def case_prepare_upload_validation() -> bool:
+    with tempfile.TemporaryDirectory(prefix="atlassian-helper-test-") as tmp:
+        good = Path(tmp) / "flow.png"
+        good.write_bytes(b"\x89PNG\r\n")
+        empty = Path(tmp) / "empty.png"
+        empty.write_bytes(b"")
+        path, name = common.prepare_upload(str(good))
+        ok = path == good and name == "flow.png"
+        _, renamed = common.prepare_upload(str(good), "diagram.png")
+        ok = ok and renamed == "diagram.png"
+        for bad_args in (
+            (str(empty), None),
+            (str(Path(tmp) / "missing.png"), None),
+            (str(tmp), None),
+            (str(good), "../escape.png"),
+        ):
+            try:
+                common.prepare_upload(*bad_args)
+                ok = False
+            except common.AtlassianHelperError:
+                pass
+        form = common.file_form(good, "flow.png")
+    return check(
+        "prepare_upload accepts a real file and rejects empty/missing/dir/path-escape names",
+        ok and form == [f'file=@"{good.resolve()}";filename="flow.png";type=image/png'],
+        str(form),
+    )
+
+
+def case_repin_attachment_version() -> bool:
+    body = (
+        '<ac:image ac:width="900"><ri:attachment ri:filename="flow.png" '
+        'ri:version-at-save="1" /></ac:image>'
+        '<p><ri:attachment ri:filename="notes.md" ri:version-at-save="1" /></p>'
+    )
+    bumped, count = confluence._repin_attachment(body, "flow.png", 2)
+    same, zero = confluence._repin_attachment(bumped, "flow.png", 2)
+    return check(
+        "_repin_attachment rewrites only the target filename and is idempotent",
+        count == 1
+        and 'ri:filename="flow.png" ri:version-at-save="2"' in bumped
+        and 'ri:filename="notes.md" ri:version-at-save="1"' in bumped
+        and zero == 0
+        and same == bumped,
+        f"count={count} zero={zero}",
+    )
+
+
+def case_attach_refuses_silent_overwrite() -> bool:
+    calls, restore = _record_requests(
+        confluence,
+        {
+            f"{common.CONTENT_PATH}/123/child/attachment": {
+                "results": [{"id": "att9", "title": "flow.png", "version": {"number": 1}}]
+            }
+        },
+    )
+    with tempfile.TemporaryDirectory(prefix="atlassian-helper-test-") as tmp:
+        target = Path(tmp) / "flow.png"
+        target.write_bytes(b"\x89PNG\r\n")
+        args = _parse_conf(["attach", "123", "--file", str(target)])
+        try:
+            confluence.command_attach(args)
+            ok, detail = False, "no error raised"
+        except common.AtlassianHelperError as exc:
+            ok, detail = "--replace" in str(exc), str(exc)
+        finally:
+            restore()
+    methods = [method for method, _ in calls]
+    return check(
+        "confluence attach refuses to overwrite a same-name attachment without --replace",
+        ok and "POST" not in methods,
+        f"{detail} / calls={calls}",
+    )
+
+
+def case_attach_replace_blocked_for_other_author() -> bool:
+    calls, restore = _record_requests(
+        confluence,
+        {
+            f"{common.CONTENT_PATH}/123/child/attachment": {
+                "results": [{"id": "att9", "title": "flow.png", "version": {"number": 1}}]
+            },
+            common.PAGES_PATH: {"id": "123", "title": "남의 문서", "authorId": "other-1"},
+            "/wiki/rest/api/user": {"publicName": "홍길동"},
+        },
+    )
+    with tempfile.TemporaryDirectory(prefix="atlassian-helper-test-") as tmp:
+        target = Path(tmp) / "flow.png"
+        target.write_bytes(b"\x89PNG\r\n")
+        args = _parse_conf(["attach", "123", "--file", str(target), "--replace"])
+        try:
+            confluence.command_attach(args)
+            ok, detail = False, "no error raised"
+        except common.AtlassianHelperError as exc:
+            ok, detail = "작성자가 본인이 아닙니다" in str(exc), str(exc)
+        finally:
+            restore()
+    methods = [method for method, _ in calls]
+    return check(
+        "confluence attach --replace on someone else's page never uploads",
+        ok and "POST" not in methods and "PUT" not in methods,
+        f"{detail} / calls={calls}",
+    )
+
+
+def case_upload_sets_xsrf_header() -> bool:
+    captured: dict[str, object] = {}
+
+    def fake_curl(**kwargs):
+        captured.update(kwargs)
+        return 200, "", "{}"
+
+    real_curl = common.run_curl
+    common.run_curl = fake_curl
+    try:
+        common.api_request(
+            dict(ME), "/rest/api/3/issue/ABC-1/attachments", http_method="POST", form=["file=@x"]
+        )
+    finally:
+        common.run_curl = real_curl
+    headers = captured.get("headers") or {}
+    return check(
+        "multipart requests send X-Atlassian-Token: no-check and the form parts",
+        headers.get("X-Atlassian-Token") == "no-check" and captured.get("form") == ["file=@x"],
+        str(captured.get("form")),
+    )
+
+
 def main() -> int:
     cases = [
         case_normalize_site,
@@ -737,6 +866,11 @@ def main() -> int:
         case_confluence_update_bumps_version_for_own_page,
         case_confluence_search_cql,
         case_confluence_search_needs_a_filter,
+        case_prepare_upload_validation,
+        case_repin_attachment_version,
+        case_attach_refuses_silent_overwrite,
+        case_attach_replace_blocked_for_other_author,
+        case_upload_sets_xsrf_header,
     ]
     results = [case() for case in cases]
     passed = sum(results)

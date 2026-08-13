@@ -12,6 +12,7 @@ from atlassian_common import (
     DEFAULT_LIMIT,
     MAX_LIMIT,
     SEARCH_PATH,
+    UPLOAD_MAX_TIME_SECONDS,
     AtlassianHelperError,
     adf_summary,
     add_profile_arg,
@@ -19,14 +20,17 @@ from atlassian_common import (
     assert_owner,
     combine_jql,
     confirm_destructive,
+    file_form,
     format_issue,
     format_issues,
     format_timestamp,
+    human_size,
     jql_in_clause,
     jql_quote,
     jql_time_value,
     load_profile,
     my_account_id,
+    prepare_upload,
     print_response,
     read_body,
     response_issues,
@@ -358,6 +362,29 @@ def command_comment(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_attach(args: argparse.Namespace) -> int:
+    key = validate_issue_key(args.key)
+    path, filename = prepare_upload(args.file, args.name)
+    _, profile = load_profile(args.profile)
+    response = api_request(
+        profile,
+        f"/rest/api/3/issue/{key}/attachments",
+        http_method="POST",
+        form=file_form(path, filename),
+        max_time=UPLOAD_MAX_TIME_SECONDS,
+    )
+    if args.raw:
+        return print_response(response)
+    uploaded = response[0] if isinstance(response, list) and response else {}
+    uploaded = uploaded if isinstance(uploaded, dict) else {}
+    print(
+        f"attached {uploaded.get('filename') or filename} "
+        f"(id={uploaded.get('id') or '-'}, {human_size(uploaded.get('size'))}) to {key}"
+        f"  {_issue_url(profile, key)}"
+    )
+    return 0
+
+
 def command_edit(args: argparse.Namespace) -> int:
     key = validate_issue_key(args.key)
     fields: dict[str, Any] = {}
@@ -602,6 +629,14 @@ def build_parser() -> argparse.ArgumentParser:
     add_body_args(comment)
     comment.add_argument("--raw", action="store_true")
     comment.set_defaults(func=command_comment)
+
+    attach = subparsers.add_parser("attach", help="Attach a file/image to an issue (안전 작업)")
+    add_profile_arg(attach)
+    attach.add_argument("key")
+    attach.add_argument("--file", required=True, help="업로드할 로컬 파일 경로")
+    attach.add_argument("--name", help="첨부 파일명 (기본: 원본 파일명)")
+    attach.add_argument("--raw", action="store_true")
+    attach.set_defaults(func=command_attach)
 
     edit = subparsers.add_parser("edit", help="Edit an issue I created (작성자 확인)")
     add_profile_arg(edit)

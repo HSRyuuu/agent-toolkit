@@ -4,23 +4,29 @@
 from __future__ import annotations
 
 import argparse
+import re
 from typing import Any
 
 from atlassian_common import (
+    CONTENT_PATH,
     CQL_SEARCH_PATH,
     DEFAULT_LIMIT,
     MAX_LIMIT,
     PAGES_PATH,
     SPACES_PATH,
+    UPLOAD_MAX_TIME_SECONDS,
     AtlassianHelperError,
     add_profile_arg,
     api_request,
     assert_owner,
     confirm_destructive,
     cql_quote,
+    file_form,
     format_timestamp,
+    human_size,
     load_profile,
     my_account_id,
+    prepare_upload,
     print_response,
     read_body,
     run_main,
@@ -272,6 +278,153 @@ def command_delete(args: argparse.Namespace) -> int:
     return 0
 
 
+def _list_attachments(profile: dict[str, Any], page_id: str) -> list[dict[str, Any]]:
+    response = api_request(
+        profile,
+        f"{CONTENT_PATH}/{page_id}/child/attachment",
+        query={"expand": "version,extensions", "limit": 100},
+    )
+    results = response.get("results") if isinstance(response, dict) else []
+    return [item for item in (results or []) if isinstance(item, dict)]
+
+
+def _attachment_version(attachment: dict[str, Any]) -> int:
+    version = attachment.get("version") if isinstance(attachment.get("version"), dict) else {}
+    try:
+        return int(version.get("number") or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _repin_attachment(storage: str, filename: str, version: int) -> tuple[str, int]:
+    """Point <ri:attachment ri:version-at-save> at the freshly uploaded version.
+
+    Confluence renders the pinned version, so a replaced file stays invisible
+    until the page body is re-saved with the new number.
+    """
+    pattern = re.compile(
+        r'(<ri:attachment\b[^>]*?ri:filename="' + re.escape(filename) + r'"[^>]*?'
+        r'ri:version-at-save=")(\d+)(")'
+    )
+    replaced = 0
+
+    def sub(match: re.Match[str]) -> str:
+        nonlocal replaced
+        if int(match.group(2)) == version:
+            return match.group(0)
+        replaced += 1
+        return f"{match.group(1)}{version}{match.group(3)}"
+
+    return pattern.sub(sub, storage), replaced
+
+
+def command_attachments(args: argparse.Namespace) -> int:
+    page_id = validate_id(args.id, "페이지 ID")
+    _, profile = load_profile(args.profile)
+    attachments = _list_attachments(profile, page_id)
+    if args.raw:
+        return print_response(attachments)
+    if not attachments:
+        print("(no attachments)")
+        return 0
+    for attachment in attachments:
+        extensions = (
+            attachment.get("extensions")
+            if isinstance(attachment.get("extensions"), dict)
+            else {}
+        )
+        print(
+            f"{attachment.get('id')}  {attachment.get('title')}  "
+            f"v{_attachment_version(attachment)}  {human_size(extensions.get('fileSize'))}"
+        )
+    return 0
+
+
+def command_attach(args: argparse.Namespace) -> int:
+    page_id = validate_id(args.id, "페이지 ID")
+    path, filename = prepare_upload(args.file, args.name)
+    _, profile = load_profile(args.profile)
+    existing = next(
+        (item for item in _list_attachments(profile, page_id) if item.get("title") == filename),
+        None,
+    )
+    if existing and not args.replace:
+        raise AtlassianHelperError(
+            f"같은 이름의 첨부가 이미 있습니다 (v{_attachment_version(existing)}): {filename}\n"
+            "새 버전으로 교체하려면 --replace, 다른 이름으로 올리려면 --name을 쓰세요."
+        )
+
+    form = file_form(path, filename)
+    if args.comment:
+        form.append(f"comment={args.comment}")
+    page: dict[str, Any] = {"id": page_id}
+    if existing:
+        page = _get_page(profile, page_id)
+        _assert_page_owner(profile, page)
+        response = api_request(
+            profile,
+            f"{CONTENT_PATH}/{page_id}/child/attachment/{existing.get('id')}/data",
+            http_method="POST",
+            form=form,
+            max_time=UPLOAD_MAX_TIME_SECONDS,
+        )
+    else:
+        form.append("minorEdit=true")
+        response = api_request(
+            profile,
+            f"{CONTENT_PATH}/{page_id}/child/attachment",
+            http_method="POST",
+            form=form,
+            max_time=UPLOAD_MAX_TIME_SECONDS,
+        )
+        results = response.get("results") if isinstance(response, dict) else None
+        if isinstance(results, list) and results and isinstance(results[0], dict):
+            response = results[0]
+    if args.raw:
+        return print_response(response)
+
+    version = _attachment_version(response) if isinstance(response, dict) else 0
+    action = "replaced" if existing else "uploaded"
+    attachment_id = response.get("id") if isinstance(response, dict) else "-"
+    print(
+        f"{action} attachment {filename} (v{version}, id={attachment_id}, "
+        f"{human_size(path.stat().st_size)}) on page {page_id}"
+    )
+
+    if existing:
+        body = page.get("body") if isinstance(page.get("body"), dict) else {}
+        storage = body.get("storage") if isinstance(body.get("storage"), dict) else {}
+        value = storage.get("value") or ""
+        repinned, count = _repin_attachment(value, filename, version)
+        if count:
+            page_version = page.get("version") if isinstance(page.get("version"), dict) else {}
+            next_version = int(page_version.get("number") or 0) + 1
+            api_request(
+                profile,
+                f"{PAGES_PATH}/{page_id}",
+                http_method="PUT",
+                payload={
+                    "id": page_id,
+                    "status": "current",
+                    "title": page.get("title"),
+                    "body": {"representation": "storage", "value": repinned},
+                    "version": {
+                        "number": next_version,
+                        "message": f"{filename} v{version} 반영",
+                    },
+                },
+            )
+            print(f"  본문의 ri:version-at-save {count}곳을 v{version}로 갱신 (page v{next_version})")
+    else:
+        print(
+            "  본문에 이미지로 넣으려면 update --storage 로 다음 조각을 삽입하세요:\n"
+            f'  <ac:image ac:align="center"><ri:attachment ri:filename="{filename}" '
+            f'ri:version-at-save="{version}" /></ac:image>'
+        )
+    print(f"  {_page_url(profile, page)}")
+    return 0
+
+
 def command_comment(args: argparse.Namespace) -> int:
     page_id = validate_id(args.id, "페이지 ID")
     _, profile = load_profile(args.profile)
@@ -361,6 +514,26 @@ def build_parser() -> argparse.ArgumentParser:
     delete.add_argument("id")
     delete.add_argument("--yes", action="store_true", help="삭제 확인 (필수)")
     delete.set_defaults(func=command_delete)
+
+    attachments = subparsers.add_parser("attachments", help="List page attachments")
+    add_profile_arg(attachments)
+    attachments.add_argument("id", help="페이지 ID (숫자)")
+    attachments.add_argument("--raw", action="store_true")
+    attachments.set_defaults(func=command_attachments)
+
+    attach = subparsers.add_parser(
+        "attach", help="Upload a file/image to a page (교체는 작성자 확인)"
+    )
+    add_profile_arg(attach)
+    attach.add_argument("id", help="페이지 ID (숫자)")
+    attach.add_argument("--file", required=True, help="업로드할 로컬 파일 경로")
+    attach.add_argument("--name", help="첨부 파일명 (기본: 원본 파일명)")
+    attach.add_argument(
+        "--replace", action="store_true", help="같은 이름 첨부를 새 버전으로 교체 (작성자 확인)"
+    )
+    attach.add_argument("--comment", help="첨부 설명")
+    attach.add_argument("--raw", action="store_true")
+    attach.set_defaults(func=command_attach)
 
     comment = subparsers.add_parser("comment", help="Add a footer comment (안전 작업)")
     add_profile_arg(comment)

@@ -7,11 +7,13 @@ description: >
   연체), review what they worked on over a period (지난 2주 작업한 내용), read
   an issue's detail or comments by key (ABC-123), run raw JQL or count issues,
   create a ticket or comment (티켓 만들어줘, 코멘트 달아줘), edit, transition,
-  or delete their own ticket, or search, read, create, update, and delete
+  or delete their own ticket, search, read, create, update, and delete
   Confluence pages (컨플루언스 문서 찾아줘, 위키 페이지 만들어줘, 페이지
-  수정해줘). Triggers: "지라", "Jira", "컨플루언스", "Confluence", "위키",
-  "JQL", "CQL", and in Atlassian context: "기억해", "기억해줘", "memory",
-  "MEMORY".
+  수정해줘), or upload/replace an image or attachment on a page or issue
+  (이미지 올려줘, 첨부 파일 업로드, 이미지 바꿔줘/교체해줘, 스크린샷 첨부).
+  Triggers: "지라", "Jira", "컨플루언스", "Confluence", "위키", "JQL", "CQL",
+  "첨부", "attachment", and in Atlassian context: "기억해", "기억해줘",
+  "memory", "MEMORY".
 ---
 
 # Atlassian Helper
@@ -45,8 +47,8 @@ the reference files) when running scripts or showing commands to the user.
 | 작업 | 분류 | 게이트 |
 | --- | --- | --- |
 | 조회 (search, issue, page, count …) | 안전 | 없음 |
-| 생성 (issue create, comment, page create) | 안전 | 실행 전 대상/내용을 사용자에게 한 줄로 확인 |
-| 수정 (issue edit, transition, comment-edit, page update) | 위험 | **작성자 == 본인**일 때만 실행 |
+| 생성 (issue create, comment, page create, 새 첨부 attach) | 안전 | 실행 전 대상/내용을 사용자에게 한 줄로 확인 |
+| 수정 (issue edit, transition, comment-edit, page update, `attach --replace`) | 위험 | **작성자 == 본인**일 때만 실행 |
 | 삭제 (issue delete, comment-delete, page delete) | 위험 | **작성자 == 본인** + `--yes` |
 
 작성자 확인은 스크립트가 API로 직접 검사하고, 작성자를 못 읽으면 fail-closed로
@@ -70,6 +72,7 @@ the reference files) when running scripts or showing commands to the user.
 | 티켓 수정/상태 변경/삭제 | `references/write-guide.md` | `jira.py edit`, `transition`, `delete` |
 | 컨플루언스 문서 검색/읽기 | `references/scripts-reference.md` | `confluence.py search`, `page` |
 | 컨플루언스 문서 작성/수정/삭제 | `references/write-guide.md` | `confluence.py create`, `update`, `delete` |
+| 이미지·첨부 업로드/교체 (페이지 이미지 바꿔줘, 스크린샷 첨부) | `references/write-guide.md` | `confluence.py attach`, `attachments`, `jira.py attach` |
 | 프로젝트/상태/스페이스 이름 탐색 | `references/scripts-reference.md` | `jira.py projects`, `statuses`, `confluence.py spaces` |
 
 ## Local Files
@@ -91,10 +94,10 @@ The config directory should be `700`; `config.json` and `MEMORY.md` should be
 - `atlassian_setup.py`: `init-keys`, `auth-test`, `search-test`,
   `confluence-test`, `profiles`
 - `jira.py`: 읽기 `search`, `mine`, `worked`, `due`, `text`, `count`, `issue`,
-  `projects`, `statuses`, `transitions` / 쓰기 `create`, `comment`, `edit`,
-  `transition`, `delete`, `comment-edit`, `comment-delete`
-- `confluence.py`: 읽기 `search`, `page`, `spaces` / 쓰기 `create`, `update`,
-  `delete`, `comment`
+  `projects`, `statuses`, `transitions` / 쓰기 `create`, `comment`, `attach`,
+  `edit`, `transition`, `delete`, `comment-edit`, `comment-delete`
+- `confluence.py`: 읽기 `search`, `page`, `spaces`, `attachments` / 쓰기
+  `create`, `update`, `delete`, `comment`, `attach`
 - `atlassian_common.py`: import-only shared implementation
 
 자연어 요청은 가능한 한 전용 커맨드(`mine`/`worked`/`due`/`text`)로 매핑하고,

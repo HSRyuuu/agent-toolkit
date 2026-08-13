@@ -6,6 +6,7 @@ from __future__ import annotations
 import base64
 import html
 import json
+import mimetypes
 import os
 import re
 import stat
@@ -28,11 +29,14 @@ DEFAULT_LIMIT = 20
 MAX_LIMIT = 100  # Jira Cloud /search/jql caps maxResults at 100
 MAX_RETRY_AFTER_SECONDS = 60
 TRANSIENT_RETRY_SLEEP_SECONDS = 2
+UPLOAD_MAX_BYTES = 100 * 1024 * 1024  # Confluence Cloud per-file default; Jira is lower
+UPLOAD_MAX_TIME_SECONDS = 300
 
 SEARCH_PATH = "/rest/api/3/search/jql"
 COUNT_PATH = "/rest/api/3/search/approximate-count"
 MYSELF_PATH = "/rest/api/3/myself"
 CQL_SEARCH_PATH = "/wiki/rest/api/search"
+CONTENT_PATH = "/wiki/rest/api/content"  # v1: only API with attachment upload
 PAGES_PATH = "/wiki/api/v2/pages"
 SPACES_PATH = "/wiki/api/v2/spaces"
 
@@ -246,6 +250,8 @@ def run_curl(
     http_method: str = "GET",
     headers: dict[str, str] | None = None,
     payload: dict[str, Any] | None = None,
+    form: list[str] | None = None,
+    max_time: int = 60,
 ) -> tuple[int, str, str]:
     method = http_method.upper()
     headers = headers or {}
@@ -260,6 +266,8 @@ def run_curl(
             body = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
             config_lines.append('header = "Content-Type: application/json"')
             config_lines.append(f'data = "{curl_config_quote(body)}"')
+        for part in form or []:
+            config_lines.append(f'form = "{curl_config_quote(part)}"')
 
         command = [
             "curl",
@@ -269,7 +277,7 @@ def run_curl(
             "--connect-timeout",
             "10",
             "--max-time",
-            "60",
+            str(max_time),
             "--dump-header",
             str(header_path),
             "--output",
@@ -323,6 +331,8 @@ def api_request(
     payload: dict[str, Any] | None = None,
     query: dict[str, Any] | None = None,
     retries: int = 1,
+    form: list[str] | None = None,
+    max_time: int = 60,
 ) -> Any:
     base = normalize_site(str(profile.get("site")))
     url = f"{base}{path}"
@@ -336,13 +346,21 @@ def api_request(
         "Accept": "application/json",
         "Authorization": basic_auth_header(profile),
     }
+    if form:
+        # Atlassian rejects multipart uploads without this XSRF opt-out header.
+        headers["X-Atlassian-Token"] = "no-check"
 
     attempts_left = retries
     transient_left = retries
     while True:
         try:
             status, response_headers, body = run_curl(
-                url=url, http_method=http_method, headers=headers, payload=payload
+                url=url,
+                http_method=http_method,
+                headers=headers,
+                payload=payload,
+                form=form,
+                max_time=max_time,
             )
         except AtlassianHelperError:
             # network failure / curl error: retry once before giving up
@@ -379,6 +397,43 @@ def api_request(
             sanitize_sensitive(f"Atlassian API {path} HTTP {status}{hint}: {detail}", profile)
         )
     return data
+
+
+def prepare_upload(path_value: str, name: str | None = None) -> tuple[Path, str]:
+    """Validate a local file for upload and resolve the attachment filename."""
+    path = Path(path_value).expanduser()
+    if not path.exists():
+        raise AtlassianHelperError(f"파일을 찾을 수 없습니다: {path}")
+    if not path.is_file():
+        raise AtlassianHelperError(f"파일이 아닙니다: {path}")
+    size = path.stat().st_size
+    if size == 0:
+        raise AtlassianHelperError(f"빈 파일은 업로드하지 않습니다: {path}")
+    if size > UPLOAD_MAX_BYTES:
+        limit_mb = UPLOAD_MAX_BYTES // (1024 * 1024)
+        raise AtlassianHelperError(f"파일이 너무 큽니다 ({size} bytes, 상한 {limit_mb}MB): {path}")
+    filename = (name or path.name).strip()
+    if not filename or filename in (".", "..") or "/" in filename or "\\" in filename:
+        raise AtlassianHelperError(f"첨부 파일명이 올바르지 않습니다: {filename!r}")
+    return path, filename
+
+
+def file_form(path: Path, filename: str, field: str = "file") -> list[str]:
+    """Build the curl --form spec for a single file part."""
+    content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    return [f'{field}=@"{path.resolve()}";filename="{filename}";type={content_type}']
+
+
+def human_size(value: Any) -> str:
+    try:
+        size = float(value)
+    except (TypeError, ValueError):
+        return "-"
+    for unit in ("B", "KB", "MB", "GB"):
+        if size < 1024 or unit == "GB":
+            return f"{size:.0f}{unit}" if unit == "B" else f"{size:.1f}{unit}"
+        size /= 1024
+    return "-"
 
 
 def site_url(profile: dict[str, Any]) -> str:
