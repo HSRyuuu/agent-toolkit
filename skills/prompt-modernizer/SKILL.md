@@ -2,18 +2,21 @@
 name: prompt-modernizer
 description: >
   Use when an existing prompt, system prompt, CLAUDE.md/AGENTS.md, skill body, or
-  agent instruction set was written for an older model generation and needs to be
-  re-tuned for a current frontier model — deciding line by line what to relax,
-  convert, or keep. Triggers: "프롬프트 최신 모델에 맞게 정리해줘", "예전 프롬프트
-  손봐줘", "시스템 프롬프트 다이어트", "CLAUDE.md 너무 길어", "AGENTS.md 줄여줘",
-  "모델 바꿨는데 프롬프트 그대로 써도 돼?", "prompt migration", "context diet",
-  "/prompt-modernizer". Do NOT use for writing a new prompt from scratch (use
-  `prompt-master`) or for general doc cleanup.
+  agent instruction set was written for an older model generation and you want to
+  find out what is worth re-tuning for a current frontier model. Produces a
+  line-by-line diagnosis and proposed changes as a report — it does NOT edit the
+  artifact. Triggers: "프롬프트 최신 모델 기준으로 진단해줘", "고칠 만한 데 찾아줘",
+  "예전 프롬프트 손볼 곳 있나", "시스템 프롬프트 다이어트", "CLAUDE.md 너무 길어",
+  "AGENTS.md 줄여줘", "모델 바꿨는데 프롬프트 그대로 써도 돼?", "prompt migration",
+  "context diet", "/prompt-modernizer". Do NOT use for writing a new prompt from
+  scratch (use `prompt-master`) or for general doc cleanup.
 ---
 
 # Prompt Modernizer
 
-낡은 프롬프트를 최신 프론티어 모델 기준으로 재조정한다. 목표는 "짧게 만들기"가 아니라 **모델이 이미 잘 하는 것에 대한 지시를 걷어내고, 모델이 알 수 없는 것에 토큰을 몰아주는 것**이다.
+낡은 프롬프트에서 **최신 프론티어 모델 기준으로 고칠 만한 항목을 찾아내고, 각 항목의 개선안을 제시한다**. 판단 기준은 "짧게 만들기"가 아니라 모델이 이미 잘 하는 것에 대한 지시를 찾아내고, 모델이 알 수 없는 것에 토큰을 몰아줄 지점을 짚는 것이다.
+
+**이 스킬은 진단 도구다. 대상 아티팩트를 수정하지 않는다.** 산출물은 항목별 판정과 개선안이 담긴 리포트 하나뿐이다. 실제 편집은 사용자가 리포트를 보고 별도로 요청했을 때만 한다.
 
 전제: 최근 세대 모델은 추론·탐색·도구 선택을 내부에서 처리한다. 그걸 대신 지시하던 문장은 이제 성능을 **깎는다**. Anthropic은 Claude Opus 5 대상 Claude Code 시스템 프롬프트의 80% 이상을 제거하고도 자사 코딩 평가에서 측정 가능한 손실이 없었고, ETH SRI의 AGENTS.md 연구는 컨텍스트 파일이 성공률은 못 올리면서 추론 비용만 20%+ 늘렸다고 보고했다.
 
@@ -140,9 +143,9 @@ Gemini 대상 프롬프트에서 few-shot을 걷어내는 것은 벤더 가이�
 
 eval이 없으면: 대표 작업 3~5개를 골라 before/after 출력을 나란히 비교하는 것으로 대체하고, 그 한계를 리포트에 적는다.
 
-### 7. 리포트 출력
+### 7. 리포트 출력 (스킬의 종착점)
 
-원본을 바로 덮어쓰지 않는다. 먼저 판정표를 보여주고 승인을 받는다.
+리포트를 내는 것으로 이 스킬은 끝난다. 원본은 읽기만 하고 손대지 않는다.
 
 ```markdown
 ## 프롬프트 현대화 리포트
@@ -178,7 +181,7 @@ eval이 없으면: 대표 작업 3~5개를 골라 before/after 출력을 나란�
 1. ... (묶음별 제거 순서와 각 묶음의 검증 방법)
 ```
 
-승인 후 편집하고, 원본은 git에 커밋되어 있는지 확인한다 (되돌릴 수 없으면 백업본을 남긴다).
+리포트 끝에 다음 행동을 사용자에게 넘긴다: *"적용할 항목 번호를 알려주면 그것만 반영한다."* 사용자가 번호나 범위를 지정하기 전에는 편집하지 않는다 — "전부 적용해줘"도 명시적 요청으로 친다. 편집 요청을 받으면 그때 원본이 git에 커밋되어 있는지 먼저 확인한다 (되돌릴 수 없으면 백업본을 남긴다).
 
 ## 사용자 프롬프트를 개선할 때
 
