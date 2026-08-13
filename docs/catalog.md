@@ -3,13 +3,13 @@
 > `agent-toolkit` 저장소의 현재 플러그인 스킬 목록.
 > 이 문서는 `skills/*/SKILL.md` frontmatter에서 생성한다.
 >
-> Last updated: 2026-08-12
+> Last updated: 2026-08-13
 
 ## 요약
 
 | 항목 | 개수 |
 |---|---:|
-| Physical plugin skills under `skills/` | 43 |
+| Physical plugin skills under `skills/` | 44 |
 
 스킬 카테고리는 이름과 설명에서 읽는 메타데이터다. 플러그인 로더 기준의 활성 스킬 루트는 `skills/` 하나다.
 
@@ -43,6 +43,7 @@
 | [node-backend-patterns](../skills/node-backend-patterns/SKILL.md) | `node-backend-patterns` | Use when writing, reviewing, or refactoring Node.js backend code in Express, Next.js API routes, or NestJS. Triggers: "Node 백엔드", "Express 라우트", "Next.js API", "NestJS", "Repository 패턴", "N+1 쿼리", "캐싱 전략", "JWT middleware", "structured logging". Do NOT use for REST contract design alone; use rest-api-design. |
 | [postman-helper](../skills/postman-helper/SKILL.md) | `postman-helper` | Use when the user asks to find or search Postman API endpoints, look up a request's query/path parameters, headers, body, or auth, list Postman workspaces or collections, inspect an exported collection JSON file, or run a saved Postman request. Triggers: "Postman 엔드포인트 찾아줘", "이 API 파라미터 뭐야", "컬렉션에서 검색", "이 요청 실행해줘", "collection.json", "workspace 목록". Prefer this over Postman MCP for read and guarded-run tasks. |
 | [prompt-master](../skills/prompt-master/SKILL.md) | `prompt-master` | Use when creating, improving, reviewing, evaluating, or comparing LLM prompts for chat, API pipelines, system prompts, agent prompts, or subagent orchestration. Triggers: "프롬프트 만들어줘", "prompt 개선", "시스템 프롬프트", "에이전트 프롬프트", "prompt review", "prompt eval", "멀티에이전트 설계". Do NOT use for general product copy or docs. |
+| [prompt-modernizer](../skills/prompt-modernizer/SKILL.md) | `prompt-modernizer` | Use when an existing prompt, system prompt, CLAUDE.md/AGENTS.md, skill body, or agent instruction set was written for an older model generation and needs to be re-tuned for a current frontier model — deciding line by line what to relax, convert, or keep. Triggers: "프롬프트 최신 모델에 맞게 정리해줘", "예전 프롬프트 손봐줘", "시스템 프롬프트 다이어트", "CLAUDE.md 너무 길어", "모델 바꿨는데 프롬프트 그대로 써도 돼?", "prompt migration", "context diet". Do NOT use for writing a new prompt from scratch (prompt-master) or for general doc cleanup. |
 | [rest-api-design](../skills/rest-api-design/SKILL.md) | `rest-api-design` | Use when designing or reviewing REST API contracts, endpoint URLs, methods, status codes, error shapes, pagination, filtering, sorting, or versioning. Triggers: "API 설계", "REST API 만들어줘", "엔드포인트 설계", "페이지네이션 패턴", "버전 관리 전략", "에러 응답 표준", "API 컨트랙트 리뷰". Do NOT use for backend implementation patterns alone. |
 | [setup-agent-entrypoint](../skills/setup-agent-entrypoint/SKILL.md) | `setup-agent-entrypoint` | Use when a project needs AGENTS.md, CLAUDE.md, .claude/CLAUDE.md, or an agent entrypoint that points agents to existing docs, conventions, and local helper skills. Triggers: "set up agent instructions", "create AGENTS.md", "wire CLAUDE.md", "map project docs". Do NOT use to create docs, source maps, LESSONS.md, or local skills. |
 | [setup-codebase-context-map](../skills/setup-codebase-context-map/SKILL.md) | `setup-codebase-context-map` | Use when a project needs source navigation/context map files such as SOURCE_MAP.md, CODEBASE_CONTEXT.md, route maps, schema maps, component maps, Codesight outputs, or agent source-reading guides. Triggers: "create SOURCE_MAP.md", "CODEBASE_CONTEXT.md", "codebase context map", "Codesight", "route map", "schema map", "component map". Do NOT use for human project docs or AGENTS.md/CLAUDE.md. |
