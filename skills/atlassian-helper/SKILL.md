@@ -74,6 +74,7 @@ the reference files) when running scripts or showing commands to the user.
 | 컨플루언스 문서 작성/수정/삭제 | `references/write-guide.md` | `confluence.py create`, `update`, `delete` |
 | 이미지·첨부 업로드/교체 (페이지 이미지 바꿔줘, 스크린샷 첨부) | `references/write-guide.md` | `confluence.py attach`, `attachments`, `jira.py attach` |
 | 프로젝트/상태/스페이스 이름 탐색 | `references/scripts-reference.md` | `jira.py projects`, `statuses`, `confluence.py spaces` |
+| 페이지 계층·폴더 위치 확인 ("A/B/C 아래에") | `references/scripts-reference.md` | `confluence.py search --type all`, `--and "ancestor = <id>"` |
 
 ## Local Files
 

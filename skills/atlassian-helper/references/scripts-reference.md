@@ -112,12 +112,42 @@ python3 "<SKILL_DIR>/scripts/confluence.py" search --mine --limit 10
 python3 "<SKILL_DIR>/scripts/confluence.py" search --title "회의록" --updated-from "2026-07-01"
 ```
 
+### 폴더는 기본 검색에 안 나온다
+
+`search`의 기본값은 `--type page`다. Confluence의 **폴더는 `type = folder`인 별개 콘텐츠 타입**이라
+기본 검색으로는 존재 자체가 보이지 않는다. "그런 폴더 없는데요"라고 답하기 전에 타입을 넓혀서 다시 본다.
+
+```bash
+python3 "<SKILL_DIR>/scripts/confluence.py" search --space MET --type folder   # 폴더만
+python3 "<SKILL_DIR>/scripts/confluence.py" search --space MET --type all      # 타입 제한 없이
+```
+
+`--type ""`은 `type = ` 이라는 깨진 CQL이 되어 API가 400을 던진다. 반드시 `all`을 쓴다.
+
+`all`은 첨부(`att…` id)와 블로그까지 섞여 나온다. 폴더만 필요하면 `--type folder`가 더 깔끔하다.
+
+### 페이지 계층 확인
+
+부모/자식 관계는 `--and`에 CQL을 직접 넣어 확인한다. 전용 옵션은 없다.
+
+```bash
+python3 "<SKILL_DIR>/scripts/confluence.py" search --space MET --and "ancestor = 1925152775"
+```
+
+`ancestor`는 조상 전체(손자 이하 포함)를 잡는다. 직계 자식만 보려면 결과에서 골라낸다.
+
 문서 읽기 (본문은 storage XHTML을 평문으로 변환, 기본 4000자):
 
 ```bash
 python3 "<SKILL_DIR>/scripts/confluence.py" page 1234567890 --comments 3
 python3 "<SKILL_DIR>/scripts/confluence.py" page 1234567890 --storage   # 원본 XHTML
 ```
+
+`page`는 `/wiki/api/v2/pages/<id>`를 쓰므로 **폴더 id를 넣으면 404**가 난다. 폴더는 본문이 없는
+컨테이너라 읽을 것이 없다 — 폴더 안을 보려면 위의 `ancestor` 검색을 쓴다.
+
+`page`의 평문 변환은 `<`로 시작하는 텍스트를 태그로 오인해 잘라낼 수 있다. SQL의 `date < '...'` 같은
+본문이 사라져 보이면 깨진 것이 아니라 표시 문제이니, `--storage`로 원본을 확인한다.
 
 스페이스 목록:
 

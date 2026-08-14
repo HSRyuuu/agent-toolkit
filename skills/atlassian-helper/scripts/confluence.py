@@ -94,7 +94,7 @@ def _space_id(profile: dict[str, Any], space_key: str) -> str:
 
 def command_search(args: argparse.Namespace) -> int:
     keyword = " ".join(args.keyword or []).strip()
-    clauses = [f"type = {args.type}"]
+    clauses = [] if args.type in ("all", "") else [f"type = {args.type}"]
     if keyword:
         clauses.append(f"text ~ {cql_quote(keyword)}")
     if args.space:
@@ -467,7 +467,11 @@ def build_parser() -> argparse.ArgumentParser:
     search.add_argument("--space", help="space key")
     search.add_argument("--title", help="제목 부분 일치")
     search.add_argument("--mine", action="store_true", help="creator = currentUser()")
-    search.add_argument("--type", default="page", help='content type (default "page")')
+    search.add_argument(
+        "--type",
+        default="page",
+        help='content type (default "page"). "folder"는 폴더만, "all"은 타입 제한 없이 검색',
+    )
     search.add_argument("--updated-from", help='예: "2026-07-01"')
     search.add_argument("--and", dest="cql_and", help="추가 CQL 조건")
     search.add_argument("--order", default="lastmodified DESC")
