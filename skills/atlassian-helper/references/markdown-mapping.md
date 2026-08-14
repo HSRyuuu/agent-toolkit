@@ -19,6 +19,7 @@
 | ` ```lang ` 펜스 | codeBlock (language 유지) | code 매크로 (language 유지) |
 | 파이프 표 + `\|---\|` 구분행 | table | `<table>` |
 | `` `코드` `` | code 마크 | `<code>` |
+| ``` ``백틱 ` 포함`` ``` | code 마크 | `<code>` |
 | `**굵게**` | strong 마크 | `<strong>` |
 | `[라벨](https://…)` | link 마크 | `<a href>` |
 | `` **`굵은 코드`** `` | code만 (아래 참조) | `<strong><code>` |

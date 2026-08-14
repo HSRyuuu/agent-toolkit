@@ -683,7 +683,14 @@ def _take_pipe_table(lines: list[str], start: int) -> tuple[list[list[str]], boo
 
 # `code`, **bold**, [label](url) — the inline forms worth carrying over. Italic
 # is left alone: `*x*` collides with bullets and `_x_` with identifiers.
-_INLINE_RE = re.compile(r"`([^`\n]+)`|\*\*([^*\n]+)\*\*|\[([^\]\n]+)\]\(([^)\s]+)\)")
+# The double-backtick span comes first: it is how markdown escapes a literal
+# backtick, and letting the single-backtick branch see it shreds the run.
+_INLINE_RE = re.compile(
+    r"``\s?(?P<code2>.+?)\s?``"
+    r"|`(?P<code>[^`\n]+)`"
+    r"|\*\*(?P<bold>[^*\n]+)\*\*"
+    r"|\[(?P<label>[^\]\n]+)\]\((?P<href>[^)\s]+)\)"
+)
 _FENCE_RE = re.compile(r"^(?:```|~~~)\s*([A-Za-z0-9_+#-]*)\s*$")
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 _BULLET_RE = re.compile(r"^[-*]\s+(.*)$")
@@ -701,7 +708,8 @@ def _adf_inline(text: str) -> list[dict[str, Any]]:
     for match in _INLINE_RE.finditer(text):
         if match.start() > pos:
             nodes.append({"type": "text", "text": text[pos : match.start()]})
-        code, bold, label, href = match.groups()
+        code = match.group("code2") or match.group("code")
+        bold, label, href = match.group("bold", "label", "href")
         if code is not None:
             nodes.append({"type": "text", "text": code, "marks": [{"type": "code"}]})
         elif bold is not None:
@@ -737,7 +745,8 @@ def _storage_inline(text: str) -> str:
     for match in _INLINE_RE.finditer(text):
         if match.start() > pos:
             out.append(html.escape(text[pos : match.start()]))
-        code, bold, label, href = match.groups()
+        code = match.group("code2") or match.group("code")
+        bold, label, href = match.group("bold", "label", "href")
         if code is not None:
             out.append(f"<code>{html.escape(code)}</code>")
         elif bold is not None:

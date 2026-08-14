@@ -265,6 +265,23 @@ def case_inline_marks_nest() -> bool:
     )
 
 
+def case_double_backtick_code_span() -> bool:
+    # Markdown escapes a literal backtick by doubling the fence. Without this
+    # the single-backtick branch shreds the run into alternating code spans.
+    storage = common.text_to_storage("| 문법 | 결과 |\n| --- | --- |\n| `` `코드` `` | 인라인 |")
+    doc = common.text_to_adf("이중 ``a`b`` 와 단일 `x`")
+    spans = [
+        node["text"]
+        for node in doc["content"][0]["content"]
+        if any(m["type"] == "code" for m in node.get("marks") or [])
+    ]
+    return check(
+        "a double-backtick span keeps its literal backticks intact",
+        "<code>`코드`</code>" in storage and spans == ["a`b", "x"],
+        f"{spans} / {storage}",
+    )
+
+
 def case_text_to_adf_code_block() -> bool:
     doc = common.text_to_adf('앞말\n\n```json\n{\n  "a": 1\n}\n```\n\n뒷말\n')
     types = [block.get("type") for block in doc["content"]]
@@ -994,6 +1011,7 @@ def main() -> int:
         case_text_to_adf_table_needs_separator,
         case_text_to_adf_inline_marks,
         case_inline_marks_nest,
+        case_double_backtick_code_span,
         case_text_to_adf_code_block,
         case_text_to_adf_headings_lists_quote,
         case_text_to_storage_code_and_marks,
