@@ -681,6 +681,168 @@ def _take_pipe_table(lines: list[str], start: int) -> tuple[list[list[str]], boo
     return rows, True, index
 
 
+# `code`, **bold**, [label](url) — the inline forms worth carrying over. Italic
+# is left alone: `*x*` collides with bullets and `_x_` with identifiers.
+_INLINE_RE = re.compile(r"`([^`\n]+)`|\*\*([^*\n]+)\*\*|\[([^\]\n]+)\]\(([^)\s]+)\)")
+_FENCE_RE = re.compile(r"^(?:```|~~~)\s*([A-Za-z0-9_+#-]*)\s*$")
+_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
+_BULLET_RE = re.compile(r"^[-*]\s+(.*)$")
+_NUMBER_RE = re.compile(r"^\d+[.)]\s+(.*)$")
+
+
+def _is_web_link(href: str) -> bool:
+    return href.startswith(("http://", "https://", "mailto:"))
+
+
+def _adf_inline(text: str) -> list[dict[str, Any]]:
+    """Split one line into ADF text nodes, applying code/strong/link marks."""
+    nodes: list[dict[str, Any]] = []
+    pos = 0
+    for match in _INLINE_RE.finditer(text):
+        if match.start() > pos:
+            nodes.append({"type": "text", "text": text[pos : match.start()]})
+        code, bold, label, href = match.groups()
+        if code is not None:
+            nodes.append({"type": "text", "text": code, "marks": [{"type": "code"}]})
+        elif bold is not None:
+            # Bold wraps whatever is inside it, so recurse. ADF rejects a code
+            # mark combined with any other formatting mark, so code wins there
+            # and the strong is dropped rather than sent as an invalid pair.
+            for inner in _adf_inline(bold):
+                marks = inner.get("marks") or []
+                if not any(mark["type"] == "code" for mark in marks):
+                    inner["marks"] = marks + [{"type": "strong"}]
+                nodes.append(inner)
+        else:
+            # Labels carry their own formatting, so recurse there too. Anchors
+            # and relative paths mean nothing outside the source doc, so those
+            # keep the label and drop the target.
+            inner_nodes = _adf_inline(label)
+            if _is_web_link(href):
+                for inner in inner_nodes:
+                    inner["marks"] = (inner.get("marks") or []) + [
+                        {"type": "link", "attrs": {"href": href}}
+                    ]
+            nodes.extend(inner_nodes)
+        pos = match.end()
+    if pos < len(text):
+        nodes.append({"type": "text", "text": text[pos:]})
+    return [node for node in nodes if node.get("text")]
+
+
+def _storage_inline(text: str) -> str:
+    """Split one line into storage XHTML, applying code/strong/link markup."""
+    out: list[str] = []
+    pos = 0
+    for match in _INLINE_RE.finditer(text):
+        if match.start() > pos:
+            out.append(html.escape(text[pos : match.start()]))
+        code, bold, label, href = match.groups()
+        if code is not None:
+            out.append(f"<code>{html.escape(code)}</code>")
+        elif bold is not None:
+            out.append(f"<strong>{_storage_inline(bold)}</strong>")
+        elif _is_web_link(href):
+            out.append(f'<a href="{html.escape(href, quote=True)}">{_storage_inline(label)}</a>')
+        else:
+            out.append(_storage_inline(label))
+        pos = match.end()
+    if pos < len(text):
+        out.append(html.escape(text[pos:]))
+    return "".join(out)
+
+
+def _parse_blocks(text: str) -> list[tuple[str, Any]]:
+    """Markdown-ish plain text -> neutral block list shared by both writers.
+
+    Blank line ends a block. Recognized: ATX headings (`#`..`######`), fenced
+    code blocks, blockquotes, bullet and numbered lists, and pipe tables.
+    Anything else becomes a paragraph, with its lines joined by line breaks.
+    """
+    lines = [raw.rstrip() for raw in str(text).splitlines()]
+    blocks: list[tuple[str, Any]] = []
+    paragraph: list[str] = []
+    items: list[str] = []
+    ordered = False
+
+    def flush() -> None:
+        nonlocal ordered
+        if items:
+            blocks.append(("list", (ordered, list(items))))
+            items.clear()
+            ordered = False
+        if paragraph:
+            blocks.append(("para", list(paragraph)))
+            paragraph.clear()
+
+    index = 0
+    total = len(lines)
+    while index < total:
+        line = lines[index]
+        stripped = line.strip()
+        if not stripped:
+            flush()
+            index += 1
+            continue
+
+        fence = _FENCE_RE.match(stripped)
+        if fence:
+            flush()
+            language = fence.group(1)
+            index += 1
+            body: list[str] = []
+            while index < total and not _FENCE_RE.match(lines[index].strip()):
+                body.append(lines[index])
+                index += 1
+            index += 1  # closing fence, or past the end when it was never closed
+            blocks.append(("code", (language, "\n".join(body))))
+            continue
+
+        rows, has_header, next_index = _take_pipe_table(lines, index)
+        if rows:
+            flush()
+            blocks.append(("table", (rows, has_header)))
+            index = next_index
+            continue
+
+        heading = _HEADING_RE.match(stripped)
+        if heading:
+            flush()
+            blocks.append(("heading", (len(heading.group(1)), heading.group(2).strip())))
+            index += 1
+            continue
+
+        if stripped == ">" or stripped.startswith("> "):
+            flush()
+            quote: list[str] = []
+            while index < total and (
+                lines[index].strip() == ">" or lines[index].strip().startswith("> ")
+            ):
+                quote.append(lines[index].strip()[1:].lstrip())
+                index += 1
+            blocks.append(("quote", quote))
+            continue
+
+        bullet = _BULLET_RE.match(stripped)
+        number = _NUMBER_RE.match(stripped)
+        if bullet or number:
+            wants_ordered = number is not None
+            if paragraph or (items and ordered != wants_ordered):
+                flush()
+            ordered = wants_ordered
+            items.append((number or bullet).group(1).strip())
+            index += 1
+            continue
+
+        if items:
+            flush()
+        paragraph.append(line)
+        index += 1
+
+    flush()
+    return blocks
+
+
 def _adf_table(rows: list[list[str]], has_header: bool) -> dict[str, Any]:
     content = []
     for row_index, row in enumerate(rows):
@@ -705,7 +867,7 @@ def _storage_table(rows: list[list[str]], has_header: bool) -> str:
     body = []
     for row_index, row in enumerate(rows):
         tag = "th" if has_header and row_index == 0 else "td"
-        cells = "".join(f"<{tag}><p>{html.escape(cell)}</p></{tag}>" for cell in row)
+        cells = "".join(f"<{tag}><p>{_storage_inline(cell)}</p></{tag}>" for cell in row)
         body.append(f"<tr>{cells}</tr>")
     return f"<table><tbody>{''.join(body)}</tbody></table>"
 
@@ -715,73 +877,48 @@ def _adf_paragraph(lines: list[str]) -> dict[str, Any]:
     for index, line in enumerate(lines):
         if index:
             content.append({"type": "hardBreak"})
-        content.append({"type": "text", "text": line})
+        content.extend(_adf_inline(line))
     return {"type": "paragraph", "content": content} if content else {"type": "paragraph"}
 
 
-def text_to_adf(text: str) -> dict[str, Any]:
-    """Plain text -> ADF doc.
+def _adf_list(ordered: bool, items: list[str]) -> dict[str, Any]:
+    return {
+        "type": "orderedList" if ordered else "bulletList",
+        "content": [{"type": "listItem", "content": [_adf_paragraph([item])]} for item in items],
+    }
 
-    Blank line starts a new block; `- ` / `* ` lines become a bullet list;
-    `# `..`### ` lines become headings; markdown pipe tables (`| a | b |` with a
-    `|---|---|` separator) become ADF tables. Everything else stays plain text.
+
+def text_to_adf(text: str) -> dict[str, Any]:
+    """Markdown-ish plain text -> ADF doc.
+
+    Supported: headings, paragraphs, bullet/numbered lists, blockquotes, fenced
+    code blocks, pipe tables, and inline `code` / **bold** / [label](url).
+    See `references/markdown-mapping.md` for what is deliberately not supported.
     """
     blocks: list[dict[str, Any]] = []
-    paragraph: list[str] = []
-    bullets: list[str] = []
-
-    def flush() -> None:
-        if bullets:
+    for kind, value in _parse_blocks(text):
+        if kind == "heading":
+            level, content = value
             blocks.append(
-                {
-                    "type": "bulletList",
-                    "content": [
-                        {"type": "listItem", "content": [_adf_paragraph([item])]}
-                        for item in bullets
-                    ],
-                }
+                {"type": "heading", "attrs": {"level": level}, "content": _adf_inline(content)}
             )
-            bullets.clear()
-        if paragraph:
-            blocks.append(_adf_paragraph(list(paragraph)))
-            paragraph.clear()
+        elif kind == "para":
+            blocks.append(_adf_paragraph(value))
+        elif kind == "list":
+            blocks.append(_adf_list(*value))
+        elif kind == "quote":
+            blocks.append({"type": "blockquote", "content": [_adf_paragraph(value)]})
+        elif kind == "code":
+            language, body = value
+            node: dict[str, Any] = {"type": "codeBlock", "attrs": {}}
+            if language:
+                node["attrs"] = {"language": language}
+            if body:
+                node["content"] = [{"type": "text", "text": body}]
+            blocks.append(node)
+        elif kind == "table":
+            blocks.append(_adf_table(*value))
 
-    lines = [raw.rstrip() for raw in str(text).splitlines()]
-    index = 0
-    while index < len(lines):
-        line = lines[index]
-        stripped = line.strip()
-        index += 1
-        if not stripped:
-            flush()
-            continue
-        rows, has_header, next_index = _take_pipe_table(lines, index - 1)
-        if rows:
-            flush()
-            blocks.append(_adf_table(rows, has_header))
-            index = next_index
-            continue
-        heading = re.match(r"^(#{1,3})\s+(.*)$", stripped)
-        if heading:
-            flush()
-            blocks.append(
-                {
-                    "type": "heading",
-                    "attrs": {"level": len(heading.group(1))},
-                    "content": [{"type": "text", "text": heading.group(2)}],
-                }
-            )
-            continue
-        if stripped.startswith(("- ", "* ")):
-            if paragraph:
-                flush()
-            bullets.append(stripped[2:].strip())
-            continue
-        if bullets:
-            flush()
-        paragraph.append(line)
-
-    flush()
     if not blocks:
         blocks = [{"type": "paragraph"}]
     return {"type": "doc", "version": 1, "content": blocks}
@@ -794,6 +931,8 @@ def storage_to_text(value: Any, limit: int | None = None) -> str:
     """Flatten Confluence storage XHTML to readable plain text."""
     text = str(value or "")
     text = re.sub(r"(?is)<(script|style)\b.*?</\1>", "", text)
+    # Unwrap code-macro bodies first; otherwise tag stripping eats them whole.
+    text = re.sub(r"(?s)<!\[CDATA\[(.*?)\]\]>", lambda match: match.group(1), text)
     text = re.sub(r"(?i)<li[^>]*>", "\n- ", text)
     text = re.sub(r"(?i)<br\s*/?>", "\n", text)
     text = re.sub(r"(?i)</(p|div|h[1-6]|li|tr|table|ul|ol)>", "\n", text)
@@ -807,53 +946,45 @@ def storage_to_text(value: Any, limit: int | None = None) -> str:
     return cleaned
 
 
+def _storage_code(language: str, body: str) -> str:
+    """Confluence code macro. CDATA cannot nest, so split any literal `]]>`."""
+    safe = body.replace("]]>", "]]]]><![CDATA[>")
+    parameter = (
+        f'<ac:parameter ac:name="language">{html.escape(language)}</ac:parameter>' if language else ""
+    )
+    return (
+        '<ac:structured-macro ac:name="code" ac:schema-version="1">'
+        f"{parameter}<ac:plain-text-body><![CDATA[{safe}]]></ac:plain-text-body>"
+        "</ac:structured-macro>"
+    )
+
+
 def text_to_storage(text: str) -> str:
-    """Plain text -> Confluence storage XHTML (paragraphs, bullets, headings, tables)."""
+    """Markdown-ish plain text -> Confluence storage XHTML.
+
+    Same input grammar as `text_to_adf`; see `references/markdown-mapping.md`.
+    """
     blocks: list[str] = []
-    paragraph: list[str] = []
-    bullets: list[str] = []
+    for kind, value in _parse_blocks(text):
+        if kind == "heading":
+            level, content = value
+            tag = min(level + 1, 6)  # the page title is h1
+            blocks.append(f"<h{tag}>{_storage_inline(content)}</h{tag}>")
+        elif kind == "para":
+            blocks.append("<p>" + "<br />".join(_storage_inline(line) for line in value) + "</p>")
+        elif kind == "list":
+            ordered, items = value
+            tag = "ol" if ordered else "ul"
+            entries = "".join(f"<li><p>{_storage_inline(item)}</p></li>" for item in items)
+            blocks.append(f"<{tag}>{entries}</{tag}>")
+        elif kind == "quote":
+            body = "<br />".join(_storage_inline(line) for line in value)
+            blocks.append(f"<blockquote><p>{body}</p></blockquote>")
+        elif kind == "code":
+            blocks.append(_storage_code(*value))
+        elif kind == "table":
+            blocks.append(_storage_table(*value))
 
-    def flush() -> None:
-        if bullets:
-            items = "".join(f"<li><p>{html.escape(item)}</p></li>" for item in bullets)
-            blocks.append(f"<ul>{items}</ul>")
-            bullets.clear()
-        if paragraph:
-            body = "<br />".join(html.escape(line) for line in paragraph)
-            blocks.append(f"<p>{body}</p>")
-            paragraph.clear()
-
-    lines = [raw.rstrip() for raw in str(text).splitlines()]
-    index = 0
-    while index < len(lines):
-        line = lines[index]
-        stripped = line.strip()
-        index += 1
-        if not stripped:
-            flush()
-            continue
-        rows, has_header, next_index = _take_pipe_table(lines, index - 1)
-        if rows:
-            flush()
-            blocks.append(_storage_table(rows, has_header))
-            index = next_index
-            continue
-        heading = re.match(r"^(#{1,3})\s+(.*)$", stripped)
-        if heading:
-            flush()
-            level = len(heading.group(1)) + 1  # page title is h1
-            blocks.append(f"<h{level}>{html.escape(heading.group(2))}</h{level}>")
-            continue
-        if stripped.startswith(("- ", "* ")):
-            if paragraph:
-                flush()
-            bullets.append(stripped[2:].strip())
-            continue
-        if bullets:
-            flush()
-        paragraph.append(line)
-
-    flush()
     return "".join(blocks) or "<p />"
 
 

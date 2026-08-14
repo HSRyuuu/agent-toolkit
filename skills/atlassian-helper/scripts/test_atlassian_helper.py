@@ -221,6 +221,97 @@ def case_text_to_adf_table_needs_separator() -> bool:
     )
 
 
+def case_text_to_adf_inline_marks() -> bool:
+    doc = common.text_to_adf(
+        "`deep_link`가 **필수**입니다 [문서](https://example.com/a) [앵커](#로컬)\n"
+    )
+    nodes = doc["content"][0]["content"]
+    marked = {
+        node["text"]: (node.get("marks") or [{}])[0].get("type", "")
+        for node in nodes
+    }
+    link = next((node for node in nodes if node["text"] == "문서"), {})
+    href = ((link.get("marks") or [{}])[0].get("attrs") or {}).get("href")
+    return check(
+        "text_to_adf applies code/strong/link marks and drops non-web link targets",
+        marked.get("deep_link") == "code"
+        and marked.get("필수") == "strong"
+        and href == "https://example.com/a"
+        and marked.get("앵커") == "",
+        f"{marked} / {href}",
+    )
+
+
+def case_inline_marks_nest() -> bool:
+    doc = common.text_to_adf("앞 **`type`으로 분기** 뒤")
+    nodes = doc["content"][0]["content"]
+    marked = {node["text"]: sorted(m["type"] for m in node.get("marks") or []) for node in nodes}
+    storage = common.text_to_storage("| 셀 | **`x`** |\n| --- | --- |\n| a | b |")
+
+    # Link labels carry formatting too: [`spec.md`](url) and [`rel.md`](../x.md)
+    labelled = common.text_to_adf("[`spec.md`](https://example.com) [`rel.md`](../x.md)")
+    by_text = {
+        node["text"]: sorted(m["type"] for m in node.get("marks") or [])
+        for node in labelled["content"][0]["content"]
+    }
+    return check(
+        "bold and link labels recurse; ADF keeps code alone where it excludes marks",
+        marked.get("type") == ["code"]
+        and marked.get("으로 분기") == ["strong"]
+        and "<strong><code>x</code></strong>" in storage
+        and by_text.get("spec.md") == ["code", "link"]
+        and by_text.get("rel.md") == ["code"],
+        f"{marked} / {by_text} / {storage}",
+    )
+
+
+def case_text_to_adf_code_block() -> bool:
+    doc = common.text_to_adf('앞말\n\n```json\n{\n  "a": 1\n}\n```\n\n뒷말\n')
+    types = [block.get("type") for block in doc["content"]]
+    block = doc["content"][1]
+    return check(
+        "text_to_adf turns a fenced block into codeBlock with its language",
+        types == ["paragraph", "codeBlock", "paragraph"]
+        and block["attrs"] == {"language": "json"}
+        and block["content"][0]["text"] == '{\n  "a": 1\n}',
+        f"{types} / {block}",
+    )
+
+
+def case_text_to_adf_headings_lists_quote() -> bool:
+    doc = common.text_to_adf("#### 깊은 제목\n\n> 인용문\n\n1. 하나\n2. 둘\n\n- 불릿\n")
+    types = [block.get("type") for block in doc["content"]]
+    level = doc["content"][0]["attrs"]["level"]
+    return check(
+        "text_to_adf handles h4-h6, blockquote, ordered and bullet lists",
+        types == ["heading", "blockquote", "orderedList", "bulletList"] and level == 4,
+        f"{types} / level={level}",
+    )
+
+
+def case_text_to_storage_code_and_marks() -> bool:
+    html_out = common.text_to_storage("`x<y` **굵게** [링크](https://example.com)\n\n```sql\na > b\n```\n")
+    return check(
+        "text_to_storage emits code/strong/link inline and a code macro",
+        "<code>x&lt;y</code>" in html_out
+        and "<strong>굵게</strong>" in html_out
+        and '<a href="https://example.com">링크</a>' in html_out
+        and '<ac:parameter ac:name="language">sql</ac:parameter>' in html_out
+        and "<![CDATA[a > b]]>" in html_out,
+        html_out,
+    )
+
+
+def case_storage_code_roundtrip() -> bool:
+    body = common.text_to_storage("```\n{\"a\": 1} ]]> tail\n```\n")
+    text = common.storage_to_text(body)
+    return check(
+        "a code body survives the CDATA escape and reads back intact",
+        "]]]]><![CDATA[>" in body and '{"a": 1} ]]> tail' in text,
+        f"{body} / {text!r}",
+    )
+
+
 def case_text_to_storage_table() -> bool:
     html_out = common.text_to_storage("| 필드 | <b> |\n|---|---|\n| id | long |\n")
     return check(
@@ -901,6 +992,12 @@ def main() -> int:
         case_text_to_adf_empty,
         case_text_to_adf_table,
         case_text_to_adf_table_needs_separator,
+        case_text_to_adf_inline_marks,
+        case_inline_marks_nest,
+        case_text_to_adf_code_block,
+        case_text_to_adf_headings_lists_quote,
+        case_text_to_storage_code_and_marks,
+        case_storage_code_roundtrip,
         case_text_to_storage_table,
         case_text_to_storage_escapes,
         case_storage_to_text,
