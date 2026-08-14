@@ -19,7 +19,7 @@ Most writes are small. Do not run the full ritual for a one-line note.
 - **Fast path** (default): the input is a single topic, contains no
   security-sensitive candidate, and has an obvious owning document (or clearly
   needs one new document). Steps: resolve root → read the target document (and
-  `index.md`) → one security scan → write → update `index.md`. Skip the routing
+  `index.md`) → one security scan → write → regenerate `index.md`. Skip the routing
   table and the washing prompt; apply their spirit inline.
 - **Full path**: use the sections below (Ambiguity Gate, Multi-document Write,
   Security Gate, Document Washing) when the input spans multiple topics, trips a
@@ -73,7 +73,7 @@ do not use them just because a KB has `.obsidian/`.
 | Pasted text | Treat the provided text as the source context. |
 | Local file path | Read the file, then write a curated KB document or update. Do not copy the source into `_raw/`. |
 | URL | Read/extract the useful content if available, then store only the curated result and safe source reference. |
-| Archive request | Move the document to top-level `_archived/<filename>.md`, set `agent_edit_mode: read_only`, and update `index.md`/`log.jsonl` if maintained. |
+| Archive request | Move the document to top-level `_archived/<filename>.md`, set `agent_edit_mode: read_only`, then regenerate `index.md` and append to `log.jsonl` if maintained. |
 | Stub or unfinished document | Move it to `_inbox/stubs/` when it only names a future topic or says "to be written". Do not leave it in a normal topic folder where it may look authoritative. |
 | Broad question | Do not add. Switch to [`search.md`](./search.md) unless the user explicitly asks to file the answer back. |
 | Ambiguous note | Ask only when a wrong document choice would be risky; otherwise choose the most natural location. |
@@ -247,8 +247,8 @@ Use when a document is only a placeholder and does not yet contain maintained kn
 - Move it under top-level `_inbox/stubs/`.
 - Keep or add frontmatter so it remains searchable.
 - Add tags such as `inbox` and `stub` while preserving useful topic tags.
-- Remove it from the main maintained-document section of `index.md`; if helpful, list it under a clearly labeled "Inbox" or "Stubs" section.
-- When the stub becomes a real document, move it to the owning folder and update `summary`, `tags`, related links, `index.md`, and `log.jsonl` if maintained.
+- Regenerate `index.md` after the move. The generator files it under the labeled `_inbox/` section on its own; do not move the row by hand.
+- When the stub becomes a real document, move it to the owning folder, update `summary`, `tags`, and related links, then regenerate `index.md` and append to `log.jsonl` if maintained.
 
 ### Related Document Links
 
@@ -266,11 +266,19 @@ Keep links selective. Do not bulk-add wikilinks or graph-style links. Use normal
 
 After successful writes:
 
-1. Update `index.md` if present.
-   - Add or adjust the document link, one-line summary, and tags/category.
-   - Keep it content-oriented, not chronological.
+1. Regenerate `index.md` if present. Do not hand-edit its Documents catalog — it
+   is generated from frontmatter per conventions (index.md).
+   - Run `scripts/kb_build_index.py --write <root>` with the runtime from
+     [`getting-started.md`](./getting-started.md).
+   - Verify with `--check` (exit 1 means still out of date).
+   - Fix a wrong row by correcting that document's frontmatter and regenerating,
+     never by editing the row.
 2. Append one JSON object to `log.jsonl` using the entry shape and rules in
    conventions (Work History).
+
+Every write that adds, moves, renames, or deletes a document needs step 1. Skipping
+it is what makes a catalog drift: manage and lint regenerate, so a write that
+hand-edits instead leaves the two out of sync and the next `--check` fails.
 
 If `index.md` does not exist, do not create it unless the user asked for KB setup/management or the local rules say it is required. If `log.jsonl` is missing, create it with this write's entry unless local KB rules opt out; mention the creation in the completion report. A log problem should never block the write itself.
 

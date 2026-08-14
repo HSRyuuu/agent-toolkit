@@ -226,6 +226,18 @@ link, one-line summary, important tags/category, and `updated` date when
 available. Do not include every heading or long excerpts. Keep it
 content-oriented, not chronological.
 
+**The Documents catalog is generated from frontmatter, not hand-edited.** Every
+field in it already lives in each document's frontmatter, so the catalog is a
+derived cache: editing rows by hand makes it disagree with the generator and
+leaves dead links behind after any move or rename. Regenerate with
+`scripts/kb_build_index.py --write` after adding, moving, renaming, or deleting
+documents, and verify with `--check` (exit 1 means out of date). The script
+rewrites only the generated marker block and preserves the human-written
+preamble, so hand-write the preamble and let the catalog be built.
+
+This applies to every mode that touches documents — write mode included, not
+just manage and lint.
+
 Default shape:
 
 ```markdown
