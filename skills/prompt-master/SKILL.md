@@ -5,12 +5,25 @@ description: >
   for chat, API pipelines, system prompts, agent prompts, or subagent
   orchestration. Triggers: "프롬프트 만들어줘", "prompt 개선", "시스템 프롬프트",
   "에이전트 프롬프트", "prompt review", "prompt eval", "멀티에이전트 설계". Do
-  NOT use for general product copy or docs.
+  NOT use for general product copy or docs, or for diagnosing an existing
+  prompt/CLAUDE.md/AGENTS.md against a newer model generation (use
+  `prompt-modernizer`).
 ---
 
 # Prompt Master
 
 사용자의 요구사항을 분석하여 프로덕션 수준의 LLM 프롬프트를 설계한다. 프롬프트 설계는 **전략 선택**(어떤 기법을 쓸 것인가)과 **작성 기법**(어떻게 잘 쓸 것인가) 두 축으로 이루어진다.
+
+## 적용 전 게이트
+
+**대상이 최신 추론 모델(Claude 5 계열 / GPT-5.5+ / Gemini 3)이면** 아래는 적용하지 않는다. 모델이 내부에서 하는 일을 지시해 성능을 깎거나 벤더 가이드에 반한다.
+
+- B.3 사고 과정 유도 — CoT 유도·단계 강제는 추론 모델에 불필요 (OpenAI 명시적 비권장). 사고 *구조*가 결과를 바꾸는 경우에만 남긴다
+- 공통 원칙 2 "반복 & 변주", C.1 Level 5 "다중 형태 반복" — 중복 노출은 토큰만 먹는다. 규칙은 한 곳에 한 번
+- 전략 선택 트리의 CoT(3)·Self-Consistency(4)·ToT(7) — reasoning effort 파라미터로 대체
+- 하이퍼파라미터 표 — 아래 벤더 주의 참조
+
+**낡은 프롬프트를 최신 모델 기준으로 진단·정리하는 요청은 이 스킬이 아니라 `prompt-modernizer`로 보낸다.** 이 스킬은 새로 쓰거나 품질을 올릴 때 쓴다.
 
 ---
 
@@ -96,6 +109,8 @@ description: >
 | 브레인스토밍, ToT, 창의적 글쓰기 | 0.8 ~ 1.0 | 1.0 | 다양한 추론 경로 탐색. Self-Consistency에서도 높은 temperature로 샘플링 |
 
 **원칙:**
+- **Gemini 3 대상이면 이 표를 쓰지 않는다.** 벤더 가이드가 `temperature`/`top_p`/`top_k` 기본값 유지를 강하게 권고하고, 건드리면 루프·성능 저하가 난다고 경고한다
+- Temperature와 Top-P는 둘 중 하나만 조정한다. 동시에 움직이면 원인을 분리할 수 없다
 - API 파이프라인에서는 Temperature 0.0~0.2를 기본으로 설정하고, 필요 시에만 올린다
 - Self-Consistency 기법은 의도적으로 temperature를 높여(0.7~1.0) 다양한 경로를 샘플링한다
 - `max_tokens`는 예상 출력 길이의 1.5배로 설정하여 잘림을 방지한다
