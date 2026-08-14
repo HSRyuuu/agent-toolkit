@@ -19,6 +19,7 @@ Uses the frontmatter loader bundled with the unified kb skill.
 from __future__ import annotations
 
 import argparse
+import subprocess
 import sys
 from pathlib import Path
 
@@ -36,6 +37,35 @@ def is_catalog_doc(doc: KbDoc) -> bool:
         return False
     # A catalog entry needs at least a title or summary to be meaningful.
     return bool(doc.metadata.get("title") or doc.metadata.get("summary"))
+
+
+def git_ignored(root: Path, docs: list[KbDoc]) -> set[str]:
+    """Relpaths that git ignores, so the catalog never links to uncommitted files.
+
+    A git-ignored document (e.g. a private `_personal/` area) is deliberately not
+    part of the shared KB: listing it would publish a link nobody else can follow.
+    Returns an empty set when the KB is not a git repo or git is unavailable, so a
+    non-git KB keeps working unchanged.
+    """
+    if not docs:
+        return set()
+    try:
+        proc = subprocess.run(
+            # core.quotePath=false keeps non-ASCII paths (e.g. Korean filenames)
+            # readable instead of octal-escaped, so they match relpath.
+            ["git", "-c", "core.quotePath=false", "-C", str(root), "check-ignore", "--stdin"],
+            input="\n".join(d.relpath for d in docs),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    # 0 = some paths ignored, 1 = none ignored; anything else (128 = not a repo)
+    # means we cannot tell, so ignore nothing.
+    if proc.returncode not in (0, 1):
+        return set()
+    return {line.strip() for line in proc.stdout.splitlines() if line.strip()}
 
 
 def bucket(doc: KbDoc) -> str:
@@ -69,6 +99,8 @@ def table(docs: list[KbDoc]) -> str:
 
 def build_block(root: Path) -> str:
     docs = [d for d in load_docs(root) if is_catalog_doc(d)]
+    ignored = git_ignored(root, docs)
+    docs = [d for d in docs if d.relpath not in ignored]
     buckets: dict[str, list[KbDoc]] = {"documents": [], "inbox": [], "archived": []}
     for doc in docs:
         buckets[bucket(doc)].append(doc)

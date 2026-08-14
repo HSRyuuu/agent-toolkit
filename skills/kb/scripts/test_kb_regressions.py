@@ -12,6 +12,7 @@ import pytest
 
 SCRIPT_DIR = Path(__file__).parent
 REGRESSION_SCRIPTS = [
+    "test_kb_build_index.py",
     "test_kb_frontmatter_filter.py",
     "test_kb_lint.py",
     "test_kb_search.py",
