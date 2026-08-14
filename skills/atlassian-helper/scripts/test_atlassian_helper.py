@@ -194,6 +194,43 @@ def case_text_to_adf_empty() -> bool:
     )
 
 
+def case_text_to_adf_table() -> bool:
+    doc = common.text_to_adf("앞 문단\n\n| 필드 | 타입 |\n| --- | --- |\n| id | long |\n| a\\|b | str |\n")
+    types = [block.get("type") for block in doc["content"]]
+    table = doc["content"][1] if len(doc["content"]) > 1 else {}
+    rows = table.get("content") or []
+    header = rows[0]["content"][0]["type"] if rows else ""
+    escaped = rows[2]["content"][0]["content"][0]["content"][0]["text"] if len(rows) > 2 else ""
+    return check(
+        "text_to_adf builds an ADF table from a markdown pipe table",
+        types == ["paragraph", "table"]
+        and len(rows) == 3
+        and header == "tableHeader"
+        and rows[1]["content"][0]["type"] == "tableCell"
+        and escaped == "a|b",
+        f"{types} / rows={len(rows)} / {header} / {escaped!r}",
+    )
+
+
+def case_text_to_adf_table_needs_separator() -> bool:
+    doc = common.text_to_adf("| 그냥 | 파이프 |\n다음 줄\n")
+    return check(
+        "a pipe line without a |---| separator stays a paragraph",
+        [block.get("type") for block in doc["content"]] == ["paragraph"],
+        str(doc["content"]),
+    )
+
+
+def case_text_to_storage_table() -> bool:
+    html_out = common.text_to_storage("| 필드 | <b> |\n|---|---|\n| id | long |\n")
+    return check(
+        "text_to_storage builds a storage table and escapes cells",
+        "<table><tbody><tr><th><p>필드</p></th><th><p>&lt;b&gt;</p></th></tr>" in html_out
+        and "<tr><td><p>id</p></td><td><p>long</p></td></tr></tbody></table>" in html_out,
+        html_out,
+    )
+
+
 def case_text_to_storage_escapes() -> bool:
     html_out = common.text_to_storage("# 제목\n\n<script>x</script> & y\n\n- 하나\n")
     return check(
@@ -686,6 +723,31 @@ def case_confluence_search_cql() -> bool:
     )
 
 
+def case_confluence_search_type_all_drops_the_clause() -> bool:
+    """--type all 은 type 절을 빼서 폴더까지 검색되게 한다 (기본 page는 폴더를 못 본다)."""
+    captured: dict[str, object] = {}
+
+    def fake_request(profile, path, **kwargs):
+        captured.update(kwargs.get("query") or {})
+        return {"results": []}
+
+    real_request, real_load = confluence.api_request, confluence.load_profile
+    confluence.api_request = fake_request
+    confluence.load_profile = lambda name=None: ("default", dict(ME))
+    try:
+        confluence.command_search(_parse_conf(["search", "--space", "DEV", "--type", "all"]))
+        cql_all = str(captured.get("cql"))
+        confluence.command_search(_parse_conf(["search", "--space", "DEV", "--type", "folder"]))
+        cql_folder = str(captured.get("cql"))
+    finally:
+        confluence.api_request, confluence.load_profile = real_request, real_load
+    return check(
+        "confluence search --type all drops the type clause, --type folder keeps it",
+        "type =" not in cql_all and cql_folder.startswith("type = folder AND"),
+        f"all={cql_all} | folder={cql_folder}",
+    )
+
+
 def case_confluence_search_needs_a_filter() -> bool:
     args = _parse_conf(["search"])
     try:
@@ -837,6 +899,9 @@ def main() -> int:
         case_adf_to_text,
         case_text_to_adf_roundtrip,
         case_text_to_adf_empty,
+        case_text_to_adf_table,
+        case_text_to_adf_table_needs_separator,
+        case_text_to_storage_table,
         case_text_to_storage_escapes,
         case_storage_to_text,
         case_due_label,
@@ -865,6 +930,7 @@ def main() -> int:
         case_confluence_delete_blocked_for_other_author,
         case_confluence_update_bumps_version_for_own_page,
         case_confluence_search_cql,
+        case_confluence_search_type_all_drops_the_clause,
         case_confluence_search_needs_a_filter,
         case_prepare_upload_validation,
         case_repin_attachment_version,

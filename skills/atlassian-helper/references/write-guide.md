@@ -26,13 +26,25 @@ Confluence는 storage XHTML로 변환한다.
 - 빈 줄 → 새 문단
 - `- ` 또는 `* ` 로 시작하는 줄 → 글머리 목록
 - `# ` / `## ` / `### ` → 제목
+- 마크다운 파이프 표 → 표 (Jira ADF table, Confluence storage table)
 - 그 외에는 평문 그대로 (Jira 위키 마크업이나 HTML은 해석되지 않는다)
+
+표는 첫 행 바로 아래에 `|---|---|` 구분행이 있어야 표로 인식된다. 구분행이
+없으면 그 줄은 평문 문단으로 남는다. 첫 행은 헤더가 되고, 열 개수는 첫 행
+기준으로 맞춰진다 (모자라면 빈 칸, 넘치면 잘림). 셀 안의 `|`는 `\|`로 쓴다.
+
+```text
+| 필드 | 타입 | 필수 |
+| --- | --- | --- |
+| id | long | Y |
+| name | string | N |
+```
 
 긴 본문은 `--body-file <path>` 또는 `--body-file -` (stdin)을 쓴다. 셸 인용
 문제가 있는 한글/특수문자 본문은 파일 경로가 안전하다.
 
-Confluence에서 표·매크로 같은 원본 XHTML을 그대로 넣어야 하면 `--storage`를
-붙이고 storage 형식으로 직접 작성한다.
+Confluence에서 매크로처럼 파이프 표로 표현할 수 없는 원본 XHTML을 넣어야 하면
+`--storage`를 붙이고 storage 형식으로 직접 작성한다.
 
 ## Jira 쓰기
 
@@ -87,6 +99,21 @@ python3 "<SKILL_DIR>/scripts/jira.py" comment-delete ABC-123 --id 10021 --yes
 python3 "<SKILL_DIR>/scripts/confluence.py" create --space DEV \
   --title "결제 실패 원인 정리" --body-file /tmp/page.md --parent 1234567
 ```
+
+**만들기 전에 그 경로가 이미 있는지 확인한다.** 사용자가 `A/B/C 아래에`처럼 경로를 말하면 각 마디가
+페이지가 아니라 **폴더**일 수 있고, 폴더는 기본 검색(`--type page`)에 안 잡힌다. `--type all`로 먼저
+확인하지 않으면 같은 이름의 페이지를 새로 만들어 트리가 둘로 갈라진다.
+
+```bash
+python3 "<SKILL_DIR>/scripts/confluence.py" search --space DEV --type all --title "data"
+```
+
+`--parent`에는 폴더 id도 넣을 수 있다.
+
+**페이지는 옮길 수 없다.** `update`에 `--parent`가 없어서 부모를 바꾸려면 삭제 후 재생성해야 하는데,
+같은 스페이스에 제목이 중복될 수 없으므로 **먼저 지우고 다시 만드는** 순서가 된다. 본문 원본을 손에 쥔
+상태에서만 진행하고, 사용자에게 확인을 받는다. 잘못 만든 위치를 바로잡는 정도라면 UI에서 끌어다 옮기는
+쪽이 안전하다고 안내한다.
 
 내가 만든 페이지 수정 (버전은 자동으로 +1):
 

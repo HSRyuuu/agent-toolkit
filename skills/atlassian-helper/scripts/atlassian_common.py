@@ -629,7 +629,9 @@ def adf_to_text(node: Any, depth: int = 0) -> str:
         return inner + "\n"
     if node_type == "listItem":
         return "- " + inner
-    if node_type in ("bulletList", "orderedList", "table", "tableRow"):
+    if node_type == "tableRow":
+        return "| " + inner + "\n"
+    if node_type in ("bulletList", "orderedList", "table"):
         return inner
     if node_type == "tableCell" or node_type == "tableHeader":
         return inner.rstrip("\n") + " | "
@@ -645,6 +647,69 @@ def adf_summary(node: Any, limit: int = 800) -> str:
     return cleaned[: limit - 3] + "..."
 
 
+_TABLE_SEP_RE = re.compile(r"^:?-{1,}:?$")
+
+
+def _split_pipe_row(line: str) -> list[str]:
+    body = line.strip().strip("|")
+    return [cell.replace("\x00", "|").strip() for cell in body.replace(r"\|", "\x00").split("|")]
+
+
+def _take_pipe_table(lines: list[str], start: int) -> tuple[list[list[str]], bool, int]:
+    """Read a markdown pipe table at `lines[start]`.
+
+    Returns (rows, has_header, next_index). `rows` is empty when the lines are
+    not a table. A table needs a `|---|---|` separator right after the first
+    row; without it the caller keeps its plain-text handling.
+    """
+    if start + 1 >= len(lines) or not lines[start].strip().startswith("|"):
+        return [], False, start
+    separator = lines[start + 1].strip()
+    if not separator.startswith("|"):
+        return [], False, start
+    cells = _split_pipe_row(separator)
+    if not cells or not all(_TABLE_SEP_RE.match(cell) for cell in cells):
+        return [], False, start
+    header = _split_pipe_row(lines[start])
+    width = len(header)
+    rows = [header]
+    index = start + 2
+    while index < len(lines) and lines[index].strip().startswith("|"):
+        row = _split_pipe_row(lines[index])
+        rows.append((row + [""] * width)[:width])
+        index += 1
+    return rows, True, index
+
+
+def _adf_table(rows: list[list[str]], has_header: bool) -> dict[str, Any]:
+    content = []
+    for row_index, row in enumerate(rows):
+        cell_type = "tableHeader" if has_header and row_index == 0 else "tableCell"
+        content.append(
+            {
+                "type": "tableRow",
+                "content": [
+                    {"type": cell_type, "attrs": {}, "content": [_adf_paragraph([cell] if cell else [])]}
+                    for cell in row
+                ],
+            }
+        )
+    return {
+        "type": "table",
+        "attrs": {"isNumberColumnEnabled": False, "layout": "default"},
+        "content": content,
+    }
+
+
+def _storage_table(rows: list[list[str]], has_header: bool) -> str:
+    body = []
+    for row_index, row in enumerate(rows):
+        tag = "th" if has_header and row_index == 0 else "td"
+        cells = "".join(f"<{tag}><p>{html.escape(cell)}</p></{tag}>" for cell in row)
+        body.append(f"<tr>{cells}</tr>")
+    return f"<table><tbody>{''.join(body)}</tbody></table>"
+
+
 def _adf_paragraph(lines: list[str]) -> dict[str, Any]:
     content: list[dict[str, Any]] = []
     for index, line in enumerate(lines):
@@ -658,7 +723,8 @@ def text_to_adf(text: str) -> dict[str, Any]:
     """Plain text -> ADF doc.
 
     Blank line starts a new block; `- ` / `* ` lines become a bullet list;
-    `# `..`### ` lines become headings. Everything else stays plain text.
+    `# `..`### ` lines become headings; markdown pipe tables (`| a | b |` with a
+    `|---|---|` separator) become ADF tables. Everything else stays plain text.
     """
     blocks: list[dict[str, Any]] = []
     paragraph: list[str] = []
@@ -680,11 +746,20 @@ def text_to_adf(text: str) -> dict[str, Any]:
             blocks.append(_adf_paragraph(list(paragraph)))
             paragraph.clear()
 
-    for raw in str(text).splitlines():
-        line = raw.rstrip()
+    lines = [raw.rstrip() for raw in str(text).splitlines()]
+    index = 0
+    while index < len(lines):
+        line = lines[index]
         stripped = line.strip()
+        index += 1
         if not stripped:
             flush()
+            continue
+        rows, has_header, next_index = _take_pipe_table(lines, index - 1)
+        if rows:
+            flush()
+            blocks.append(_adf_table(rows, has_header))
+            index = next_index
             continue
         heading = re.match(r"^(#{1,3})\s+(.*)$", stripped)
         if heading:
@@ -733,7 +808,7 @@ def storage_to_text(value: Any, limit: int | None = None) -> str:
 
 
 def text_to_storage(text: str) -> str:
-    """Plain text -> Confluence storage XHTML (paragraphs, bullets, headings)."""
+    """Plain text -> Confluence storage XHTML (paragraphs, bullets, headings, tables)."""
     blocks: list[str] = []
     paragraph: list[str] = []
     bullets: list[str] = []
@@ -748,11 +823,20 @@ def text_to_storage(text: str) -> str:
             blocks.append(f"<p>{body}</p>")
             paragraph.clear()
 
-    for raw in str(text).splitlines():
-        line = raw.rstrip()
+    lines = [raw.rstrip() for raw in str(text).splitlines()]
+    index = 0
+    while index < len(lines):
+        line = lines[index]
         stripped = line.strip()
+        index += 1
         if not stripped:
             flush()
+            continue
+        rows, has_header, next_index = _take_pipe_table(lines, index - 1)
+        if rows:
+            flush()
+            blocks.append(_storage_table(rows, has_header))
+            index = next_index
             continue
         heading = re.match(r"^(#{1,3})\s+(.*)$", stripped)
         if heading:
