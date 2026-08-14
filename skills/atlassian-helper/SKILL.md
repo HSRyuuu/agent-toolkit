@@ -122,6 +122,9 @@ The config directory should be `700`; `config.json` and `MEMORY.md` should be
 
 - 쓰기 명령을 실행하기 전에 무엇을 어디에 쓰는지 한 줄로 요약해 사용자에게
   확인받는다. 사용자가 이미 구체적으로 지시했다면 그대로 실행한다.
+- 본문을 쓸 때 서식을 평문으로 뭉개지 않는다. 식별자·값·경로는 백틱, 두 줄 이상의
+  코드/JSON/로그는 언어를 붙인 코드 블록, 문단의 결론은 굵게 하나. 기준은
+  `references/write-guide.md`의 "서식은 쓸 자리에 쓴다".
 - 기존 마크다운 문서를 본문으로 넘길 때는 먼저 `references/markdown-mapping.md`를
   읽고 지원하지 않는 문법을 걷어낸다. 변환기가 모르는 문법은 사라지지 않고 원문
   그대로 노출된다.
