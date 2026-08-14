@@ -68,6 +68,7 @@ the reference files) when running scripts or showing commands to the user.
 | 키워드로 티켓 찾기 ("~~ 티켓 찾아줘") | `references/scripts-reference.md` | `jira.py text` |
 | 이슈 상세, 코멘트 보기 (ABC-123) | `references/scripts-reference.md` | `jira.py issue` |
 | 복잡한 조건, 직접 JQL 조합 | `references/jql-patterns.md` | `jira.py search`, `count` |
+| 마크다운 문서를 코멘트/설명/페이지로 옮기기 | `references/markdown-mapping.md` | `jira.py comment`, `confluence.py create` |
 | 티켓/코멘트 생성 | `references/write-guide.md` | `jira.py create`, `comment` |
 | 티켓 수정/상태 변경/삭제 | `references/write-guide.md` | `jira.py edit`, `transition`, `delete` |
 | 컨플루언스 문서 검색/읽기 | `references/scripts-reference.md` | `confluence.py search`, `page` |
@@ -121,6 +122,9 @@ The config directory should be `700`; `config.json` and `MEMORY.md` should be
 
 - 쓰기 명령을 실행하기 전에 무엇을 어디에 쓰는지 한 줄로 요약해 사용자에게
   확인받는다. 사용자가 이미 구체적으로 지시했다면 그대로 실행한다.
+- 기존 마크다운 문서를 본문으로 넘길 때는 먼저 `references/markdown-mapping.md`를
+  읽고 지원하지 않는 문법을 걷어낸다. 변환기가 모르는 문법은 사라지지 않고 원문
+  그대로 노출된다.
 - Default to bounded reads: limit 20, 기간 필터를 붙일 수 있으면 붙인다.
 - 결과가 잘리면 `--limit`을 넓히기 전에 `--next-page <token>`으로 페이지를
   넘긴다 (출력 마지막의 안내 참조).
