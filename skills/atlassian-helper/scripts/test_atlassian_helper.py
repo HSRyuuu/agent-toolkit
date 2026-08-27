@@ -994,6 +994,40 @@ def case_upload_sets_xsrf_header() -> bool:
     )
 
 
+def case_attach_comment_is_not_a_file_read() -> bool:
+    """A leading '@' in --comment must not make curl upload a local file."""
+    captured: list[dict] = []
+
+    def fake_request(profile, path, **kwargs):
+        captured.append(kwargs)
+        return {"results": [{"id": "att1", "version": {"number": 1}}]}
+
+    real_request, real_load = confluence.api_request, confluence.load_profile
+    confluence.api_request = fake_request
+    confluence.load_profile = lambda name=None: ("default", dict(ME))
+    try:
+        with tempfile.TemporaryDirectory(prefix="atlassian-helper-test-") as tmp:
+            target = Path(tmp) / "flow.png"
+            target.write_bytes(b"\x89PNG\r\n")
+            args = _parse_conf(
+                ["attach", "123", "--file", str(target), "--comment", "@/etc/passwd"]
+            )
+            confluence.command_attach(args)
+    finally:
+        confluence.api_request, confluence.load_profile = real_request, real_load
+
+    post = next((kw for kw in captured if kw.get("http_method") == "POST"), {})
+    form = post.get("form") or []
+    form_string = post.get("form_string") or []
+    return check(
+        "attach --comment goes to form-string, never to a file-reading form part",
+        all("comment=" not in part for part in form)
+        and "comment=@/etc/passwd" in form_string
+        and "minorEdit=true" in form_string,
+        f"form={form} form_string={form_string}",
+    )
+
+
 def main() -> int:
     cases = [
         case_normalize_site,
@@ -1052,6 +1086,7 @@ def main() -> int:
         case_attach_refuses_silent_overwrite,
         case_attach_replace_blocked_for_other_author,
         case_upload_sets_xsrf_header,
+        case_attach_comment_is_not_a_file_read,
     ]
     results = [case() for case in cases]
     passed = sum(results)

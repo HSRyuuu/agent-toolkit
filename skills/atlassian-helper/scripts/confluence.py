@@ -355,8 +355,7 @@ def command_attach(args: argparse.Namespace) -> int:
         )
 
     form = file_form(path, filename)
-    if args.comment:
-        form.append(f"comment={args.comment}")
+    form_string = [f"comment={args.comment}"] if args.comment else []
     page: dict[str, Any] = {"id": page_id}
     if existing:
         page = _get_page(profile, page_id)
@@ -366,15 +365,17 @@ def command_attach(args: argparse.Namespace) -> int:
             f"{CONTENT_PATH}/{page_id}/child/attachment/{existing.get('id')}/data",
             http_method="POST",
             form=form,
+            form_string=form_string,
             max_time=UPLOAD_MAX_TIME_SECONDS,
         )
     else:
-        form.append("minorEdit=true")
+        form_string.append("minorEdit=true")
         response = api_request(
             profile,
             f"{CONTENT_PATH}/{page_id}/child/attachment",
             http_method="POST",
             form=form,
+            form_string=form_string,
             max_time=UPLOAD_MAX_TIME_SECONDS,
         )
         results = response.get("results") if isinstance(response, dict) else None

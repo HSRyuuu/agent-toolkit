@@ -251,6 +251,7 @@ def run_curl(
     headers: dict[str, str] | None = None,
     payload: dict[str, Any] | None = None,
     form: list[str] | None = None,
+    form_string: list[str] | None = None,
     max_time: int = 60,
 ) -> tuple[int, str, str]:
     method = http_method.upper()
@@ -268,6 +269,10 @@ def run_curl(
             config_lines.append(f'data = "{curl_config_quote(body)}"')
         for part in form or []:
             config_lines.append(f'form = "{curl_config_quote(part)}"')
+        # form-string, not form: a leading '@' in a --form value makes curl read
+        # a local file, which would upload it. Literal parts must never do that.
+        for part in form_string or []:
+            config_lines.append(f'form-string = "{curl_config_quote(part)}"')
 
         command = [
             "curl",
@@ -332,6 +337,7 @@ def api_request(
     query: dict[str, Any] | None = None,
     retries: int = 1,
     form: list[str] | None = None,
+    form_string: list[str] | None = None,
     max_time: int = 60,
 ) -> Any:
     base = normalize_site(str(profile.get("site")))
@@ -346,7 +352,7 @@ def api_request(
         "Accept": "application/json",
         "Authorization": basic_auth_header(profile),
     }
-    if form:
+    if form or form_string:
         # Atlassian rejects multipart uploads without this XSRF opt-out header.
         headers["X-Atlassian-Token"] = "no-check"
 
@@ -360,6 +366,7 @@ def api_request(
                 headers=headers,
                 payload=payload,
                 form=form,
+                form_string=form_string,
                 max_time=max_time,
             )
         except AtlassianHelperError:
