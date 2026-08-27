@@ -22,7 +22,7 @@ scripts freely. 쓰기(생성·수정·삭제)는 `write-guide.md`를 읽는다.
 
 | Script | Use For | Key Commands |
 | --- | --- | --- |
-| `atlassian_setup.py` | Credential setup and checks | `init-keys`, `auth-test`, `search-test`, `confluence-test`, `profiles` |
+| `atlassian_setup.py` | Credential setup and checks | `init-keys`, `migrate-keychain`, `auth-test`, `search-test`, `confluence-test`, `profiles` |
 | `jira.py` | Jira issues (read + write) | `search`, `mine`, `worked`, `due`, `text`, `count`, `issue`, `projects`, `statuses`, `transitions`, `create`, `comment`, `attach`, `edit`, `transition`, `delete`, `comment-edit`, `comment-delete` |
 | `confluence.py` | Confluence pages (read + write) | `search`, `page`, `spaces`, `attachments`, `create`, `update`, `delete`, `comment`, `attach` |
 | `atlassian_common.py` | Shared implementation | import-only; do not call as CLI |

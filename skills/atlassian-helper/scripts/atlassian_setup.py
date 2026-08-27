@@ -5,9 +5,14 @@ from __future__ import annotations
 
 import argparse
 import getpass
+import subprocess
+import sys
 
 from atlassian_common import (
     DEFAULT_LIMIT,
+    LEGACY_KEYCHAIN_EMAIL_ACCOUNT,
+    LEGACY_KEYCHAIN_SERVICE,
+    LEGACY_KEYCHAIN_TOKEN_ACCOUNT,
     SEARCH_PATH,
     SPACES_PATH,
     AtlassianHelperError,
@@ -26,16 +31,17 @@ from atlassian_common import (
 )
 
 
-def command_init_keys(args: argparse.Namespace) -> int:
-    site = normalize_site(args.site)
-    email = args.email.strip()
+def save_credentials(
+    *, site: str, email: str, api_token: str, profile_name: str, default_limit: int
+) -> None:
+    """한 프로필을 config.json에 쓴다. token은 화면에 찍지 않는다."""
+    site = normalize_site(site)
+    email = (email or "").strip()
     if not email or "@" not in email:
-        raise AtlassianHelperError("email이 올바르지 않습니다.")
-    api_token = getpass.getpass("Atlassian API token: ").strip()
+        raise AtlassianHelperError(f"email이 올바르지 않습니다: {email!r}")
     if not api_token:
         raise AtlassianHelperError("API token이 비어 있습니다.")
 
-    profile_name = args.profile or "default"
     config = load_config(required=False)
     profiles = config.get("profiles")
     if not isinstance(profiles, dict):
@@ -44,14 +50,76 @@ def command_init_keys(args: argparse.Namespace) -> int:
         "site": site,
         "email": email,
         "api_token": api_token,
-        "default_limit": args.default_limit,
+        "default_limit": default_limit,
     }
     config["profiles"] = profiles
     config["default_profile"] = profile_name
     save_config(config)
     ensure_memory_file()
     print("Atlassian API 설정을 저장했습니다.")
-    print(f"profile={profile_name} site={site} config={config_path()}")
+    print(f"profile={profile_name} site={site} email={email} config={config_path()}")
+
+
+def command_init_keys(args: argparse.Namespace) -> int:
+    api_token = getpass.getpass("Atlassian API token: ").strip()
+    save_credentials(
+        site=args.site,
+        email=args.email,
+        api_token=api_token,
+        profile_name=args.profile or "default",
+        default_limit=args.default_limit,
+    )
+    return 0
+
+
+def keychain_secret(service: str, account: str) -> str:
+    """macOS Keychain generic password. 없으면 빈 문자열."""
+    if sys.platform != "darwin":
+        raise AtlassianHelperError("Keychain 마이그레이션은 macOS에서만 됩니다.")
+    try:
+        return (
+            subprocess.check_output(
+                ["security", "find-generic-password", "-s", service, "-a", account, "-w"],
+                stderr=subprocess.DEVNULL,
+            )
+            .decode()
+            .strip()
+        )
+    except (subprocess.CalledProcessError, OSError):
+        return ""
+
+
+def command_migrate_keychain(args: argparse.Namespace) -> int:
+    """구 jira/jira-tec 스킬이 Keychain에 둔 자격증명을 config.json으로 한 번 옮긴다.
+
+    토큰을 새로 발급받을 필요가 없다. Keychain 원본은 지우지 않는다 — auth-test로
+    확인한 뒤 사용자가 직접 지운다.
+    """
+    service = args.service
+    email = keychain_secret(service, args.email_account)
+    api_token = keychain_secret(service, args.token_account)
+    missing = [
+        name
+        for name, value in ((args.email_account, email), (args.token_account, api_token))
+        if not value
+    ]
+    if missing:
+        raise AtlassianHelperError(
+            f"Keychain '{service}'에 {', '.join(missing)} 항목이 없습니다. "
+            "init-keys로 새로 설정하세요."
+        )
+    save_credentials(
+        site=args.site,
+        email=email,
+        api_token=api_token,
+        profile_name=args.profile or "default",
+        default_limit=args.default_limit,
+    )
+    print(f"Keychain '{service}'에서 옮겼습니다. 다음: auth-test로 확인하세요.")
+    print(
+        "확인 뒤 구 항목을 지우려면: "
+        f'security delete-generic-password -s "{service}" -a "{args.token_account}"'
+    )
     return 0
 
 
@@ -131,6 +199,18 @@ def build_parser() -> argparse.ArgumentParser:
     init_keys.add_argument("--email", required=True, help="Atlassian 계정 email")
     init_keys.add_argument("--default-limit", type=int, default=DEFAULT_LIMIT)
     init_keys.set_defaults(func=command_init_keys)
+
+    migrate = subparsers.add_parser(
+        "migrate-keychain",
+        help="구 jira/jira-tec 스킬의 Keychain 자격증명을 config.json으로 옮긴다 (macOS)",
+    )
+    migrate.add_argument("--profile", default="default")
+    migrate.add_argument("--site", required=True, help="예: your-org.atlassian.net")
+    migrate.add_argument("--service", default=LEGACY_KEYCHAIN_SERVICE)
+    migrate.add_argument("--email-account", default=LEGACY_KEYCHAIN_EMAIL_ACCOUNT)
+    migrate.add_argument("--token-account", default=LEGACY_KEYCHAIN_TOKEN_ACCOUNT)
+    migrate.add_argument("--default-limit", type=int, default=DEFAULT_LIMIT)
+    migrate.set_defaults(func=command_migrate_keychain)
 
     auth_test = subparsers.add_parser("auth-test", help="Validate credentials via /myself")
     add_profile_arg(auth_test)

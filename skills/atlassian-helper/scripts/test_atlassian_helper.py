@@ -604,7 +604,7 @@ def case_owner_guard_blocks_others() -> bool:
     except common.AtlassianHelperError as exc:
         return check(
             "assert_owner blocks other people's items",
-            "작성자가 본인이 아닙니다" in str(exc) and "홍길동" in str(exc),
+            "본인 것이 아닙니다" in str(exc) and "홍길동" in str(exc),
             str(exc),
         )
 
@@ -730,7 +730,7 @@ def case_jira_edit_blocked_for_other_author() -> bool:
         jira.command_edit(args)
         ok, detail = False, "no error raised"
     except common.AtlassianHelperError as exc:
-        ok = "작성자가 본인이 아닙니다" in str(exc)
+        ok = "본인 것이 아닙니다" in str(exc)
         detail = str(exc)
     finally:
         restore()
@@ -755,7 +755,7 @@ def case_confluence_delete_blocked_for_other_author() -> bool:
         confluence.command_delete(args)
         ok, detail = False, "no error raised"
     except common.AtlassianHelperError as exc:
-        ok = "작성자가 본인이 아닙니다" in str(exc)
+        ok = "본인 것이 아닙니다" in str(exc)
         detail = str(exc)
     finally:
         restore()
@@ -960,7 +960,7 @@ def case_attach_replace_blocked_for_other_author() -> bool:
             confluence.command_attach(args)
             ok, detail = False, "no error raised"
         except common.AtlassianHelperError as exc:
-            ok, detail = "작성자가 본인이 아닙니다" in str(exc), str(exc)
+            ok, detail = "본인 것이 아닙니다" in str(exc), str(exc)
         finally:
             restore()
     methods = [method for method, _ in calls]
@@ -1028,6 +1028,94 @@ def case_attach_comment_is_not_a_file_read() -> bool:
     )
 
 
+def case_owner_guard_allows_assignee_when_permitted() -> bool:
+    """담당자 == 본인이면 수정/전환은 통과하고, 삭제는 그래도 막힌다."""
+    allowed = True
+    try:
+        common.assert_owner(
+            dict(ME), "other-1", "홍길동", "이슈 ABC-1",
+            assignee_id="me-1", assignee_name="나",
+        )
+    except common.AtlassianHelperError:
+        allowed = False
+    # assignee_id를 넘기지 않는 작업(삭제)은 담당자여도 통과하지 않는다
+    try:
+        common.assert_owner(dict(ME), "other-1", "홍길동", "이슈 ABC-1")
+        blocked = False
+    except common.AtlassianHelperError:
+        blocked = True
+    return check(
+        "assert_owner allows the assignee only where assignee_id is passed",
+        allowed and blocked,
+        f"allowed={allowed} blocked={blocked}",
+    )
+
+
+def case_jira_edit_allowed_for_assignee_delete_is_not() -> bool:
+    """남이 만들었지만 내게 배정된 티켓: edit은 PUT까지 가고 delete는 막힌다."""
+    issue = {
+        "fields": {
+            "creator": {"accountId": "other-1", "displayName": "홍길동"},
+            "assignee": {"accountId": "me-1", "displayName": "나"},
+            "summary": "내게 배정된 남의 티켓",
+        }
+    }
+    calls, restore = _record_requests(jira, {"/rest/api/3/issue/ABC-1": issue})
+    try:
+        jira.command_edit(_parse(["edit", "ABC-1", "--summary", "내용 보강"]))
+        edit_ok, detail = True, ""
+    except common.AtlassianHelperError as exc:
+        edit_ok, detail = False, str(exc)
+    try:
+        jira.command_delete(_parse(["delete", "ABC-1", "--yes"]))
+        delete_blocked = False
+    except common.AtlassianHelperError as exc:
+        delete_blocked = "본인 것이 아닙니다" in str(exc)
+    finally:
+        restore()
+    methods = [method for method, _ in calls]
+    return check(
+        "an issue assigned to me can be edited but not deleted",
+        edit_ok and delete_blocked and "PUT" in methods and "DELETE" not in methods,
+        f"edit={edit_ok}({detail}) delete_blocked={delete_blocked} calls={calls}",
+    )
+
+
+def case_migrate_keychain_writes_profile() -> bool:
+    """Keychain 값으로 프로필을 만들고, 항목이 없으면 저장하지 않는다."""
+    real_secret = setup.keychain_secret
+    vault = {
+        ("jira-doc-assistant", "jira-email"): "me@example.com",
+        ("jira-doc-assistant", "jira-api-token"): "TOKEN-FROM-KEYCHAIN",
+    }
+    setup.keychain_secret = lambda service, account: vault.get((service, account), "")
+    args = setup.build_parser().parse_args(["migrate-keychain", "--site", "acme.atlassian.net"])
+    with tempfile.TemporaryDirectory(prefix="atlassian-helper-test-") as tmp:
+        os.environ["ATLASSIAN_HELPER_CONFIG_DIR"] = tmp
+        try:
+            setup.command_migrate_keychain(args)
+            profile = common.load_config()["profiles"]["default"]
+            ok = (
+                profile["site"] == "https://acme.atlassian.net"
+                and profile["email"] == "me@example.com"
+                and profile["api_token"] == "TOKEN-FROM-KEYCHAIN"
+            )
+            vault.pop(("jira-doc-assistant", "jira-api-token"))
+            try:
+                setup.command_migrate_keychain(args)
+                refused = False
+            except common.AtlassianHelperError as exc:
+                refused = "jira-api-token" in str(exc)
+        finally:
+            os.environ.pop("ATLASSIAN_HELPER_CONFIG_DIR", None)
+            setup.keychain_secret = real_secret
+    return check(
+        "migrate-keychain moves the old jira-doc-assistant credentials into config.json",
+        ok and refused,
+        f"ok={ok} refused={refused}",
+    )
+
+
 def main() -> int:
     cases = [
         case_normalize_site,
@@ -1072,6 +1160,9 @@ def main() -> int:
         case_owner_guard_allows_self,
         case_owner_guard_blocks_others,
         case_owner_guard_fails_closed,
+        case_owner_guard_allows_assignee_when_permitted,
+        case_jira_edit_allowed_for_assignee_delete_is_not,
+        case_migrate_keychain_writes_profile,
         case_delete_requires_yes,
         case_edit_requires_a_field,
         case_read_body_exactly_one,

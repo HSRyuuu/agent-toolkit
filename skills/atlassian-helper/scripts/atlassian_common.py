@@ -80,10 +80,47 @@ def memory_path() -> Path:
     return config_dir() / MEMORY_FILE
 
 
+LEGACY_KEYCHAIN_SERVICE = "jira-doc-assistant"
+LEGACY_KEYCHAIN_EMAIL_ACCOUNT = "jira-email"
+LEGACY_KEYCHAIN_TOKEN_ACCOUNT = "jira-api-token"
+
+
+def keychain_has(service: str, account: str) -> bool:
+    """Keychain 항목 존재만 확인한다 (`-w` 없이 — 값을 읽지 않는다)."""
+    if sys.platform != "darwin":
+        return False
+    try:
+        return (
+            subprocess.run(
+                ["security", "find-generic-password", "-s", service, "-a", account],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            ).returncode
+            == 0
+        )
+    except OSError:
+        return False
+
+
+def missing_config_hint() -> str:
+    """구 jira/jira-tec 스킬의 Keychain 자격증명이 남아 있으면 이관 경로를 알려준다."""
+    if keychain_has(LEGACY_KEYCHAIN_SERVICE, LEGACY_KEYCHAIN_EMAIL_ACCOUNT) and keychain_has(
+        LEGACY_KEYCHAIN_SERVICE, LEGACY_KEYCHAIN_TOKEN_ACCOUNT
+    ):
+        return (
+            f"\n구 스킬 자격증명이 Keychain('{LEGACY_KEYCHAIN_SERVICE}')에 남아 있습니다. "
+            "토큰을 새로 발급받지 않고 옮길 수 있습니다:\n"
+            "  atlassian_setup.py migrate-keychain --site your-org.atlassian.net"
+        )
+    return ""
+
+
 def read_json(path: Path, *, required: bool = True) -> dict[str, Any]:
     if not path.exists():
         if required:
-            raise AtlassianHelperError(f"Missing config file: {path}")
+            hint = missing_config_hint() if path.name == CONFIG_FILE else ""
+            raise AtlassianHelperError(f"Missing config file: {path}{hint}")
         return {}
     try:
         with path.open("r", encoding="utf-8") as handle:
@@ -530,22 +567,37 @@ def assert_owner(
     owner_id: Any,
     owner_name: Any,
     target: str,
+    *,
+    assignee_id: Any = None,
+    assignee_name: Any = None,
 ) -> None:
-    """Block modify/delete unless the current user authored the target.
+    """Block modify/delete unless the target is mine.
 
-    Fails closed: an unknown author is treated as "not mine".
+    작성자는 항상 통과 조건이다. `assignee_id`를 넘긴 작업(이슈 수정·상태 변경)은
+    **담당자 == 본인**도 통과시킨다 — 배정받은 티켓을 다루는 것은 정상 작업이다.
+    되돌릴 수 없는 작업(삭제 등)은 `assignee_id`를 넘기지 않아 작성자만 통과한다.
+
+    Fails closed: 작성자도 담당자도 못 읽으면 중단한다.
     """
     owner = str(owner_id or "").strip()
-    if not owner:
+    assignee = str(assignee_id or "").strip()
+    if not owner and not assignee:
         raise AtlassianHelperError(
             f"{target}의 작성자를 확인할 수 없어 수정/삭제를 중단합니다."
         )
     me = my_account_id(profile)
-    if owner != me:
-        raise AtlassianHelperError(
-            f"{target}의 작성자가 본인이 아닙니다 (작성자: {owner_name or owner}). "
-            "수정/삭제는 본인이 작성한 항목에만 허용됩니다."
-        )
+    if me in (owner, assignee):
+        return
+    who = f"작성자: {owner_name or owner or '확인 불가'}"
+    if assignee_id is not None:
+        who += f", 담당자: {assignee_name or assignee or '미배정'}"
+        allowed = "본인이 작성했거나 본인에게 배정된 항목"
+    else:
+        allowed = "본인이 작성한 항목"
+    raise AtlassianHelperError(
+        f"{target}은(는) 본인 것이 아닙니다 ({who}). "
+        f"이 작업은 {allowed}에만 허용됩니다."
+    )
 
 
 def confirm_destructive(yes: bool, target: str) -> None:

@@ -7,16 +7,24 @@ Use this file whenever the request changes something in Jira or Confluence.
 게이트 자체는 `SKILL.md`의 Safety Model에 있다. 여기서는 스크립트가 무엇을 보고
 판정하는지만 다룬다.
 
-- Jira 이슈: `creator` (없으면 `reporter`)
-- Jira 코멘트: 코멘트 `author`
-- Confluence 페이지: `authorId` (최초 작성자, 마지막 수정자가 아님)
+| 대상 | 통과 조건 |
+| --- | --- |
+| Jira 이슈 수정 (`edit`), 상태 변경 (`transition`) | `creator`(없으면 `reporter`) **또는** `assignee` 가 본인 |
+| Jira 이슈 삭제 (`delete`) | `creator`(없으면 `reporter`) 만. 담당자는 통과하지 않는다 |
+| Jira 코멘트 수정·삭제 | 코멘트 `author` |
+| Confluence 페이지 수정·삭제, `attach --replace` | `authorId` (최초 작성자, 마지막 수정자가 아님) |
 
-남의 티켓/문서를 수정·삭제해야 하는 상황이면 실행하지 말고 이렇게 안내한다.
+작성자도 담당자도 못 읽으면 통과시키지 않는다(fail-closed).
+
+남의 티켓/문서라 막혔으면 실행하지 말고 이렇게 안내한다.
 
 ```text
-이 티켓은 <작성자>님이 만든 거라 수정/삭제는 막혀 있어요.
+이 티켓은 <작성자>님이 만들었고 담당자도 본인이 아니라 수정/삭제가 막혀 있어요.
 대신 코멘트를 남기거나 작성자에게 요청하는 방법이 있습니다.
 ```
+
+배정만 받은 티켓(작성자는 남, 담당자는 본인)은 본문 수정과 상태 변경까지 되고
+삭제는 안 된다.
 
 ## 본문 작성 형식
 

@@ -28,6 +28,29 @@ errors.
 
 아래 1~4단계를 순서대로 진행한다. 이미 완료된 단계는 검증 후 건너뛴다.
 
+## 0단계: 구 스킬 자격증명 확인 (macOS)
+
+구 `jira`·`jira-tec` 스킬을 쓴 적이 있으면 이메일과 API token이 이미 macOS
+Keychain(`jira-doc-assistant`)에 있다. 그러면 **token을 새로 발급받을 필요가
+없다.** 설정이 없는 상태에서 스크립트를 실행하면 에러 메시지가 이 경로를 알려주기도
+한다.
+
+```bash
+security find-generic-password -s "jira-doc-assistant" -a "jira-email" -w
+```
+
+이메일이 출력되면 site만 확인해서(1단계) 바로 옮긴다.
+
+```bash
+python3 "<SKILL_DIR>/scripts/atlassian_setup.py" migrate-keychain --site your-org.atlassian.net
+```
+
+- 값은 화면에 찍히지 않고 `config.json`으로 바로 들어간다.
+- Keychain 원본은 지우지 않는다. `auth-test`로 확인한 뒤 사용자가 직접 지운다.
+- 항목이 없거나 macOS가 아니면 2~3단계로 새로 발급받는다.
+- 옮긴 뒤 **4단계 검증(`auth-test`)까지 반드시 실행한다.** 옛 token이 만료됐을 수
+  있고, `auth-test`가 accountId를 캐시해야 작성자·담당자 판정이 추가 호출 없이 돌아간다.
+
 ## 1단계: Atlassian site 확인
 
 ```text

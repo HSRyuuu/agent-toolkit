@@ -275,25 +275,41 @@ def command_statuses(args: argparse.Namespace) -> int:
 # --- Write ---------------------------------------------------------------
 
 
-def _issue_author(profile: dict[str, Any], key: str) -> tuple[str, str, str]:
-    """(accountId, displayName, summary) of the issue creator (reporter fallback)."""
+def _issue_people(profile: dict[str, Any], key: str) -> dict[str, str]:
+    """이슈의 작성자(creator, 없으면 reporter)·담당자·제목."""
     response = api_request(
-        profile, f"/rest/api/3/issue/{key}", query={"fields": "creator,reporter,summary"}
+        profile,
+        f"/rest/api/3/issue/{key}",
+        query={"fields": "creator,reporter,assignee,summary"},
     )
     fields = response.get("fields") if isinstance(response, dict) else {}
     fields = fields if isinstance(fields, dict) else {}
     author = fields.get("creator") or fields.get("reporter")
     author = author if isinstance(author, dict) else {}
-    return (
-        str(author.get("accountId") or ""),
-        str(author.get("displayName") or ""),
-        str(fields.get("summary") or ""),
+    assignee = fields.get("assignee")
+    assignee = assignee if isinstance(assignee, dict) else {}
+    return {
+        "owner_id": str(author.get("accountId") or ""),
+        "owner_name": str(author.get("displayName") or ""),
+        "assignee_id": str(assignee.get("accountId") or ""),
+        "assignee_name": str(assignee.get("displayName") or ""),
+        "summary": str(fields.get("summary") or ""),
+    }
+
+
+def _assert_issue_owner(
+    profile: dict[str, Any], key: str, *, allow_assignee: bool = False
+) -> None:
+    """작성자 게이트. `allow_assignee` 면 담당자 == 본인도 통과한다."""
+    people = _issue_people(profile, key)
+    assert_owner(
+        profile,
+        people["owner_id"],
+        people["owner_name"],
+        f"이슈 {key}",
+        assignee_id=people["assignee_id"] if allow_assignee else None,
+        assignee_name=people["assignee_name"],
     )
-
-
-def _assert_issue_owner(profile: dict[str, Any], key: str) -> None:
-    account_id, display_name, _ = _issue_author(profile, key)
-    assert_owner(profile, account_id, display_name, f"이슈 {key}")
 
 
 def _comment_author(profile: dict[str, Any], key: str, comment_id: str) -> tuple[str, str]:
@@ -403,7 +419,7 @@ def command_edit(args: argparse.Namespace) -> int:
     if not fields:
         raise AtlassianHelperError("수정할 필드가 없습니다 (--summary/--description/--duedate/...).")
     _, profile = load_profile(args.profile)
-    _assert_issue_owner(profile, key)
+    _assert_issue_owner(profile, key, allow_assignee=True)
     api_request(
         profile, f"/rest/api/3/issue/{key}", http_method="PUT", payload={"fields": fields}
     )
@@ -432,7 +448,7 @@ def command_transitions(args: argparse.Namespace) -> int:
 def command_transition(args: argparse.Namespace) -> int:
     key = validate_issue_key(args.key)
     _, profile = load_profile(args.profile)
-    _assert_issue_owner(profile, key)
+    _assert_issue_owner(profile, key, allow_assignee=True)
     response = api_request(profile, f"/rest/api/3/issue/{key}/transitions")
     transitions = response.get("transitions") if isinstance(response, dict) else []
     transitions = transitions if isinstance(transitions, list) else []
@@ -471,7 +487,8 @@ def command_delete(args: argparse.Namespace) -> int:
     key = validate_issue_key(args.key)
     confirm_destructive(args.yes, f"이슈 {key}")
     _, profile = load_profile(args.profile)
-    _, _, summary = _issue_author(profile, key)
+    # 삭제는 되돌릴 수 없다 — 담당자가 아니라 작성자만 통과시킨다.
+    summary = _issue_people(profile, key)["summary"]
     _assert_issue_owner(profile, key)
     api_request(
         profile,

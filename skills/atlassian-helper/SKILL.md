@@ -48,13 +48,15 @@ the reference files) when running scripts or showing commands to the user.
 | --- | --- | --- |
 | 조회 (search, issue, page, count …) | 안전 | 없음 |
 | 생성 (issue create, comment, page create, 새 첨부 attach) | 안전 | 실행 전 대상/내용을 사용자에게 한 줄로 확인 |
-| 수정 (issue edit, transition, comment-edit, page update, `attach --replace`) | 위험 | **작성자 == 본인**일 때만 실행 |
-| 삭제 (issue delete, comment-delete, page delete) | 위험 | **작성자 == 본인** + `--yes` |
+| 이슈 수정/상태 변경 (issue edit, transition) | 위험 | **작성자 == 본인 또는 담당자 == 본인**일 때만 실행 |
+| 그 외 수정 (comment-edit, page update, `attach --replace`) | 위험 | **작성자 == 본인**일 때만 실행 |
+| 삭제 (issue delete, comment-delete, page delete) | 위험 | **작성자 == 본인** + `--yes` (담당자는 해당 없음) |
 
-작성자 확인은 스크립트가 API로 직접 검사하고, 작성자를 못 읽으면 fail-closed로
-중단한다. 우회 플래그는 없다 — 검사 실패를 다른 경로(직접 curl, MCP 등)로 돌아
-가지 않고, 작성자가 다르다는 사실과 대안(코멘트 남기기, 작성자에게 요청)을
-안내한다. 삭제는 되돌릴 수 없으니 대상 키/ID와 제목을 보여주고 확인을 받은
+판정은 스크립트가 API로 직접 하고, 작성자도 담당자도 못 읽으면 fail-closed로
+중단한다. 이슈 수정·상태 변경에서 담당자를 통과 조건에 넣는 이유는 배정받은 티켓을
+다루는 것이 정상 작업이기 때문이다 — 되돌릴 수 없는 삭제는 작성자만 통과한다.
+우회 플래그는 없다 — 검사 실패를 다른 경로(직접 curl, MCP 등)로 돌아가지 않고,
+본인 것이 아니라는 사실과 대안(코멘트 남기기, 작성자에게 요청)을 안내한다. 삭제는 되돌릴 수 없으니 대상 키/ID와 제목을 보여주고 확인을 받은
 뒤에만 `--yes`를 붙인다. 판정 필드와 거절 문구는 `references/write-guide.md`.
 
 ## Routing
@@ -93,8 +95,8 @@ The config directory should be `700`; `config.json` and `MEMORY.md` should be
 
 ## Scripts
 
-- `atlassian_setup.py`: `init-keys`, `auth-test`, `search-test`,
-  `confluence-test`, `profiles`
+- `atlassian_setup.py`: `init-keys`, `migrate-keychain`(구 jira 스킬의 Keychain
+  자격증명 이관), `auth-test`, `search-test`, `confluence-test`, `profiles`
 - `jira.py`: 읽기 `search`, `mine`, `worked`, `due`, `text`, `count`, `issue`,
   `projects`, `statuses`, `transitions` / 쓰기 `create`, `comment`, `attach`,
   `edit`, `transition`, `delete`, `comment-edit`, `comment-delete`
