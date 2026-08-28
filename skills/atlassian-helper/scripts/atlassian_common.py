@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import uuid
 import urllib.parse
 from datetime import datetime, timezone
 from pathlib import Path
@@ -752,6 +753,7 @@ _INLINE_RE = re.compile(
 )
 _FENCE_RE = re.compile(r"^(?:```|~~~)\s*([A-Za-z0-9_+#-]*)\s*$")
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
+_TASK_RE = re.compile(r"^[-*]\s+\[([ xX])\]\s+(.*)$")  # - [ ] / - [x]
 _BULLET_RE = re.compile(r"^[-*]\s+(.*)$")
 _NUMBER_RE = re.compile(r"^\d+[.)]\s+(.*)$")
 
@@ -830,15 +832,18 @@ def _parse_blocks(text: str) -> list[tuple[str, Any]]:
     lines = [raw.rstrip() for raw in str(text).splitlines()]
     blocks: list[tuple[str, Any]] = []
     paragraph: list[str] = []
-    items: list[str] = []
-    ordered = False
+    items: list[Any] = []
+    list_kind = "bullet"  # bullet | ordered | task
 
     def flush() -> None:
-        nonlocal ordered
+        nonlocal list_kind
         if items:
-            blocks.append(("list", (ordered, list(items))))
+            if list_kind == "task":
+                blocks.append(("tasks", list(items)))
+            else:
+                blocks.append(("list", (list_kind == "ordered", list(items))))
             items.clear()
-            ordered = False
+            list_kind = "bullet"
         if paragraph:
             blocks.append(("para", list(paragraph)))
             paragraph.clear()
@@ -891,14 +896,19 @@ def _parse_blocks(text: str) -> list[tuple[str, Any]]:
             blocks.append(("quote", quote))
             continue
 
-        bullet = _BULLET_RE.match(stripped)
-        number = _NUMBER_RE.match(stripped)
-        if bullet or number:
-            wants_ordered = number is not None
-            if paragraph or (items and ordered != wants_ordered):
+        # a checkbox is a bullet too, so it has to be tested first
+        task = _TASK_RE.match(stripped)
+        bullet = None if task else _BULLET_RE.match(stripped)
+        number = None if task else _NUMBER_RE.match(stripped)
+        if task or bullet or number:
+            wants = "task" if task else ("ordered" if number else "bullet")
+            if paragraph or (items and list_kind != wants):
                 flush()
-            ordered = wants_ordered
-            items.append((number or bullet).group(1).strip())
+            list_kind = wants
+            if task:
+                items.append((task.group(1).lower() == "x", task.group(2).strip()))
+            else:
+                items.append((number or bullet).group(1).strip())
             index += 1
             continue
 
@@ -956,6 +966,25 @@ def _adf_list(ordered: bool, items: list[str]) -> dict[str, Any]:
     }
 
 
+def _adf_task_list(items: list[tuple[bool, str]]) -> dict[str, Any]:
+    """ADF taskList. Every taskList/taskItem needs its own localId, and a
+    taskItem holds inline nodes directly — wrapping them in a paragraph is
+    rejected."""
+    content = []
+    for done, text in items:
+        inline = _adf_inline(text)
+        if not inline:
+            continue
+        content.append(
+            {
+                "type": "taskItem",
+                "attrs": {"localId": str(uuid.uuid4()), "state": "DONE" if done else "TODO"},
+                "content": inline,
+            }
+        )
+    return {"type": "taskList", "attrs": {"localId": str(uuid.uuid4())}, "content": content}
+
+
 def text_to_adf(text: str) -> dict[str, Any]:
     """Markdown-ish plain text -> ADF doc.
 
@@ -984,6 +1013,10 @@ def text_to_adf(text: str) -> dict[str, Any]:
             if body:
                 node["content"] = [{"type": "text", "text": body}]
             blocks.append(node)
+        elif kind == "tasks":
+            task_list = _adf_task_list(value)
+            if task_list["content"]:
+                blocks.append(task_list)
         elif kind == "table":
             blocks.append(_adf_table(*value))
 
@@ -1027,6 +1060,18 @@ def _storage_code(language: str, body: str) -> str:
     )
 
 
+def _storage_task_list(items: list[tuple[bool, str]]) -> str:
+    body = "".join(
+        "<ac:task><ac:task-status>{}</ac:task-status>"
+        "<ac:task-body>{}</ac:task-body></ac:task>".format(
+            "complete" if done else "incomplete", _storage_inline(text)
+        )
+        for done, text in items
+        if text
+    )
+    return f"<ac:task-list>{body}</ac:task-list>" if body else ""
+
+
 def text_to_storage(text: str) -> str:
     """Markdown-ish plain text -> Confluence storage XHTML.
 
@@ -1050,10 +1095,12 @@ def text_to_storage(text: str) -> str:
             blocks.append(f"<blockquote><p>{body}</p></blockquote>")
         elif kind == "code":
             blocks.append(_storage_code(*value))
+        elif kind == "tasks":
+            blocks.append(_storage_task_list(value))
         elif kind == "table":
             blocks.append(_storage_table(*value))
 
-    return "".join(blocks) or "<p />"
+    return "".join(block for block in blocks if block) or "<p />"
 
 
 # --- Issue formatting -----------------------------------------------------

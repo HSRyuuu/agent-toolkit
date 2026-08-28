@@ -109,6 +109,21 @@ python3 "<SKILL_DIR>/scripts/jira.py" create --project ABC --type Bug \
 python3 "<SKILL_DIR>/scripts/jira.py" comment ABC-123 --body "확인했습니다. 배포 후 재현 여부 다시 볼게요."
 ```
 
+티켓 간 링크 (남의 티켓에도 가능 — 코멘트처럼 추가만 한다). `key` 가 링크를 붙이는
+쪽(inward), `--to` 가 연결 대상(outward)이다:
+
+```bash
+python3 "<SKILL_DIR>/scripts/jira.py" link TEC-601 --to TASK-3295
+python3 "<SKILL_DIR>/scripts/jira.py" link TEC-601 --to TASK-3295 --type Blocks
+```
+
+PR/MR·외부 문서 URL을 티켓에 웹 링크로 붙이기 (같은 URL 재실행 시 갱신):
+
+```bash
+python3 "<SKILL_DIR>/scripts/jira.py" remotelink TEC-123 \
+  --url "https://github.com/org/repo/pull/42" --title "PR: 쿠폰 만료 계산 수정"
+```
+
 내가 만든 티켓 수정:
 
 ```bash

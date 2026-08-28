@@ -349,6 +349,8 @@ def command_create(args: argparse.Namespace) -> int:
         fields["priority"] = {"name": args.priority}
     if args.parent:
         fields["parent"] = {"key": validate_issue_key(args.parent)}
+    if args.fix_version:
+        fields["fixVersions"] = [{"name": name} for name in args.fix_version]
     response = api_request(
         profile, "/rest/api/3/issue", http_method="POST", payload={"fields": fields}
     )
@@ -398,6 +400,88 @@ def command_attach(args: argparse.Namespace) -> int:
         f"(id={uploaded.get('id') or '-'}, {human_size(uploaded.get('size'))}) to {key}"
         f"  {_issue_url(profile, key)}"
     )
+    return 0
+
+
+def command_link(args: argparse.Namespace) -> int:
+    """Link two issues (Relates by default). Additive, like a comment."""
+    inward = validate_issue_key(args.key)
+    outward = validate_issue_key(args.to)
+    _, profile = load_profile(args.profile)
+    api_request(
+        profile,
+        "/rest/api/3/issueLink",
+        http_method="POST",
+        payload={
+            "type": {"name": args.type},
+            "inwardIssue": {"key": inward},
+            "outwardIssue": {"key": outward},
+        },
+    )
+    print(f"linked {inward} -[{args.type}]-> {outward}  {_issue_url(profile, inward)}")
+    return 0
+
+
+def command_remotelink(args: argparse.Namespace) -> int:
+    """Attach a web link (PR/MR, 문서 URL) to an issue. Same globalId = 갱신."""
+    key = validate_issue_key(args.key)
+    url = str(args.url or "").strip()
+    if not url.startswith(("http://", "https://")):
+        raise AtlassianHelperError(f"http(s) URL이 아닙니다: {args.url}")
+    _, profile = load_profile(args.profile)
+    api_request(
+        profile,
+        f"/rest/api/3/issue/{key}/remotelink",
+        http_method="POST",
+        payload={
+            "globalId": url,
+            "object": {"url": url, "title": args.title or url},
+        },
+    )
+    print(f"linked {url} to {key}  {_issue_url(profile, key)}")
+    return 0
+
+
+def command_versions(args: argparse.Namespace) -> int:
+    project = validate_project_key(args.project)
+    _, profile = load_profile(args.profile)
+    response = api_request(profile, f"/rest/api/3/project/{project}/versions")
+    if args.raw:
+        return print_response(response)
+    versions = response if isinstance(response, list) else []
+    shown = 0
+    for version in versions:
+        if not isinstance(version, dict):
+            continue
+        if version.get("released") and not args.all:
+            continue
+        state = "released" if version.get("released") else "unreleased"
+        print(f"{version.get('id')}  {version.get('name')}  [{state}]")
+        shown += 1
+    if not shown:
+        print("(no versions)")
+    return 0
+
+
+def command_assignable(args: argparse.Namespace) -> int:
+    project = validate_project_key(args.project)
+    _, profile = load_profile(args.profile)
+    response = api_request(
+        profile,
+        "/rest/api/3/user/assignable/search",
+        query={"project": project, "query": args.query or "", "maxResults": 20},
+    )
+    if args.raw:
+        return print_response(response)
+    users = response if isinstance(response, list) else []
+    for user in users:
+        if isinstance(user, dict):
+            print(
+                f"{user.get('accountId')}  {user.get('displayName')}  "
+                f"{user.get('emailAddress') or '-'}"
+            )
+    if not users:
+        print("(배정 가능한 사용자를 찾지 못했습니다)")
     return 0
 
 
@@ -637,6 +721,9 @@ def build_parser() -> argparse.ArgumentParser:
     create.add_argument("--duedate", help="YYYY-MM-DD")
     create.add_argument("--priority")
     create.add_argument("--parent", help="상위 이슈 키 (예: ABC-100)")
+    create.add_argument(
+        "--fix-version", action="append", help="수정버전 이름 (예: 'iOS 3.8.3'); 반복 가능"
+    )
     create.add_argument("--raw", action="store_true")
     create.set_defaults(func=command_create)
 
@@ -654,6 +741,36 @@ def build_parser() -> argparse.ArgumentParser:
     attach.add_argument("--name", help="첨부 파일명 (기본: 원본 파일명)")
     attach.add_argument("--raw", action="store_true")
     attach.set_defaults(func=command_attach)
+
+    link = subparsers.add_parser("link", help="Link two issues (안전 작업)")
+    add_profile_arg(link)
+    link.add_argument("key", help="inward 이슈 키 (링크를 붙이는 쪽)")
+    link.add_argument("--to", required=True, help="outward 이슈 키 (연결 대상)")
+    link.add_argument("--type", default="Relates", help='링크 타입 (default "Relates")')
+    link.set_defaults(func=command_link)
+
+    remotelink = subparsers.add_parser(
+        "remotelink", help="Attach a web link (PR/MR 등) to an issue (안전 작업)"
+    )
+    add_profile_arg(remotelink)
+    remotelink.add_argument("key")
+    remotelink.add_argument("--url", required=True, help="연결할 http(s) URL")
+    remotelink.add_argument("--title", help="링크 제목 (기본: URL)")
+    remotelink.set_defaults(func=command_remotelink)
+
+    versions = subparsers.add_parser("versions", help="Project versions (수정버전)")
+    add_profile_arg(versions)
+    versions.add_argument("--project", required=True, help="project key")
+    versions.add_argument("--all", action="store_true", help="released 버전도 표시")
+    versions.add_argument("--raw", action="store_true")
+    versions.set_defaults(func=command_versions)
+
+    assignable = subparsers.add_parser("assignable", help="Assignable users in a project")
+    add_profile_arg(assignable)
+    assignable.add_argument("--project", required=True, help="project key")
+    assignable.add_argument("--query", help="이름/이메일 부분 일치")
+    assignable.add_argument("--raw", action="store_true")
+    assignable.set_defaults(func=command_assignable)
 
     edit = subparsers.add_parser("edit", help="Edit an issue I created (작성자 확인)")
     add_profile_arg(edit)

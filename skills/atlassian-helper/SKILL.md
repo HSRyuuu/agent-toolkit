@@ -46,8 +46,8 @@ the reference files) when running scripts or showing commands to the user.
 
 | 작업 | 분류 | 게이트 |
 | --- | --- | --- |
-| 조회 (search, issue, page, count …) | 안전 | 없음 |
-| 생성 (issue create, comment, page create, 새 첨부 attach) | 안전 | 실행 전 대상/내용을 사용자에게 한 줄로 확인 |
+| 조회 (search, issue, page, count, versions, assignable …) | 안전 | 없음 |
+| 생성 (issue create, comment, link, remotelink, page create, 새 첨부 attach) | 안전 | 실행 전 대상/내용을 사용자에게 한 줄로 확인 |
 | 이슈 수정/상태 변경 (issue edit, transition) | 위험 | **작성자 == 본인 또는 담당자 == 본인**일 때만 실행 |
 | 그 외 수정 (comment-edit, page update, `attach --replace`) | 위험 | **작성자 == 본인**일 때만 실행 |
 | 삭제 (issue delete, comment-delete, page delete) | 위험 | **작성자 == 본인** + `--yes` (담당자는 해당 없음) |
@@ -71,8 +71,9 @@ the reference files) when running scripts or showing commands to the user.
 | 이슈 상세, 코멘트 보기 (ABC-123) | `references/scripts-reference.md` | `jira.py issue` |
 | 복잡한 조건, 직접 JQL 조합 | `references/jql-patterns.md` | `jira.py search`, `count` |
 | 마크다운 문서를 코멘트/설명/페이지로 옮기기 | `references/markdown-mapping.md` | `jira.py comment`, `confluence.py create` |
-| 티켓/코멘트 생성 | `references/write-guide.md` | `jira.py create`, `comment` |
+| 티켓/코멘트 생성, 티켓 간 링크 | `references/write-guide.md` | `jira.py create`, `comment`, `link`, `remotelink` |
 | 티켓 수정/상태 변경/삭제 | `references/write-guide.md` | `jira.py edit`, `transition`, `delete` |
+| 담당자 후보·수정버전 확인 | `references/scripts-reference.md` | `jira.py assignable`, `versions` |
 | 컨플루언스 문서 검색/읽기 | `references/scripts-reference.md` | `confluence.py search`, `page` |
 | 컨플루언스 문서 작성/수정/삭제 | `references/write-guide.md` | `confluence.py create`, `update`, `delete` |
 | 이미지·첨부 업로드/교체 (페이지 이미지 바꿔줘, 스크린샷 첨부) | `references/write-guide.md` | `confluence.py attach`, `attachments`, `jira.py attach` |
@@ -98,8 +99,9 @@ The config directory should be `700`; `config.json` and `MEMORY.md` should be
 - `atlassian_setup.py`: `init-keys`, `migrate-keychain`(구 jira 스킬의 Keychain
   자격증명 이관), `auth-test`, `search-test`, `confluence-test`, `profiles`
 - `jira.py`: 읽기 `search`, `mine`, `worked`, `due`, `text`, `count`, `issue`,
-  `projects`, `statuses`, `transitions` / 쓰기 `create`, `comment`, `attach`,
-  `edit`, `transition`, `delete`, `comment-edit`, `comment-delete`
+  `projects`, `statuses`, `transitions`, `versions`, `assignable` / 쓰기
+  `create`, `comment`, `attach`, `link`, `remotelink`, `edit`, `transition`,
+  `delete`, `comment-edit`, `comment-delete`
 - `confluence.py`: 읽기 `search`, `page`, `spaces`, `attachments` / 쓰기
   `create`, `update`, `delete`, `comment`, `attach`
 - `atlassian_common.py`: import-only shared implementation

@@ -1116,6 +1116,129 @@ def case_migrate_keychain_writes_profile() -> bool:
     )
 
 
+def case_text_to_adf_task_list() -> bool:
+    """Checkboxes must become a taskList, not a bulletList with '[ ]' text."""
+    doc = common.text_to_adf("- [ ] 미완료\n- [x] 완료\n\n- 그냥 불릿\n")
+    types = [block.get("type") for block in doc["content"]]
+    task_list = doc["content"][0] if doc["content"] else {}
+    items = task_list.get("content") or []
+    local_ids = {task_list.get("attrs", {}).get("localId")} | {
+        item.get("attrs", {}).get("localId") for item in items
+    }
+    return check(
+        "text_to_adf turns '- [ ]' into taskList/taskItem with unique localIds",
+        types == ["taskList", "bulletList"]
+        and [item["attrs"]["state"] for item in items] == ["TODO", "DONE"]
+        and items[0]["content"][0]["text"] == "미완료"
+        and items[0]["content"][0].get("type") == "text"
+        and len(local_ids) == 3
+        and None not in local_ids,
+        f"{types} / {[i['attrs']['state'] for i in items]} / ids={len(local_ids)}",
+    )
+
+
+def case_text_to_storage_task_list() -> bool:
+    storage = common.text_to_storage("- [x] 배포 확인\n- [ ] 롤백 준비\n")
+    return check(
+        "text_to_storage turns checkboxes into a Confluence ac:task-list",
+        "<ac:task-list>" in storage
+        and storage.count("<ac:task>") == 2
+        and "<ac:task-status>complete</ac:task-status>" in storage
+        and "<ac:task-status>incomplete</ac:task-status>" in storage,
+        storage,
+    )
+
+
+def case_jira_link_payload() -> bool:
+    calls: list[tuple[str, str, dict]] = []
+
+    def fake_request(profile, path, **kwargs):
+        calls.append((kwargs.get("http_method", "GET"), path, kwargs.get("payload") or {}))
+        return {}
+
+    real_request, real_load = jira.api_request, jira.load_profile
+    jira.api_request = fake_request
+    jira.load_profile = lambda name=None: ("default", dict(ME))
+    try:
+        jira.command_link(_parse(["link", "TEC-1", "--to", "TASK-2"]))
+        bad = False
+        try:
+            jira.command_link(_parse(["link", "TEC-1", "--to", "not a key"]))
+        except common.AtlassianHelperError:
+            bad = True
+    finally:
+        jira.api_request, jira.load_profile = real_request, real_load
+    method, path, payload = calls[0] if calls else ("", "", {})
+    return check(
+        "jira link posts a Relates issueLink and validates both keys",
+        method == "POST"
+        and path == "/rest/api/3/issueLink"
+        and payload.get("type") == {"name": "Relates"}
+        and payload.get("inwardIssue") == {"key": "TEC-1"}
+        and payload.get("outwardIssue") == {"key": "TASK-2"}
+        and len(calls) == 1
+        and bad,
+        f"{method} {path} {payload}",
+    )
+
+
+def case_jira_create_fix_versions() -> bool:
+    calls: list[dict] = []
+
+    def fake_request(profile, path, **kwargs):
+        calls.append(kwargs.get("payload") or {})
+        return {"key": "TEC-9"}
+
+    real_request, real_load = jira.api_request, jira.load_profile
+    jira.api_request = fake_request
+    jira.load_profile = lambda name=None: ("default", dict(ME))
+    try:
+        jira.command_create(
+            _parse(
+                [
+                    "create", "--project", "TEC", "--summary", "s",
+                    "--fix-version", "iOS 3.8.3", "--fix-version", "AOS 3.8.3",
+                ]
+            )
+        )
+    finally:
+        jira.api_request, jira.load_profile = real_request, real_load
+    fields = (calls[0] if calls else {}).get("fields") or {}
+    return check(
+        "jira create sends every --fix-version as a fixVersions name",
+        fields.get("fixVersions") == [{"name": "iOS 3.8.3"}, {"name": "AOS 3.8.3"}],
+        str(fields.get("fixVersions")),
+    )
+
+
+def case_jira_remotelink_rejects_non_http() -> bool:
+    calls: list[str] = []
+
+    def fake_request(profile, path, **kwargs):
+        calls.append(path)
+        return {}
+
+    real_request, real_load = jira.api_request, jira.load_profile
+    jira.api_request = fake_request
+    jira.load_profile = lambda name=None: ("default", dict(ME))
+    try:
+        jira.command_remotelink(
+            _parse(["remotelink", "ABC-1", "--url", "https://github.com/a/b/pull/1"])
+        )
+        blocked = False
+        try:
+            jira.command_remotelink(_parse(["remotelink", "ABC-1", "--url", "javascript:alert(1)"]))
+        except common.AtlassianHelperError:
+            blocked = True
+    finally:
+        jira.api_request, jira.load_profile = real_request, real_load
+    return check(
+        "jira remotelink posts http(s) links only",
+        calls == ["/rest/api/3/issue/ABC-1/remotelink"] and blocked,
+        f"{calls} / blocked={blocked}",
+    )
+
+
 def main() -> int:
     cases = [
         case_normalize_site,
@@ -1177,6 +1300,11 @@ def main() -> int:
         case_attach_refuses_silent_overwrite,
         case_attach_replace_blocked_for_other_author,
         case_upload_sets_xsrf_header,
+        case_text_to_adf_task_list,
+        case_text_to_storage_task_list,
+        case_jira_link_payload,
+        case_jira_create_fix_versions,
+        case_jira_remotelink_rejects_non_http,
         case_attach_comment_is_not_a_file_read,
     ]
     results = [case() for case in cases]

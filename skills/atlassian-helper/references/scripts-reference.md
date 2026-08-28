@@ -23,7 +23,7 @@ scripts freely. 쓰기(생성·수정·삭제)는 `write-guide.md`를 읽는다.
 | Script | Use For | Key Commands |
 | --- | --- | --- |
 | `atlassian_setup.py` | Credential setup and checks | `init-keys`, `migrate-keychain`, `auth-test`, `search-test`, `confluence-test`, `profiles` |
-| `jira.py` | Jira issues (read + write) | `search`, `mine`, `worked`, `due`, `text`, `count`, `issue`, `projects`, `statuses`, `transitions`, `create`, `comment`, `attach`, `edit`, `transition`, `delete`, `comment-edit`, `comment-delete` |
+| `jira.py` | Jira issues (read + write) | `search`, `mine`, `worked`, `due`, `text`, `count`, `issue`, `projects`, `statuses`, `transitions`, `versions`, `assignable`, `create`, `comment`, `attach`, `link`, `remotelink`, `edit`, `transition`, `delete`, `comment-edit`, `comment-delete` |
 | `confluence.py` | Confluence pages (read + write) | `search`, `page`, `spaces`, `attachments`, `create`, `update`, `delete`, `comment`, `attach` |
 | `atlassian_common.py` | Shared implementation | import-only; do not call as CLI |
 
@@ -101,6 +101,20 @@ python3 "<SKILL_DIR>/scripts/jira.py" issue ABC-123 --comments 5
 python3 "<SKILL_DIR>/scripts/jira.py" projects --query 백엔드
 python3 "<SKILL_DIR>/scripts/jira.py" statuses --project ABC
 ```
+
+`statuses` 출력은 `이슈타입: 상태(카테고리)…` 형식이라 그 프로젝트에 실제로 있는
+**이슈 타입 이름**을 확인하는 용도로도 쓴다 (`create --type` 에 넣을 값).
+
+담당자 후보와 수정버전 이름 확인:
+
+```bash
+python3 "<SKILL_DIR>/scripts/jira.py" assignable --project ABC --query 홍길동
+python3 "<SKILL_DIR>/scripts/jira.py" versions --project TEC
+```
+
+`assignable` 은 그 프로젝트에 배정 가능한 사용자만 준다. `create --assignee` 는
+accountId만 받으므로 이 출력의 첫 칼럼을 넘긴다 — 이메일이나 이름을 넘기면 Jira가
+오류 없이 무시하고 담당자 없는 티켓을 만든다.
 
 ## Confluence Examples
 
