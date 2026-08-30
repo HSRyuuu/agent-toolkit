@@ -21,6 +21,7 @@ from atlassian_common import (
     assert_owner,
     confirm_destructive,
     cql_quote,
+    cql_time_value,
     file_form,
     format_timestamp,
     human_size,
@@ -104,7 +105,7 @@ def command_search(args: argparse.Namespace) -> int:
     if args.mine:
         clauses.append("creator = currentUser()")
     if args.updated_from:
-        clauses.append(f'lastmodified >= "{args.updated_from}"')
+        clauses.append(f"lastmodified >= {cql_time_value(args.updated_from)}")
     if args.cql_and:
         clauses.append(f"({args.cql_and})")
     if not keyword and not args.title and not args.space and not args.mine:

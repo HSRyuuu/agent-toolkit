@@ -623,7 +623,9 @@ def read_body(text: str | None, path: str | None, *, label: str = "본문") -> s
 # --- JQL / CQL helpers ----------------------------------------------------
 
 JQL_RELATIVE_PATTERN = re.compile(r"^-?\d+[mhdw]$")  # -7d, 4h, 30m, 2w
-JQL_FUNCTION_PATTERN = re.compile(r"^\w+\(.*\)$")  # startOfWeek(), endOfDay("-1")
+# startOfWeek(), endOfDay("-1"), now("-1d"). 인자는 따옴표 문자열이나 숫자만 받는다 —
+# `f(") OR project = X ("` 처럼 괄호 안으로 절을 밀어 넣는 걸 막는다.
+JQL_FUNCTION_PATTERN = re.compile(r"""^\w+\(\s*(?:"[^"\\]*"|'[^'\\]*'|-?\d+)?\s*\)$""")
 
 
 def jql_quote(value: str) -> str:
@@ -641,6 +643,19 @@ def jql_time_value(value: str) -> str:
     if JQL_RELATIVE_PATTERN.fullmatch(text) or JQL_FUNCTION_PATTERN.fullmatch(text):
         return text
     return jql_quote(text)
+
+
+def cql_time_value(value: str) -> str:
+    """CQL 날짜 값. 상대 오프셋은 JQL과 달리 raw 로 못 쓰고 now() 로 감싸야 한다.
+
+    CQL 은 `lastmodified >= "-1d"` 를 파싱하지 못하고 400 을 낸다.
+    """
+    text = str(value).strip()
+    if JQL_RELATIVE_PATTERN.fullmatch(text):
+        return f'now("{text}")'
+    if JQL_FUNCTION_PATTERN.fullmatch(text):
+        return text
+    return cql_quote(text)
 
 
 def jql_in_clause(field: str, values: list[str]) -> str:

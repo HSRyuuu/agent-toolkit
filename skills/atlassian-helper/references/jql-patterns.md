@@ -73,7 +73,7 @@ for `confluence.py search`, or when adding conditions via `--and`.
 | 내가 만든 문서 | `creator = currentUser()` |
 | 내가 최근 고친 문서 | `contributor = currentUser()` |
 | 특정 사람이 만든 | `creator = "5f59...accountId"` |
-| 기간 | `lastmodified >= "2026-07-01"` / `created >= now("-30d")` |
+| 기간 | `lastmodified >= "2026-07-01"` / `created >= now("-30d")` — 상대 오프셋은 반드시 `now()` 안에 넣는다 |
 | 라벨 | `label = "runbook"` |
 | 특정 페이지 하위 | `ancestor = 1234567890` |
 | 정렬 | `ORDER BY lastmodified DESC` (스크립트 기본값) |

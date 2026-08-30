@@ -1239,6 +1239,46 @@ def case_jira_remotelink_rejects_non_http() -> bool:
     )
 
 
+def case_cql_time_value() -> bool:
+    """CQL은 상대 오프셋을 now()로 감싸야 한다. raw로 두면 400이 난다."""
+    ok = (
+        common.cql_time_value("-1d") == 'now("-1d")'
+        and common.cql_time_value("-7d") == 'now("-7d")'
+        and common.cql_time_value('now("-1d")') == 'now("-1d")'
+        and common.cql_time_value("startOfWeek()") == "startOfWeek()"
+        and common.cql_time_value("2026-08-27") == '"2026-08-27"'
+    )
+    # 괄호 안으로 절을 밀어 넣는 값은 함수로 통과하지 않고 인용된다
+    injected = common.cql_time_value('x(") OR space = ADMIN ("')
+    return check(
+        "cql_time_value wraps relative offsets in now() and quotes anything odd",
+        ok and injected.startswith('"') and "OR space" in injected,
+        f"{injected!r}",
+    )
+
+
+def case_confluence_search_relative_date() -> bool:
+    calls: list[dict] = []
+
+    def fake_request(profile, path, **kwargs):
+        calls.append(kwargs.get("query") or {})
+        return {"results": []}
+
+    real_request, real_load = confluence.api_request, confluence.load_profile
+    confluence.api_request = fake_request
+    confluence.load_profile = lambda name=None: ("default", dict(ME))
+    try:
+        confluence.command_search(_parse_conf(["search", "--space", "ABC", "--updated-from=-1d"]))
+    finally:
+        confluence.api_request, confluence.load_profile = real_request, real_load
+    cql = (calls[0] if calls else {}).get("cql", "")
+    return check(
+        "confluence search sends lastmodified >= now(\"-1d\") for a relative window",
+        'lastmodified >= now("-1d")' in cql,
+        cql,
+    )
+
+
 def main() -> int:
     cases = [
         case_normalize_site,
@@ -1247,6 +1287,8 @@ def main() -> int:
         case_sensitive_sanitizing,
         case_jql_quote_escapes,
         case_jql_time_value,
+        case_cql_time_value,
+        case_confluence_search_relative_date,
         case_jql_in_clause,
         case_combine_jql,
         case_adf_to_text,
