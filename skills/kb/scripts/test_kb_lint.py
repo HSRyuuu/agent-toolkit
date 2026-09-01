@@ -8,6 +8,7 @@ Run with: python3 test_kb_lint.py
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -254,6 +255,10 @@ def case_password_placeholders_not_detected() -> bool:
             "password: ${DB_PASSWORD}",
             "password: <value>",
             "password: ****",
+            "password: lo*****se",
+            "password: abc*****xyz",
+            "password: local-db-password",
+            "password: local-redis-password",
             "password: see vault",
         ]
     )
@@ -284,6 +289,82 @@ def case_password_values_detected() -> bool:
         "password values detected",
         result.returncode == 2 and matches == 3,
         f"exit={result.returncode}, matches={matches}",
+    )
+
+
+def case_secret_line_number_includes_frontmatter() -> bool:
+    root = new_kb()
+    write_doc(root, "alpha.md", title="Alpha", body="password: Str0ngP@ssw0rd!")
+    write_index(root, ["alpha.md"])
+    result = run_lint(root)
+    return check(
+        "secret line number includes frontmatter",
+        result.returncode == 2
+        and re.search(r"\[secret:password-assignment\] alpha\.md:13\b", result.stdout) is not None,
+        f"exit={result.returncode}",
+    )
+
+
+def case_secret_in_frontmatter_is_detected() -> bool:
+    root = new_kb()
+    write_doc(
+        root,
+        "alpha.md",
+        title="Alpha",
+        extra_frontmatter="password: Str0ngP@ssw0rd!\n",
+    )
+    write_index(root, ["alpha.md"])
+    result = run_lint(root)
+    return check(
+        "secret in frontmatter is detected",
+        result.returncode == 2
+        and re.search(r"\[secret:password-assignment\] alpha\.md:10\b", result.stdout) is not None,
+        f"exit={result.returncode}",
+    )
+
+
+def case_duplicate_aliases_casefolded_report() -> bool:
+    root = new_kb()
+    path = write_doc(root, "alpha.md", title="Alpha")
+    text = path.read_text(encoding="utf-8").replace(
+        "aliases: []",
+        "aliases:\n  - Alpha Alias\n  - alpha alias",
+    )
+    path.write_text(text, encoding="utf-8")
+    write_index(root, ["alpha.md"])
+    result = run_lint(root)
+    return check(
+        "case-insensitive duplicate aliases report",
+        result.returncode == 1 and "[duplicate-alias] alpha.md" in result.stdout,
+        f"exit={result.returncode}",
+    )
+
+
+def case_missing_edit_mode_defaults_to_editable() -> bool:
+    root = new_kb()
+    path = write_doc(root, "alpha.md", title="Alpha")
+    text = path.read_text(encoding="utf-8").replace("agent_edit_mode: editable\n", "")
+    path.write_text(text, encoding="utf-8")
+    write_index(root, ["alpha.md"])
+    result = run_lint(root)
+    return check(
+        "missing edit mode defaults to editable",
+        result.returncode == 0 and "missing `agent_edit_mode`" not in result.stdout,
+        f"exit={result.returncode}",
+    )
+
+
+def case_git_kb_does_not_require_log() -> bool:
+    root = new_kb()
+    (root / "log.jsonl").unlink()
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    write_doc(root, "alpha.md", title="Alpha")
+    write_index(root, ["alpha.md"])
+    result = run_lint(root)
+    return check(
+        "git-backed KB does not require log",
+        result.returncode == 0 and "[log-missing]" not in result.stdout,
+        f"exit={result.returncode}",
     )
 
 
@@ -370,6 +451,11 @@ def main() -> int:
         case_absolute_path_link_warns,
         case_password_placeholders_not_detected,
         case_password_values_detected,
+        case_secret_line_number_includes_frontmatter,
+        case_secret_in_frontmatter_is_detected,
+        case_duplicate_aliases_casefolded_report,
+        case_missing_edit_mode_defaults_to_editable,
+        case_git_kb_does_not_require_log,
         case_wikilinks_resolve_by_name_path_and_embed,
         case_broken_wikilink_reports,
         case_wikilink_in_code_ignored,

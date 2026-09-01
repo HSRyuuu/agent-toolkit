@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Search Markdown KB documents by YAML frontmatter fields."""
+"""Search Markdown KB documents by YAML frontmatter fields or ranked text."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from kb_frontmatter import (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Search KB Markdown files by python-frontmatter metadata."
+        description="Search KB Markdown files by metadata fields or ranked text."
     )
     parser.add_argument("root", nargs="?", default=".", help="KB root directory")
     parser.add_argument("--created", action="append", default=[], help="created date YYYY-MM-DD")
@@ -39,8 +39,47 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--source", help="source substring")
     parser.add_argument("--path", help="path substring")
     parser.add_argument("--agent-edit-mode", help="agent_edit_mode exact value")
+    parser.add_argument("--query", help="free-text query across path and searchable metadata")
+    parser.add_argument("--limit", type=int, help="maximum number of ranked results")
     parser.add_argument("--json", action="store_true", help="emit JSON array")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.limit is not None and args.limit < 1:
+        parser.error("--limit must be at least 1")
+    return args
+
+
+def query_score(doc: KbDoc, query: str | None) -> int | None:
+    if not query:
+        return 0
+    meta = doc.metadata
+    title = str(meta.get("title") or "").casefold()
+    aliases = [value.casefold() for value in coerce_list(meta.get("aliases"))]
+    tags = [value.casefold() for value in coerce_list(meta.get("tags"))]
+    summary = str(meta.get("summary") or "").casefold()
+    path = doc.relpath.casefold()
+    folded = query.casefold().strip()
+    tokens = folded.split()
+    values = [title, *aliases, *tags, summary, path]
+    if not tokens or not all(any(token in value for value in values) for token in tokens):
+        return None
+
+    score = 0
+    if folded == title:
+        score += 1000
+    if folded in aliases:
+        score += 800
+    for token in tokens:
+        if token in title:
+            score += 100
+        if any(token in alias for alias in aliases):
+            score += 80
+        if token in tags:
+            score += 60
+        if token in summary:
+            score += 20
+        if token in path:
+            score += 10
+    return score
 
 
 def matches(doc: KbDoc, args: argparse.Namespace, invalid_date_paths: set[str]) -> bool:
@@ -80,7 +119,7 @@ def matches(doc: KbDoc, args: argparse.Namespace, invalid_date_paths: set[str]) 
         return False
     if args.agent_edit_mode and meta.get("agent_edit_mode") != args.agent_edit_mode:
         return False
-    return True
+    return query_score(doc, args.query) is not None
 
 
 def print_table(rows: list[dict[str, Any]]) -> None:
@@ -99,6 +138,10 @@ def main() -> int:
     root = Path(args.root).expanduser().resolve()
     invalid_date_paths: set[str] = set()
     docs = [doc for doc in load_docs(root) if matches(doc, args, invalid_date_paths)]
+    if args.query:
+        docs.sort(key=lambda doc: (-(query_score(doc, args.query) or 0), doc.relpath))
+    if args.limit is not None:
+        docs = docs[: args.limit]
     rows = [metadata_row(doc) for doc in docs]
     if invalid_date_paths:
         print(f"invalid date skipped: {len(invalid_date_paths)} files", file=sys.stderr)

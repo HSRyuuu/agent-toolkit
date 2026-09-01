@@ -97,10 +97,9 @@ After the first-time prerequisite check passes, initialize a KB:
 5. Create or adapt `AGENTS.md` from `../templates/AGENTS.md` if no agent entrypoint
    exists.
 6. Create or adapt `index.md` from `../templates/index.md` if missing.
-7. Create `log.jsonl` from `../templates/log.jsonl` (see conventions Work
-   History). Replace placeholders with the setup datetime and a root-specific
-   summary. Skip it only when the user explicitly opts out of a work-history
-   file.
+7. For a non-git KB, create `log.jsonl` from `../templates/log.jsonl` (see
+   conventions Work History) and replace its placeholders. For a git-backed KB,
+   use Git history unless local rules explicitly request both.
 8. Do not create `_raw/`.
 9. Create `_inbox/` only if the user explicitly wants a staging area.
 10. Run the getting-started verification sequence. Remove all template
@@ -192,7 +191,7 @@ logs, or `kind: canonical`:
    - keep dated notes only when useful as documents, not because a schema required
      them
    - build `index.md`
-   - start `log.jsonl` as the work-history trail (regardless of git)
+   - start `log.jsonl` only when the KB is not git-backed
 4. Ask before moving, deleting, or rewriting old files.
 
 ## Index Maintenance
@@ -212,8 +211,6 @@ never switch Python interpreters between installation and script execution.
 
 ## Log Maintenance
 
-Maintain `log.jsonl` by default (see conventions Work History): append entries
-for setup, add/update/merge/append, lint runs with meaningful findings, index
-rebuilds, and migrations. If it is missing in an existing KB, treat that as a
-maintenance gap and offer to start it. Do not log routine read-only searches
-unless the user asks for a research trail.
+Use Git history for git-backed KBs. For non-git KBs, append `log.jsonl` entries
+for setup, meaningful writes, lint findings, index rebuilds, and migrations. Do
+not log routine read-only searches unless the user asks for a research trail.

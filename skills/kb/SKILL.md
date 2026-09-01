@@ -1,16 +1,16 @@
 ---
 name: kb
 description: >
-  Use when working with a personal Markdown Knowledge Base (KB): saving or
+  Use when working with a registered personal or work Markdown Knowledge Base (KB): saving or
   organizing knowledge ("kb에 저장해줘", "이거 기록해둬"), finding what is
   recorded ("kb에서 찾아줘"), health-checking the KB ("kb 점검해줘"), or
   setting up and managing a KB root ("kb 셋업"). Do not use for ordinary
-  project documentation that is not a registered personal KB.
+  project documentation that is not a registered KB.
 ---
 
 # KB
 
-Route personal Markdown KB work to exactly one primary mode, then follow that
+Route Markdown KB work to exactly one primary mode, then follow that
 mode's reference. Maintained documents are the source-of-truth surface.
 
 ## Routing

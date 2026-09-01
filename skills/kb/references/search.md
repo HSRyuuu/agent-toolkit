@@ -2,7 +2,10 @@
 
 ## Overview
 
-Search a curated Markdown KB in read-only mode. The maintained documents are the source-of-truth surface; use `log.jsonl` to locate relevant files and past work, never as evidence for a fact. Do not rely on embeddings or general web knowledge unless the user explicitly asks for outside-KB research.
+Search a curated Markdown KB in read-only mode. Maintained documents are the
+source-of-truth surface; history is only a locator, never evidence for a fact.
+Do not rely on embeddings or general web knowledge unless the user explicitly
+asks for outside-KB research.
 
 **Shared rules:** Read [`conventions.md`](./conventions.md) completely and follow
 its rules for KB root resolution, frontmatter fields, uncertainty markers, `index.md` /
@@ -28,13 +31,12 @@ packages without approval.
 
 1. Resolve the KB root and read local root guidance per the conventions Root
    Resolution rules.
-2. Read `index.md` first if it exists.
-3. Read relevant directory `README.md` files when folder intent helps narrow the search.
-4. Search frontmatter fields: `title`, `summary`, `tags`, `aliases`, `source`, `created`, `updated`.
-5. Search filenames and headings.
-6. Search body text with exact terms and likely synonyms.
-7. Read the most relevant documents or sections.
-8. Follow only clearly useful related links; avoid broad graph walks.
+2. Run `kb_meta_search.py --query <terms> --limit 10` across frontmatter and paths.
+3. Search filenames/headings, then body text when metadata candidates are weak.
+4. Read relevant directory `README.md` files only when folder intent is needed.
+5. Read the smallest useful set of candidate documents or sections.
+6. Read `index.md` only for repository-wide overviews, not ordinary lookup.
+7. Follow only clearly useful related links; avoid broad graph walks.
 
 ## Useful Commands
 
@@ -42,6 +44,7 @@ Resolve the root per conventions (`scripts/resolve_kb_root.py`), then pass the
 resolved absolute root to the search helpers bundled with this skill:
 
 - `../scripts/kb_meta_search.py <KB_ROOT> --updated 2026-07-01`
+- `../scripts/kb_meta_search.py <KB_ROOT> --query "kafka consumer" --limit 10`
 - `../scripts/kb_meta_search.py <KB_ROOT> --created 2026-07-01 --tag kafka`
 - `../scripts/kb_meta_search.py <KB_ROOT> --updated-since 2026-06-01 --updated-until 2026-06-30`
 - `../scripts/kb_recent_activity.py <KB_ROOT> --date 2026-07-01`
@@ -74,7 +77,7 @@ rg -n --glob '*.md' --glob '!**/.*/**' --glob '!**/.*' --glob '!**/node_modules/
   "<검색어>|<synonym>" "$KB_ROOT"
 ```
 
-Recent KB activity — check `log.jsonl` first:
+Recent KB activity — non-git `log.jsonl` fallback:
 
 ```bash
 test -f "$KB_ROOT/log.jsonl" && tail -100 "$KB_ROOT/log.jsonl"
@@ -82,11 +85,10 @@ test -f "$KB_ROOT/log.jsonl" && rg -n '"files":|"summary":|"datetime":|"type":|"
 test -f "$KB_ROOT/log.jsonl" && jq -c . "$KB_ROOT/log.jsonl" >/dev/null
 ```
 
-If `log.jsonl` is absent, note the gap only when the user asked about KB
-maintenance; for a normal search, fall back to git history when available and
-otherwise rely on frontmatter dates.
+If a non-git KB has no `log.jsonl`, note the gap only when the user asked about
+maintenance; normal search can rely on frontmatter dates.
 
-Git history — a supplementary reference in a git-backed KB. Use it for diffs,
+Git history — the work-history trail in a git-backed KB. Use it for diffs,
 blame, and change archaeology. Commits may follow the `kb:` convention from
 conventions (Work History):
 
@@ -101,8 +103,8 @@ git log --oneline --name-only -n 20          # recent changes with touched files
 
 Prioritize:
 
-1. `index.md` entries whose title/summary/tags match the question.
-2. Documents whose title or aliases match the user's wording.
+1. Documents whose title or aliases match the user's wording.
+2. Documents whose tags, summary, or path match the question.
 3. Documents with current `updated` dates or body-level 기준일.
 4. Documents with exact terms from the question.
 5. Related documents linked from the strongest candidate.

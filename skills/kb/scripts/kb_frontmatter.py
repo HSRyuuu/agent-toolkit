@@ -31,6 +31,7 @@ class KbDoc:
     relpath: str
     metadata: dict[str, Any]
     content: str
+    content_line_offset: int
 
 
 def require_frontmatter() -> None:
@@ -67,13 +68,16 @@ def load_docs(root: Path) -> list[KbDoc]:
     require_frontmatter()
     docs: list[KbDoc] = []
     for path in iter_markdown_files(root):
-        post = frontmatter.load(path)  # type: ignore[union-attr]
+        raw = path.read_text(encoding="utf-8")
+        post = frontmatter.loads(raw)  # type: ignore[union-attr]
+        content_start = raw.rfind(post.content)
         docs.append(
             KbDoc(
                 path=path,
                 relpath=path.relative_to(root).as_posix(),
                 metadata=dict(post.metadata),
                 content=post.content,
+                content_line_offset=(raw[:content_start].count("\n") if content_start >= 0 else 0),
             )
         )
     return docs

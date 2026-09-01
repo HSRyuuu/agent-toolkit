@@ -114,7 +114,8 @@ Use manage mode for setup:
 1. Confirm the selected root is already present in `kb-config.json`.
 2. Create the root directory after approval when it does not exist.
 3. Read existing root guidance and setup files.
-4. Create or adapt `AGENTS.md`, `index.md`, and `log.jsonl` from its templates.
+4. Create or adapt `AGENTS.md` and `index.md`; create `log.jsonl` only for a
+   non-git KB or when local rules explicitly maintain it.
 5. Remove template placeholders; never leave a nonexistent example link.
 6. Do not create `_raw/`. Create `_inbox/` only when requested.
 

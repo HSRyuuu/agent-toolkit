@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Deterministic KB lint checks.
 
-Covers only what a machine can decide reliably: frontmatter completeness, valid
-agent_edit_mode, date format, title/H1 match, index.md link
-targets, broken relative Markdown links, broken Obsidian wikilinks,
-log.jsonl validity/placeholders, and high-confidence secret patterns. Judgement checks (duplicate topics,
-conflicting claims, split candidates) stay with the kb skill's lint workflow.
+Covers only what a machine can decide reliably: frontmatter completeness,
+duplicate aliases, optional agent_edit_mode validity, date format, title/H1
+match, index.md link targets, broken relative Markdown links, broken Obsidian
+wikilinks, applicable history validity, and high-confidence secret patterns.
+Judgement checks (duplicate topics, conflicting claims, split candidates) stay
+with the kb skill's lint workflow.
 
 Underscore-prefixed paths (_inbox/, _archived/, ...) are reserved staging or
 frozen areas and are exempt from every structural check; only the secret scan
@@ -25,14 +26,15 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import unquote
 
-from kb_frontmatter import IGNORED_DIRS, KbDoc, load_docs, normalize_date  # noqa: E402
+from kb_frontmatter import IGNORED_DIRS, KbDoc, coerce_list, load_docs, normalize_date  # noqa: E402
 
-REQUIRED_FIELDS = ("title", "summary", "tags", "aliases", "created", "updated", "agent_edit_mode")
+REQUIRED_FIELDS = ("title", "summary", "tags", "aliases", "created", "updated")
 # aliases may be an empty list by design; only its absence is a finding.
 ALLOW_EMPTY_FIELDS = {"aliases"}
 # Root entrypoints and folder notes do not carry KB document frontmatter.
@@ -53,8 +55,9 @@ SECRET_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("slack-token", re.compile(r"xox[bpoa]-[A-Za-z0-9-]{10,}")),
     ("jwt", re.compile(r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{6,}")),
     ("bearer-token", re.compile(r"[Bb]earer\s+[A-Za-z0-9._~+/=-]{20,}")),
-    ("password-assignment", re.compile(r"(?i)(?:password|passwd|pwd|비밀번호)\s*[:=]\s*['\"]?(?!\$\{|[\[<*])[\x21-\x7e]{8,}")),
 ]
+PASSWORD_ASSIGNMENT_RE = re.compile(r"(?i)(?:password|passwd|pwd|비밀번호)\s*[:=]\s*(.+)$")
+NAMED_PLACEHOLDER_RE = re.compile(r"^[a-z]+(?:-[a-z]+)+$")
 
 
 @dataclass
@@ -82,6 +85,14 @@ def check_frontmatter(doc: KbDoc) -> list[Finding]:
     mode = meta.get("agent_edit_mode")
     if mode is not None and mode not in VALID_MODES:
         out.append(Finding("error", "invalid-edit-mode", doc.relpath, None, f"invalid agent_edit_mode: {mode}"))
+
+    aliases = coerce_list(meta.get("aliases"))
+    seen_aliases: set[str] = set()
+    for alias in aliases:
+        key = alias.casefold()
+        if key in seen_aliases:
+            out.append(Finding("warn", "duplicate-alias", doc.relpath, None, f"duplicate alias: {alias!r}"))
+        seen_aliases.add(key)
 
     for field in ("created", "updated"):
         raw = meta.get(field)
@@ -198,12 +209,13 @@ def check_links(root: Path, doc: KbDoc) -> list[Finding]:
             path_part = normalize_link_target(raw_target, (".md", ".markdown"))
             if path_part is None:
                 continue
-            absolute = absolute_link_finding(doc.relpath, lineno, path_part)
+            file_lineno = doc.content_line_offset + lineno
+            absolute = absolute_link_finding(doc.relpath, file_lineno, path_part)
             if absolute is not None:
                 out.append(absolute)
                 continue
             if existing_path(base, path_part) is None:
-                out.append(Finding("error", "broken-link", doc.relpath, lineno, f"link target missing: {path_part}"))
+                out.append(Finding("error", "broken-link", doc.relpath, file_lineno, f"link target missing: {path_part}"))
     return out
 
 
@@ -245,8 +257,18 @@ def check_wikilinks(doc: KbDoc, index_keys: set[str]) -> list[Finding]:
                 continue  # [[#heading]] links inside the same document
             key = unicodedata.normalize("NFC", target).casefold()
             if key not in index_keys:
-                out.append(Finding("error", "broken-wikilink", doc.relpath, lineno, f"wikilink target not found: {target}"))
+                out.append(Finding("error", "broken-wikilink", doc.relpath, doc.content_line_offset + lineno, f"wikilink target not found: {target}"))
     return out
+
+
+def is_password_placeholder(value: str) -> bool:
+    value = value.strip().strip("'\"")
+    folded = value.casefold()
+    if folded.startswith(("${", "[", "<", "*")) or folded in {"확인 필요", "see vault"}:
+        return True
+    if "***" in value:
+        return True
+    return bool(NAMED_PLACEHOLDER_RE.fullmatch(folded) and folded.endswith(("password", "secret")))
 
 
 def scan_secrets_in_text(relpath: str, text: str) -> list[Finding]:
@@ -255,19 +277,37 @@ def scan_secrets_in_text(relpath: str, text: str) -> list[Finding]:
         for label, pattern in SECRET_PATTERNS:
             if pattern.search(line):
                 out.append(Finding("high", f"secret:{label}", relpath, lineno, "high-confidence secret candidate (value not shown)"))
+        password_match = PASSWORD_ASSIGNMENT_RE.search(line)
+        if password_match and not is_password_placeholder(password_match.group(1)):
+            out.append(Finding("high", "secret:password-assignment", relpath, lineno, "high-confidence secret candidate (value not shown)"))
     return out
+
+
+def is_git_repo(root: Path) -> bool:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--is-inside-work-tree"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return result.returncode == 0 and result.stdout.strip() == "true"
 
 
 def check_log(root: Path) -> list[Finding]:
     log_path = root / "log.jsonl"
     if not log_path.exists():
+        if is_git_repo(root):
+            return []
         return [
             Finding(
                 "warn",
                 "log-missing",
                 "log.jsonl",
                 None,
-                "missing primary work-history trail",
+                "missing non-git work-history trail",
             )
         ]
     out: list[Finding] = []
@@ -301,8 +341,9 @@ def collect(root: Path) -> list[Finding]:
     wikilink_keys = build_wikilink_index(root)
 
     for doc in docs:
+        raw = doc.path.read_text(encoding="utf-8")
         if is_reserved_path(doc.relpath):
-            findings += scan_secrets_in_text(doc.relpath, doc.content)
+            findings += scan_secrets_in_text(doc.relpath, raw)
             continue
         is_entrypoint = doc.path.name.lower() in ENTRYPOINT_NAMES
         if not is_entrypoint:
@@ -311,7 +352,7 @@ def collect(root: Path) -> list[Finding]:
         if doc.relpath != "index.md":
             findings += check_links(root, doc)
         findings += check_wikilinks(doc, wikilink_keys)
-        findings += scan_secrets_in_text(doc.relpath, doc.content)
+        findings += scan_secrets_in_text(doc.relpath, raw)
 
     findings += check_index(root)
     findings += check_log(root)

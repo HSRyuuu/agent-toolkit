@@ -45,9 +45,9 @@ single source of truth.
 - Human-readable documents are primary.
 - LLMs help add, search, lint, and reorganize.
 - `index.md` is the content catalog.
-- `log.jsonl` is the primary work-history trail; it works with or without git
-  and is a navigation pointer, not a source of truth.
-- Git history, when the KB is git-backed, is a supplementary audit trail.
+- Git history is the work-history trail for git-backed KBs.
+- `log.jsonl` is the fallback work-history trail for non-git KBs and remains
+  optional in git-backed KBs that already use it.
 - Provenance is recorded safely in frontmatter or body notes, never by storing
   raw source copies.
 - Security and privacy override source preservation.
@@ -138,12 +138,11 @@ aliases:
 created: "YYYY-MM-DD"
 updated: "YYYY-MM-DD"
 source: "user-note"
-agent_edit_mode: editable
 ---
 ```
 
-Required fields: `title`, `summary`, `tags`, `aliases`, `created`, `updated`,
-`agent_edit_mode`. Optional: `source`.
+Required fields: `title`, `summary`, `tags`, `aliases`, `created`, `updated`.
+Optional: `source`, `agent_edit_mode`.
 
 Field rules:
 
@@ -158,8 +157,8 @@ Field rules:
 - `updated`: last meaningful update date in `YYYY-MM-DD`.
 - `source`: safe provenance such as `user-note`, `meeting`, `slack`, `docs`, a
   filename, or a non-sensitive URL.
-- `agent_edit_mode`: one of `read_only`, `append_only`, or `editable`. Normal KB
-  documents use `editable` unless the owner chooses otherwise.
+- `agent_edit_mode`: one of `read_only`, `append_only`, or `editable`. Omit it
+  for normal editable documents; record only protected exceptions when useful.
 
 Writing rules:
 
@@ -189,7 +188,7 @@ rewriting protected notes.
 | `editable` | Full editing: wording, structure, merges, removals, and frontmatter cleanup are allowed while preserving important facts and source meaning. |
 
 When a file has no `agent_edit_mode`, use local KB rules. If none exist, treat
-new documents as `editable` and add the field during the next meaningful update.
+it as `editable`; do not add a redundant field solely for completeness.
 
 ### Git Guard
 
@@ -258,12 +257,15 @@ maintained documents.
 
 ## Work History
 
-### log.jsonl (default): the primary work-history trail
+### Git-backed KBs: Git is the work-history trail
 
-The KB must work without git. `log.jsonl` at the KB root is the primary
-work-history trail: create it at setup and append to it on every meaningful
-write. It is a navigation pointer for finding files and past work, not a source
-of truth.
+Use searchable commit messages and path history. Do not also require
+`log.jsonl`; duplicated history drifts when documents move or are deleted.
+
+### Non-git KBs: log.jsonl is the work-history trail
+
+For a KB without git, create `log.jsonl` at setup and append to it on every
+meaningful write. It is a navigation pointer, not a source of truth.
 
 Each line is one JSON object:
 
@@ -276,29 +278,22 @@ root, `datetime` includes a timezone offset (KB/user local timezone when known),
 `commit` stays `null` when no related git commit exists (always `null` in a
 non-git KB).
 
-If `log.jsonl` is missing in an existing KB, that is a maintenance gap, not a
-blocker: writing may create it with the current entry unless local KB rules opt
-out of a log file.
+When a non-git KB is missing `log.jsonl`, that is a maintenance gap, not a
+blocker: writing may create it with the current entry unless local rules opt out.
 
-### Git history (supplementary): git-backed KB only
-
-When the KB happens to be a git repository, git history is a useful secondary
-reference — for diffs, blame, and recovering past states — but it never replaces
-`log.jsonl`. Keep commit messages searchable with this convention:
+Keep git-backed KB commit messages searchable with this convention:
 
 ```text
 kb: add|update|merge|append <doc> — <short summary>
 ```
 
-Then git can supplement the log:
+Useful history commands:
 
 ```bash
 git log --oneline --grep='^kb:'         # all KB work, newest first
 git log --oneline -- path/to/doc.md     # history of one document
 git log --oneline --name-only -n 20     # recent changes with touched files
 ```
-
-Do not skip `log.jsonl` just because the KB is git-backed.
 
 ## Security Principles
 

@@ -23,18 +23,24 @@ def write_doc(
     created: str = "2026-07-04",
     updated: str = "2026-07-04",
     tags: list[str] | None = None,
+    summary: str | None = None,
+    aliases: list[str] | None = None,
 ) -> Path:
     path = root / relpath
     path.parent.mkdir(parents=True, exist_ok=True)
     tags = tags or []
+    aliases = aliases or []
+    summary = summary or f"{title} summary"
     tag_lines = "\n".join(f"  - {tag}" for tag in tags) or "  []"
+    alias_lines = "\n".join(f"  - {alias}" for alias in aliases) or "  []"
     frontmatter = (
         "---\n"
         f'title: "{title}"\n'
-        f'summary: "{title} summary"\n'
+        f'summary: "{summary}"\n'
         "tags:\n"
         f"{tag_lines}\n"
-        "aliases: []\n"
+        "aliases:\n"
+        f"{alias_lines}\n"
         f'created: "{created}"\n'
         f'updated: "{updated}"\n'
         "agent_edit_mode: editable\n"
@@ -183,6 +189,35 @@ def case_meta_search_invalid_date_warns_and_skips() -> bool:
     )
 
 
+def case_free_query_matches_metadata_and_path() -> bool:
+    root = new_kb()
+    write_doc(root, "domain/platform.md", title="Platform", aliases=["티버스"])
+    write_doc(root, "dev/cache-guide.md", title="Cache Guide", summary="Redis 운영 가이드")
+    alias_result = run_script("kb_meta_search.py", root, "--query", "티버스")
+    summary_result = run_script("kb_meta_search.py", root, "--query", "Redis")
+    return check(
+        "free query matches aliases and summary",
+        alias_result.returncode == 0
+        and "domain/platform.md" in alias_result.stdout
+        and summary_result.returncode == 0
+        and "dev/cache-guide.md" in summary_result.stdout,
+    )
+
+
+def case_free_query_ranks_exact_title_and_limits() -> bool:
+    root = new_kb()
+    write_doc(root, "domain/tverse.md", title="Tverse", tags=["admin"])
+    write_doc(root, "dev/tverse-usage.md", title="Tverse 사용 방법", tags=["tverse"])
+    result = run_script("kb_meta_search.py", root, "--query", "Tverse", "--limit", "1")
+    return check(
+        "free query ranks exact title and limits results",
+        result.returncode == 0
+        and "domain/tverse.md" in result.stdout
+        and "dev/tverse-usage.md" not in result.stdout,
+        f"exit={result.returncode}",
+    )
+
+
 def main() -> int:
     cases = [
         case_single_tag_filter_matches,
@@ -193,6 +228,8 @@ def main() -> int:
         case_meta_search_created_range_inclusive_boundary,
         case_meta_search_range_and_exact,
         case_meta_search_invalid_date_warns_and_skips,
+        case_free_query_matches_metadata_and_path,
+        case_free_query_ranks_exact_title_and_limits,
     ]
     results = [case() for case in cases]
     print(f"\n{sum(results)}/{len(results)} passed")

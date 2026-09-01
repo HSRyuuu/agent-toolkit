@@ -40,11 +40,12 @@ Never auto-fix sensitive content. Report it and ask.
 
 ## Deterministic Checks
 
-`kb_lint.py` reports frontmatter completeness, invalid `agent_edit_mode`, date
+`kb_lint.py` reports frontmatter completeness, invalid or duplicate metadata, date
 format, title/H1 mismatch, `index.md` link targets and coverage,
 broken relative Markdown links, broken Obsidian wikilinks (filename/path
-resolution; code blocks excluded), absolute Markdown path warnings, `log.jsonl`
-JSON validity/template placeholders, and high-confidence secret candidates.
+resolution; code blocks excluded), absolute Markdown path warnings, applicable
+history validity, and high-confidence secret candidates. Reported body line
+numbers include YAML frontmatter.
 
 Run the bundled `../scripts/kb_lint.py` with the absolute KB root.
 
@@ -78,8 +79,9 @@ All checks below apply only outside reserved paths.
 ### Metadata
 
 - `[script]` missing YAML frontmatter where the KB requires it
-- `[script]` missing `title`, `summary`, `tags`, `aliases`, `created`, `updated`, `agent_edit_mode`
+- `[script]` missing `title`, `summary`, `tags`, `aliases`, `created`, `updated`
 - `[script]` invalid `agent_edit_mode`; expected `read_only`, `append_only`, or `editable`
+- `[script]` duplicate aliases after case-insensitive normalization
 - `[script]` title/H1 mismatch
 - `[script]` invalid or inconsistent date format
 - `[LLM]` weak `summary`, sparse `tags`, missing likely aliases
@@ -97,11 +99,12 @@ All checks below apply only outside reserved paths.
 
 ### Log
 
-- `[script]` `log.jsonl` missing — expected by default, unless local KB rules opt out
+- `[script]` `log.jsonl` missing in a non-git KB
 - `[script]` malformed `log.jsonl`, when present
 - `[script]` setup template placeholders left in `log.jsonl`
 - `[LLM]` recent changed documents with no approximate log entry
-- `[LLM]` log entries pointing to missing files, when present
+- `[LLM]` recent log entries pointing to missing files, when present; historical
+  paths may legitimately have moved or been deleted
 - `[script]` log entries containing sensitive raw values, when present
 
 ### Content Health
@@ -131,7 +134,8 @@ not drown in false positives:
 
 **[script] High-confidence (auto-flagged by `kb_lint.py`)** — value-shaped matches:
 AWS access key IDs, private-key blocks, GitHub/Slack tokens, JWTs, bearer tokens,
-`password: <value>` assignments. These are near-certain and lead the report.
+literal `password: <value>` assignments after excluding variable syntax,
+named examples, and recognizable masking. These are near-certain and lead the report.
 
 **[LLM] Contextual (LLM judgement)** — keyword-adjacent candidates the linter cannot
 confirm from shape alone, reported only after you judge them likely sensitive:

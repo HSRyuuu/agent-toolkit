@@ -7,8 +7,8 @@ conventions, this file wins. Keep intentional differences explicit.
 
 ## Read First
 
-- Use `index.md` as the document catalog.
-- Use `log.jsonl` as the primary work-history trail for finding files and past work; it works without git. Git history, when this KB is git-backed, is a supplementary reference only.
+- Use metadata search for ordinary lookup; read `index.md` only for a repository-wide overview.
+- Use Git history in git-backed KBs. Use `log.jsonl` only when this KB is not git-backed or intentionally maintains both.
 - Resolve this root only through its registration in `~/.config/kb/kb-config.json`; KB skills must not use an unregistered absolute path.
 - If an agent is working from a nested or different directory, it should still resolve this KB root and read this file before changing or answering from the KB.
 - Route KB work through the `kb` skill's matching mode:
@@ -24,6 +24,11 @@ conventions, this file wins. Keep intentional differences explicit.
 - Read existing context before changing a document.
 - Preserve meaning while improving structure and readability.
 - Avoid duplicate ownership. Choose one source-of-truth document and link or reference it from related documents.
+- Treat top-level folder purposes as the human-owned taxonomy. Agents choose
+  subfolders, filenames, metadata, and existing document owners from that taxonomy.
+- If routing is genuinely ambiguous and `_inbox/` exists, store the note there
+  instead of asking. Ask only for source-of-truth conflicts, protected edits,
+  security-sensitive values, or broad destructive restructuring.
 - Prefer exact dates over relative dates when timing matters.
 - Respect `agent_edit_mode` in Markdown frontmatter:
   - `read_only`: agents must not edit the file.
@@ -35,7 +40,8 @@ conventions, this file wins. Keep intentional differences explicit.
 ## Document Structure
 
 - New knowledge documents should use YAML frontmatter unless local rules say otherwise.
-- Keep `title`, `summary`, `tags`, `aliases`, `created`, `updated`, and `agent_edit_mode` useful for search and maintenance.
+- Keep `title`, `summary`, `tags`, `aliases`, `created`, and `updated` useful for search and maintenance.
+- Omit `agent_edit_mode` for normal editable documents; record only protected exceptions.
 - Keep root agent entrypoints such as this file free of KB document frontmatter.
 - Exclude hidden files and directories from KB document discovery, indexing, search, and lint. Read hidden agent guidance separately when instructed.
 - Use ordinary Markdown links for external URLs.

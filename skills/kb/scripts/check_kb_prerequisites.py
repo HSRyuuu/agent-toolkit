@@ -156,7 +156,7 @@ def main() -> int:
     for command, purpose in (
         ("rg", "fast text search"),
         ("jq", "convenient log.jsonl validation"),
-        ("git", "edit-mode guard and supplementary history"),
+        ("git", "edit-mode guard and git-backed KB history"),
     ):
         path = shutil.which(command)
         if path:

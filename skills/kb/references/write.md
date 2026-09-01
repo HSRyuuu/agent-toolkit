@@ -18,9 +18,9 @@ Most writes are small. Do not run the full ritual for a one-line note.
 
 - **Fast path** (default): the input is a single topic, contains no
   security-sensitive candidate, and has an obvious owning document (or clearly
-  needs one new document). Steps: resolve root → read the target document (and
-  `index.md`) → one security scan → write → regenerate `index.md`. Skip the routing
-  table and the washing prompt; apply their spirit inline.
+  needs one new document). Steps: resolve root → metadata query → read the target
+  document → one security scan → write → run the completion checks. Skip the
+  routing table and washing prompt; apply their spirit inline.
 - **Full path**: use the sections below (Ambiguity Gate, Multi-document Write,
   Security Gate, Document Washing) when the input spans multiple topics, trips a
   security candidate, needs large restructuring, or conflicts with existing facts.
@@ -48,11 +48,12 @@ Before writing:
 1. Resolve the KB root and read local root guidance per the conventions Root
    Resolution rules; if no root resolves, stop and switch to the
    [`manage.md`](./manage.md) config bootstrap.
-2. Read `index.md` if present to find existing topics.
-3. Read relevant directory `README.md` files when choosing a folder (intent, not
+2. Run `kb_meta_search.py --query <terms> --limit 10` to find candidate owners.
+3. Read `index.md` only when a repository-wide overview is actually needed.
+4. Read relevant directory `README.md` files when choosing a folder (intent, not
    inventory).
-4. Read relevant existing documents before deciding create/append/merge.
-5. Check each target document's `agent_edit_mode` before drafting edits.
+5. Read relevant existing documents before deciding create/append/merge.
+6. Check each target document's `agent_edit_mode` before drafting edits.
 
 If the KB has project-local add/search/security/writing rules, follow those over the generic defaults here.
 
@@ -76,16 +77,14 @@ do not use them just because a KB has `.obsidian/`.
 | Archive request | Move the document to top-level `_archived/<filename>.md`, set `agent_edit_mode: read_only`, then regenerate `index.md` and append to `log.jsonl` if maintained. |
 | Stub or unfinished document | Move it to `_inbox/stubs/` when it only names a future topic or says "to be written". Do not leave it in a normal topic folder where it may look authoritative. |
 | Broad question | Do not add. Switch to [`search.md`](./search.md) unless the user explicitly asks to file the answer back. |
-| Ambiguous note | Ask only when a wrong document choice would be risky; otherwise choose the most natural location. |
+| Ambiguous note | Choose the most natural location. If no owner is defensible and `_inbox/` exists, file it there and report the temporary route. |
 
 ## Ambiguity Gate
 
 Do not ask by default, but pause before writing when a wrong choice could lose meaning or scatter ownership.
 
-Ask or present a short split plan when:
+Ask only when:
 
-- one input clearly contains multiple topics that should land in different documents
-- part of the input belongs in an existing document and part needs a new document
 - several existing documents could own the same fact
 - the user asks for a merge but the target section is unclear
 - the input conflicts with existing facts and the current source of truth is not obvious
@@ -102,9 +101,13 @@ Use this when one input contains multiple durable knowledge units.
    - `append`: add to an intentionally accumulating document
    - `create`: make a new document when no existing document naturally owns it
    - `skip`: do not store broad questions, duplicates, or unsafe details
-3. Read `index.md`, relevant directory `README.md` files, and candidate target documents before final routing.
-4. Proceed without asking only when every unit has a clear owner, no content conflict, no security gate issue, and no protected edit-mode issue.
-5. When routing is ambiguous, stop before writing that unit. Present candidate targets and ask the user to decide where it belongs.
+3. Run the metadata query, then read relevant directory `README.md` files and
+   candidate target documents before final routing.
+4. Route clear units directly when there is no content conflict, security gate
+   issue, or protected edit-mode issue.
+5. Route a safe but ownerless unit to `_inbox/` when available and report it.
+   Ask only when candidate documents disagree about source-of-truth ownership or
+   no safe fallback exists.
 
 Candidate routing format:
 
@@ -264,7 +267,7 @@ Keep links selective. Do not bulk-add wikilinks or graph-style links. Use normal
 
 ## Index And Log
 
-After successful writes:
+After successful writes, run this automatic completion sequence without asking:
 
 1. Regenerate `index.md` if present. Do not hand-edit its Documents catalog — it
    is generated from frontmatter per conventions (index.md).
@@ -273,14 +276,20 @@ After successful writes:
    - Verify with `--check` (exit 1 means still out of date).
    - Fix a wrong row by correcting that document's frontmatter and regenerating,
      never by editing the row.
-2. Append one JSON object to `log.jsonl` using the entry shape and rules in
-   conventions (Work History).
+2. In a non-git KB, append one JSON object to `log.jsonl`. In a git-backed KB,
+   use Git history and do not duplicate the entry unless local rules explicitly
+   maintain both.
+3. Run `check_agent_edit_mode.py --files <touched Markdown>` in git-backed KBs.
+4. Run `kb_lint.py <root>`. Stop only for a real finding that cannot be corrected
+   safely within the requested change.
 
 Every write that adds, moves, renames, or deletes a document needs step 1. Skipping
 it is what makes a catalog drift: manage and lint regenerate, so a write that
 hand-edits instead leaves the two out of sync and the next `--check` fails.
 
-If `index.md` does not exist, do not create it unless the user asked for KB setup/management or the local rules say it is required. If `log.jsonl` is missing, create it with this write's entry unless local KB rules opt out; mention the creation in the completion report. A log problem should never block the write itself.
+If `index.md` does not exist, do not create it unless the user asked for KB
+setup/management or local rules require it. Create a missing `log.jsonl` only
+for a non-git KB. A history problem never blocks the document write itself.
 
 When the user commits KB work in a git-backed KB, suggest the commit-message convention from conventions (Work History).
 
@@ -296,4 +305,5 @@ Report briefly:
 - security-sensitive items excluded or masked
 - remaining `확인 필요` items
 
-Do not claim the KB is fully up to date unless `index.md`, `log.jsonl`, and related documents were checked.
+Do not claim the KB is fully up to date unless the index, applicable history
+trail, related documents, edit guard, and lint result were checked.

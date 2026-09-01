@@ -1,6 +1,6 @@
 # KB Skill Guide
 
-개인 Markdown Knowledge Base 스킬을 처음 사용하는 사람을 위한
+개인 또는 업무용 Markdown Knowledge Base 스킬을 처음 사용하는 사람을 위한
 시작점이다. 에이전트 실행 규칙은 `SKILL.md`와
 `references/` 문서가 기준이다.
 
@@ -29,7 +29,7 @@ Python과 python-frontmatter 사전 준비부터 smoke test까지 확인해줘.
 2. 사용자 확인 후 bundled requirements로 고정된 Python runtime 설치
 3. `~/.config/kb/kb-config.json`에 KB 루트를 먼저 등록
 4. 기본 제안은 `~/KnowledgeBase`; 사용자가 다른 절대 경로를 선택할 수 있음
-5. `AGENTS.md`, `index.md`, `log.jsonl` 초기화
+5. `AGENTS.md`, `index.md` 초기화 (`log.jsonl`은 non-git KB에서만 기본 생성)
 6. 루트 해석, index, 구조화 검색, lint smoke test
 
 YAML frontmatter는 Markdown 맨 위의 `---` metadata 블록이다.
