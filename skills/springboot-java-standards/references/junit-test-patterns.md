@@ -7,6 +7,7 @@ Java Spring Boot 애플리케이션에서 테스트 품질을 높이고 유지�
 - **리플렉션 금지**: `ReflectionTestUtils.setField()`와 같이 캡슐화를 깨뜨리는 리플렉션 사용을 자제합니다. 리팩토링 시 테스트가 깨지는 주 원인이 됩니다.
 - **깊은 Mock 지양**: 모든 의존성을 Mocking하기보다는 상태 기반의 테스트(State-based target)나 통합 슬라이스 테스트 환경을 권장합니다.
 - **부분 모킹(Partial Mocks) 지양**: 스파이(Spy) 사용은 객체의 역할이 불분명함을 의미할 수 있으므로 피합니다.
+- **검증 범위**: 변경된 동작의 경계와 실패 경로를 그 프로젝트의 기존 테스트 방식으로 확인합니다. 순수 계산은 Spring 컨텍스트 없이, DB 원자성은 필요한 만큼의 통합 테스트로 확인합니다. 포맷 변경에 전용 테스트를 새로 만들지 않습니다.
 
 ## 테스트 픽스처 (Test Fixtures)
 
@@ -42,29 +43,25 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
-    @Mock
-    private UserAssembler userAssembler;
-
     @InjectMocks
-    private UserServiceImpl userService;
+    private UserService userService;
 
     @Test
     void createUser_success() {
         // given
-        var request = CreateUserRequest.builder().name("John").build();
-        var user = User.builder().name("John").build();
-        var response = UserResponse.builder().id(1L).name("John").build();
+        var request = new CreateUserRequest("John", "john@test.com", 25);
+        var user = User.builder().name("John").email("john@test.com").age(25).build();
 
-        when(userAssembler.toEntity(any())).thenReturn(user);
         when(userRepository.save(any(User.class))).thenReturn(user);
-        when(userAssembler.toResponse(any())).thenReturn(response);
 
         // when
         var result = userService.create(request);
 
         // then
-        assertThat(result.getName()).isEqualTo("John");
+        assertThat(result.name()).isEqualTo("John");
         verify(userRepository).save(any(User.class));
     }
 }
 ```
+
+변환을 `Mapper`/`Assembler`로 분리한 프로젝트라면 그 빈도 `@Mock`으로 두되, 매핑 자체는 mock stubbing 대신 매퍼 단위 테스트에서 검증합니다.

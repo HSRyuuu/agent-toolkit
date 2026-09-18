@@ -5,7 +5,7 @@
 새 REST API를 구축할 때 아래 순서를 따릅니다:
 
 ```
-Entity → DTO → Repository → Exception → Service → Controller → Test
+Entity → DTO → Repository → ErrorCode/Exception → Service → Controller → Test
 ```
 
 ### 요구사항 체크리스트
@@ -62,57 +62,47 @@ public class UserController {
 
 ## Service
 
+구현이 하나면 구체 클래스 하나로 시작합니다. `XxxService` 인터페이스 + `XxxServiceImpl` 쌍은 실제로 구현이 둘 이상 생기거나 의존성 격리가 필요해질 때 도입합니다.
+
 클래스 레벨 `@Transactional(readOnly = true)`, 쓰기 메서드만 `@Transactional`:
 
 ```java
-public interface UserService {
-    UserResponse findById(Long id);
-    List<UserResponse> findAll();
-    UserResponse create(CreateUserRequest request);
-    UserResponse update(Long id, UpdateUserRequest request);
-    void delete(Long id);
-}
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class UserServiceImpl implements UserService {
+public class UserService {
     private final UserRepository userRepository;
 
-    @Override
     public UserResponse findById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND, id));
         return UserResponse.from(user);
     }
 
-    @Override
     public List<UserResponse> findAll() {
         return userRepository.findAll().stream()
                 .map(UserResponse::from)
                 .toList();
     }
 
-    @Override
     @Transactional
     public UserResponse create(CreateUserRequest request) {
-        return UserResponse.from(userRepository.save(request.toEntity()));
+        User saved = userRepository.save(request.toEntity());
+        return UserResponse.from(saved);
     }
 
-    @Override
     @Transactional
     public UserResponse update(Long id, UpdateUserRequest request) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND, id));
         request.applyTo(user);
         return UserResponse.from(user);
     }
 
-    @Override
     @Transactional
     public void delete(Long id) {
         if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException(id);
+            throw new UserException(UserErrorCode.USER_NOT_FOUND, id);
         }
         userRepository.deleteById(id);
     }
@@ -123,31 +113,17 @@ public class UserServiceImpl implements UserService {
 
 ## DTO 패턴
 
+고정 필드 DTO는 record가 기본입니다. 네이밍은 개별 탑레벨 타입(`CreateUserRequest`)과 기능 단위 묶음(`UserDto.Request`) 중 프로젝트가 이미 쓰는 쪽을 따릅니다.
+
 ### Request DTO
 
 ```java
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CreateUserRequest {
-    @NotBlank(message = "Name is required")
-    @Size(min = 2, max = 50)
-    private String name;
+public record CreateUserRequest(@NotBlank(message = "Name is required")
+                                @Size(min = 2, max = 50) String name,
 
-    @NotBlank
-    @Email
-    private String email;
+                                @NotBlank @Email String email,
 
-    @NotNull
-    @Min(18)
-    private Integer age;
-
-    @Builder
-    public CreateUserRequest(String name, String email, Integer age) {
-        this.name = name;
-        this.email = email;
-        this.age = age;
-    }
-
+                                @NotNull @Min(18) Integer age) {
     public User toEntity() {
         return User.builder()
                 .name(name)
@@ -163,21 +139,15 @@ public class CreateUserRequest {
 null 체크로 부분 업데이트:
 
 ```java
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class UpdateUserRequest {
-    private String name;
-    private Integer age;
-
-    @Builder
-    public UpdateUserRequest(String name, Integer age) {
-        this.name = name;
-        this.age = age;
-    }
-
+public record UpdateUserRequest(String name,
+                                Integer age) {
     public void applyTo(User user) {
-        if (name != null) user.updateName(name);
-        if (age != null) user.updateAge(age);
+        if (name != null) {
+            user.updateName(name);
+        }
+        if (age != null) {
+            user.updateAge(age);
+        }
     }
 }
 ```
@@ -185,33 +155,14 @@ public class UpdateUserRequest {
 ### Response DTO
 
 ```java
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class UserResponse {
-    private Long id;
-    private String name;
-    private String email;
-    private UserStatus status;
-    private LocalDateTime createdAt;
-
-    @Builder
-    public UserResponse(Long id, String name, String email,
-                       UserStatus status, LocalDateTime createdAt) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.status = status;
-        this.createdAt = createdAt;
-    }
-
+public record UserResponse(Long id,
+                           String name,
+                           String email,
+                           UserStatus status,
+                           LocalDateTime createdAt) {
     public static UserResponse from(User user) {
-        return UserResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .status(user.getStatus())
-                .createdAt(user.getCreatedAt())
-                .build();
+        return new UserResponse(user.getId(), user.getName(), user.getEmail(),
+                user.getStatus(), user.getCreatedAt());
     }
 }
 ```
@@ -219,60 +170,36 @@ public class UserResponse {
 ### 페이지네이션 Response
 
 ```java
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class PageResponse<T> {
-    private List<T> content;
-    private int totalPages;
-    private long totalElements;
-    private int number;
-    private int size;
-
-    @Builder
-    public PageResponse(List<T> content, int totalPages,
-                       long totalElements, int number, int size) {
-        this.content = content;
-        this.totalPages = totalPages;
-        this.totalElements = totalElements;
-        this.number = number;
-        this.size = size;
-    }
-
+public record PageResponse<T>(List<T> content,
+                              int totalPages,
+                              long totalElements,
+                              int number,
+                              int size) {
     public static <T, R> PageResponse<R> from(Page<T> page, Function<T, R> mapper) {
-        return PageResponse.<R>builder()
-                .content(page.getContent().stream()
-                        .map(mapper)
-                        .toList())
-                .totalPages(page.getTotalPages())
-                .totalElements(page.getTotalElements())
-                .number(page.getNumber())
-                .size(page.getSize())
-                .build();
+        List<R> content = page.getContent().stream()
+                .map(mapper)
+                .toList();
+        return new PageResponse<>(content, page.getTotalPages(), page.getTotalElements(),
+                page.getNumber(), page.getSize());
     }
 }
 ```
 
-### Mapper (복잡한 변환 시)
+### Mapper / Assembler (복잡한 변환 시)
 
-간단한 경우 DTO 내 `toEntity()`, `from()` 메서드를 선호합니다.
-변환 로직이 복잡해지면 별도 Mapper를 분리합니다:
+기본은 DTO 내 `toEntity()`, `from()`입니다. 여러 소스를 합치거나 변환에 정책이 섞일 때만 별도 Mapper(또는 Assembler, MapStruct)를 분리합니다. 단순 위임만 하는 매핑 계층은 만들지 않습니다.
 
 ```java
 @Component
+@RequiredArgsConstructor
 public class UserMapper {
-    public User toEntity(CreateUserRequest request) {
-        return User.builder()
-                .name(request.getName())
-                .email(request.getEmail())
-                .build();
-    }
+    private final MembershipRepository membershipRepository;
 
-    public UserResponse toResponse(User user) {
-        return UserResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .build();
+    // 여러 소스를 합치므로 DTO 정적 팩터리로는 표현이 어렵다
+    public UserDetailResponse toDetailResponse(User user) {
+        Membership membership = membershipRepository.findActiveByUserId(user.getId())
+                .orElse(Membership.none());
+        return new UserDetailResponse(user.getId(), user.getName(), membership.grade());
     }
 }
 ```
@@ -281,34 +208,53 @@ public class UserMapper {
 
 ## 예외 처리 (Exception Handling)
 
+같은 도메인의 오류는 **도메인 예외 하나 + `ErrorCode` enum**으로 모읍니다. 사례마다 예외 하위 클래스를 만들지 않습니다.
+
 ```java
-// 도메인 예외
-public class UserNotFoundException extends RuntimeException {
-    public UserNotFoundException(Long id) {
-        super("User not found with id: " + id);
+// 에러 코드 계약 (name()은 enum이 자동 제공)
+public interface ErrorCode {
+    HttpStatus getStatus();
+    String getMessage();
+    String name();
+}
+
+@Getter
+@RequiredArgsConstructor
+public enum UserErrorCode implements ErrorCode {
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "User not found"),
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "Email already exists");
+
+    private final HttpStatus status;
+    private final String message;
+}
+
+// 도메인 예외 하나
+@Getter
+public class UserException extends RuntimeException {
+    private final ErrorCode errorCode;
+
+    public UserException(ErrorCode errorCode, Object detail) {
+        super(errorCode.getMessage() + ": " + detail);
+        this.errorCode = errorCode;
+    }
+
+    public UserException(ErrorCode errorCode) {
+        super(errorCode.getMessage());
+        this.errorCode = errorCode;
     }
 }
 
-public class DuplicateEmailException extends RuntimeException {
-    public DuplicateEmailException(String email) {
-        super("Email already exists: " + email);
-    }
-}
-
-// 글로벌 핸들러
+// 글로벌 핸들러는 응답 변환만 담당
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(UserNotFoundException e) {
-        log.error("Not found: {}", e.getMessage());
-        ErrorResponse response = ErrorResponse.builder()
-                .status(HttpStatus.NOT_FOUND.value())
-                .message(e.getMessage())
-                .timestamp(LocalDateTime.now())
-                .build();
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    @ExceptionHandler(UserException.class)
+    public ResponseEntity<ErrorResponse> handleDomain(UserException e) {
+        ErrorCode errorCode = e.getErrorCode();
+        log.warn("domain_error code={} message={}", errorCode.name(), e.getMessage());
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(ErrorResponse.of(errorCode, e.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -317,31 +263,24 @@ public class GlobalExceptionHandler {
         String message = e.getBindingResult().getAllErrors().stream()
                 .map(DefaultMessageSourceResolvable::getDefaultMessage)
                 .collect(Collectors.joining(", "));
-        ErrorResponse response = ErrorResponse.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .message(message)
-                .timestamp(LocalDateTime.now())
-                .build();
-        return ResponseEntity.badRequest().body(response);
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse("INVALID_REQUEST", message, LocalDateTime.now()));
     }
 }
 
 // 에러 응답 DTO
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ErrorResponse {
-    private int status;
-    private String message;
-    private LocalDateTime timestamp;
-
-    @Builder
-    public ErrorResponse(int status, String message, LocalDateTime timestamp) {
-        this.status = status;
-        this.message = message;
-        this.timestamp = timestamp;
+public record ErrorResponse(String code,
+                            String message,
+                            LocalDateTime timestamp) {
+    public static ErrorResponse of(ErrorCode errorCode, String message) {
+        return new ErrorResponse(errorCode.name(), message, LocalDateTime.now());
     }
 }
 ```
+
+- HTTP 상태와 기본 문구는 `ErrorCode` 한 곳에만 둡니다.
+- 응답의 `code` 값이 외부 계약이면 enum 상수 이름 변경도 계약 변경입니다.
+- 프로그래밍 오류(`IllegalArgumentException`, `IllegalStateException` 등)는 표준 예외를 유지합니다.
 
 ---
 
@@ -365,8 +304,8 @@ class UserControllerTest {
     @DisplayName("GET /users/{id} returns 200")
     void getUser_success() throws Exception {
         Long userId = 1L;
-        UserResponse response = UserResponse.builder()
-                .id(userId).name("John").email("john@test.com").build();
+        UserResponse response = new UserResponse(userId, "John", "john@test.com",
+                UserStatus.ACTIVE, LocalDateTime.now());
 
         when(userService.findById(userId)).thenReturn(response);
 
@@ -379,10 +318,9 @@ class UserControllerTest {
     @Test
     @DisplayName("POST /users returns 201")
     void createUser_success() throws Exception {
-        CreateUserRequest request = CreateUserRequest.builder()
-                .name("John").email("john@test.com").age(25).build();
-        UserResponse response = UserResponse.builder()
-                .id(1L).name("John").build();
+        CreateUserRequest request = new CreateUserRequest("John", "john@test.com", 25);
+        UserResponse response = new UserResponse(1L, "John", "john@test.com",
+                UserStatus.ACTIVE, LocalDateTime.now());
 
         when(userService.create(any())).thenReturn(response);
 
@@ -404,35 +342,38 @@ class UserServiceTest {
     private UserRepository userRepository;
 
     @InjectMocks
-    private UserServiceImpl userService;
+    private UserService userService;
 
     @Test
     @DisplayName("findById throws when not found")
     void findById_notFound() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
-        assertThrows(UserNotFoundException.class,
-                () -> userService.findById(1L));
+
+        assertThatThrownBy(() -> userService.findById(1L))
+                .isInstanceOf(UserException.class)
+                .extracting("errorCode")
+                .isEqualTo(UserErrorCode.USER_NOT_FOUND);
     }
 
     @Test
     @DisplayName("create saves and returns response")
     void create_success() {
-        CreateUserRequest request = CreateUserRequest.builder()
-                .name("John").email("john@test.com").age(25).build();
+        CreateUserRequest request = new CreateUserRequest("John", "john@test.com", 25);
         User savedUser = User.builder()
                 .name("John").email("john@test.com").age(25).build();
-        ReflectionTestUtils.setField(savedUser, "id", 1L);
 
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
 
         UserResponse response = userService.create(request);
 
-        assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getName()).isEqualTo("John");
+        assertThat(response.name()).isEqualTo("John");
+        assertThat(response.email()).isEqualTo("john@test.com");
         verify(userRepository).save(any(User.class));
     }
 }
 ```
+
+생성된 ID처럼 영속화 이후에만 존재하는 값은 `ReflectionTestUtils`로 주입하지 말고 `@DataJpaTest`에서 실제 저장 후 확인합니다.
 
 ### Repository 테스트
 
