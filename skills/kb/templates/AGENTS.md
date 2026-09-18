@@ -7,7 +7,10 @@ conventions, this file wins. Keep intentional differences explicit.
 
 ## Read First
 
-- Use metadata search for ordinary lookup; read `index.md` only for a repository-wide overview.
+- Start with metadata search, then use `--content` for identifiers or missing evidence.
+  Read `index.md` only for a repository-wide overview.
+- Shared search excludes private/gitignored notes. Use `--scope all` for labeled
+  draft/historical context when active knowledge is insufficient.
 - Use Git history in git-backed KBs. Use `log.jsonl` only when this KB is not git-backed or intentionally maintains both.
 - Resolve this root only through its registration in `~/.config/kb/kb-config.json`; KB skills must not use an unregistered absolute path.
 - If an agent is working from a nested or different directory, it should still resolve this KB root and read this file before changing or answering from the KB.
@@ -41,6 +44,9 @@ conventions, this file wins. Keep intentional differences explicit.
 
 - New knowledge documents should use YAML frontmatter unless local rules say otherwise.
 - Keep `title`, `summary`, `tags`, `aliases`, `created`, and `updated` useful for search and maintenance.
+- Optional `status`: maintained, draft, historical; absent means unspecified.
+  Document status never proves claim-level currency. Preserve evidence dates and
+  scope in the body; pure moves do not refresh `updated`.
 - Omit `agent_edit_mode` for normal editable documents; record only protected exceptions.
 - Keep root agent entrypoints such as this file free of KB document frontmatter.
 - Exclude hidden files and directories from KB document discovery, indexing, search, and lint. Read hidden agent guidance separately when instructed.
@@ -53,3 +59,10 @@ conventions, this file wins. Keep intentional differences explicit.
 - For English filenames, use lowercase kebab-case.
 - For non-English filenames, use the local repository convention consistently.
 - Keep filenames stable once other documents link to them.
+
+## Write Completion
+
+Regenerate/check index, run the scoped edit guard and lint, and search for the
+answer with a user phrase plus an alternate phrase/identifier. Run full lint
+and inspect incoming links after moves/deletions. Review inbox holds and related
+summary/detail conflicts periodically; do not auto-delete older candidates.

@@ -16,6 +16,7 @@ REGRESSION_SCRIPTS = [
     "test_kb_frontmatter_filter.py",
     "test_kb_lint.py",
     "test_kb_search.py",
+    "test_kb_quality.py",
     "test_resolve_kb_root.py",
     "test_check_kb_prerequisites.py",
     "test_check_agent_edit_mode.py",

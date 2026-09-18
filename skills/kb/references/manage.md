@@ -1,5 +1,23 @@
 # Manage Mode
 
+## Contents
+
+- Overview
+- First-Time Users
+- Repository Operating Defaults
+- Writing Defaults
+- Maintenance Defaults
+- Mode Responsibilities
+- Root Resolution and Guidance
+- Optional Obsidian Support
+- Setup
+- Inbox Documents
+- Archived Documents
+- Migration Between KB Roots
+- Migration From Old KB Model
+- Index Maintenance
+- Log Maintenance
+
 ## Overview
 
 Manage the KB itself: root path, identity, setup files, `index.md`, and
@@ -174,6 +192,21 @@ When archiving a document:
 2. Set or update frontmatter `agent_edit_mode: read_only`. The git guard treats
    this editable→read_only transition as an informational note, not a violation.
 3. Update `index.md` and `log.jsonl` when the KB maintains them.
+
+## Migration Between KB Roots
+
+Use the local taxonomy and process related topics as a batch. Before writing,
+map every source document/asset to a destination owner, merge, hold, or explicit
+exclusion with a reason. Preserve the old root while the new root is validated.
+Move durable conclusions, conditions and exceptions into maintained pages;
+keep safe source pointers without copying raw work archives.
+
+Pilot representative topics, then migrate the rest using the same acceptance
+checks: guard, regenerated index, full lint, assets/incoming links, preserved
+provenance and dates, and a fixed set of real questions with expected sections.
+Review draft and historical results separately. Check external local entrypoints
+and skill wrappers still point to the intended registered KB. Do not infer that
+setup authorization also authorizes bulk migration or old-root deletion.
 
 ## Migration From Old KB Model
 

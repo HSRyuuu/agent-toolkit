@@ -69,3 +69,19 @@ marketplace, `npx skills add`, Codex/Claude 수동 설치 방법과 별도 runti
 - [`references/getting-started.md`](./references/getting-started.md) — 최초 설정과 검증
 - [`references/conventions.md`](./references/conventions.md) — 네 모드의 공통 규칙
 - [`references/obsidian-skills.md`](./references/obsidian-skills.md) — 선택적 Obsidian 설치와 사용 경계
+
+## 검색과 품질 확인
+
+메타데이터 검색은 `scripts/kb_meta_search.py <root> --query <terms>`로 실행한다.
+본문 식별자나 빠진 근거는 `--content`로 찾고, 초안·과거 기록은 `--scope all`로
+추가한다. 기본 검색은 maintained/unspecified 문서이며 개인·gitignore·숨김
+영역과 운영 안내문을 제외한다. 운영 규칙은 `--include-guidance`로 조회한다.
+
+선택 필드 `status`는 maintained/draft/historical이다. 없는 문서는 unspecified로
+표시한다. 상태를 필수로 정한 KB는 `kb_lint.py <root> --require-status`를 사용한다.
+변경 파일 검사는 `--files <paths>`로 범위를 좁힌다. 이동·삭제 후에는 전체 검사와
+유입 링크 확인을 수행한다. Inbox·archive는 최소 메타데이터·상태·링크를 점검한다.
+
+검색 중 파싱 실패는 유효한 결과와 함께 경로만 보고하고 exit 2를 반환한다.
+인덱스 생성은 파싱 실패 시 쓰기를 중단한다. 문서 저장 후 실제 질문 두 개로
+검색을 확인한다. `scripts/test_kb_quality.py`가 이 동작을 회귀 검증한다.

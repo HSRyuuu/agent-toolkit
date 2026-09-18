@@ -18,6 +18,8 @@ from kb_frontmatter import (
     metadata_row,
     normalize_date,
     scalar_contains,
+    document_status,
+    is_knowledge_doc,
 )
 
 
@@ -40,6 +42,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--path", help="path substring")
     parser.add_argument("--agent-edit-mode", help="agent_edit_mode exact value")
     parser.add_argument("--query", help="free-text query across path and searchable metadata")
+    parser.add_argument("--content", action="store_true", help="also search headings and body (AND terms)")
+    parser.add_argument("--scope", choices=("active", "all"), default="active",
+                        help="active: maintained/unspecified; all: also draft/historical")
+    parser.add_argument("--include-guidance", action="store_true", help="include README/index/agent rules")
     parser.add_argument("--limit", type=int, help="maximum number of ranked results")
     parser.add_argument("--json", action="store_true", help="emit JSON array")
     args = parser.parse_args()
@@ -48,7 +54,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def query_score(doc: KbDoc, query: str | None) -> int | None:
+def query_score(doc: KbDoc, query: str | None, content: bool = False) -> int | None:
     if not query:
         return 0
     meta = doc.metadata
@@ -60,6 +66,10 @@ def query_score(doc: KbDoc, query: str | None) -> int | None:
     folded = query.casefold().strip()
     tokens = folded.split()
     values = [title, *aliases, *tags, summary, path]
+    body = doc.content.casefold() if content else ""
+    headings = "\n".join(line for line in body.splitlines() if line.startswith("#"))
+    if content:
+        values += [body]
     if not tokens or not all(any(token in value for value in values) for token in tokens):
         return None
 
@@ -79,7 +89,34 @@ def query_score(doc: KbDoc, query: str | None) -> int | None:
             score += 20
         if token in path:
             score += 10
+        if token in headings:
+            score += 8
+        if token in body:
+            score += 2
     return score
+
+
+def match_details(doc: KbDoc, query: str | None, content: bool) -> dict[str, Any]:
+    """Explain selected hits only; a snippet locates evidence, not a full answer."""
+    tokens = (query or "").casefold().split()
+    fields = {name: " ".join(coerce_list(doc.metadata.get(name))).casefold()
+              for name in ("title", "aliases", "tags", "summary")}
+    fields["path"] = doc.relpath.casefold()
+    matched = [name for name, value in fields.items() if any(t in value for t in tokens)]
+    details: dict[str, Any] = {"matched_fields": matched}
+    if content:
+        for lineno, line in enumerate(doc.content.splitlines(), 1):
+            folded = line.casefold()
+            positions = [folded.find(t) for t in tokens if t in folded]
+            if not positions:
+                continue
+            matched.append("heading" if line.startswith("#") else "body")
+            start = max(0, min(positions) - 40)
+            from kb_lint import scan_secrets_in_text
+            snippet = "[sensitive candidate omitted]" if scan_secrets_in_text(doc.relpath, line) else line[start:start + 180]
+            details.update(line=doc.content_line_offset + lineno, snippet=snippet)
+            break
+    return details
 
 
 def matches(doc: KbDoc, args: argparse.Namespace, invalid_date_paths: set[str]) -> bool:
@@ -119,7 +156,7 @@ def matches(doc: KbDoc, args: argparse.Namespace, invalid_date_paths: set[str]) 
         return False
     if args.agent_edit_mode and meta.get("agent_edit_mode") != args.agent_edit_mode:
         return False
-    return query_score(doc, args.query) is not None
+    return True
 
 
 def print_table(rows: list[dict[str, Any]]) -> None:
@@ -130,26 +167,43 @@ def print_table(rows: list[dict[str, Any]]) -> None:
         updated = row.get("updated") or "-"
         created = row.get("created") or "-"
         title = row.get("title") or "-"
-        print(f"{row['path']}\tcreated={created}\tupdated={updated}\t{title}")
+        print(f"{row['path']}\tstatus={row['status']}\tcreated={created}\tupdated={updated}\t{title}")
+        if row.get("matched_fields"):
+            print(f"  matched={','.join(row['matched_fields'])} score={row['score']}")
+        if row.get("line"):
+            print(f"  L{row['line']}: {row['snippet']}")
 
 
 def main() -> int:
     args = parse_args()
     root = Path(args.root).expanduser().resolve()
     invalid_date_paths: set[str] = set()
-    docs = [doc for doc in load_docs(root) if matches(doc, args, invalid_date_paths)]
-    if args.query:
-        docs.sort(key=lambda doc: (-(query_score(doc, args.query) or 0), doc.relpath))
+    errors: list[str] = []
+    ranked = []
+    for doc in load_docs(root, errors=errors):
+        if not args.include_guidance and not is_knowledge_doc(doc):
+            continue
+        if args.scope == "active" and document_status(doc) in {"draft", "historical"}:
+            continue
+        if not matches(doc, args, invalid_date_paths):
+            continue
+        score = query_score(doc, args.query, args.content)
+        if score is not None:
+            ranked.append((score, doc))
+    ranked.sort(key=lambda pair: (-pair[0], pair[1].relpath))
     if args.limit is not None:
-        docs = docs[: args.limit]
-    rows = [metadata_row(doc) for doc in docs]
+        ranked = ranked[: args.limit]
+    rows = [dict(metadata_row(doc), score=score, **match_details(doc, args.query, args.content))
+            for score, doc in ranked]
     if invalid_date_paths:
         print(f"invalid date skipped: {len(invalid_date_paths)} files", file=sys.stderr)
     if args.json:
         print(json.dumps(rows, ensure_ascii=False, indent=2))
     else:
         print_table(rows)
-    return 0
+    for path in errors:
+        print(f"Partial search: cannot read/parse {path}", file=sys.stderr)
+    return 2 if errors else 0
 
 
 if __name__ == "__main__":

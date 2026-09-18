@@ -1,5 +1,23 @@
 # Write Mode
 
+## Contents
+
+- Overview
+- Fast Path vs Full Path
+- Core Principles
+- Required First Reads
+- Optional Obsidian Skill Use
+- Input Handling
+- Ownership and Evidence
+- Ambiguity Gate
+- Multi-document Write
+- Security Gate
+- Agent Edit Mode Gate
+- Document Washing Protocol
+- Write Modes
+- Index And Log
+- Completion Report
+
 ## Overview
 
 Add knowledge to a Markdown KB as curated source-of-truth documents. The
@@ -49,6 +67,8 @@ Before writing:
    Resolution rules; if no root resolves, stop and switch to the
    [`manage.md`](./manage.md) config bootstrap.
 2. Run `kb_meta_search.py --query <terms> --limit 10` to find candidate owners.
+   Use `--content` for code identifiers and when metadata does not identify an
+   owner. Check `--scope all` before creating a duplicate of an existing draft.
 3. Read `index.md` only when a repository-wide overview is actually needed.
 4. Read relevant directory `README.md` files when choosing a folder (intent, not
    inventory).
@@ -79,6 +99,24 @@ do not use them just because a KB has `.obsidian/`.
 | Broad question | Do not add. Switch to [`search.md`](./search.md) unless the user explicitly asks to file the answer back. |
 | Ambiguous note | Choose the most natural location. If no owner is defensible and `_inbox/` exists, file it there and report the temporary route. |
 
+## Ownership and Evidence
+
+One document owns each independently maintained answer. A topic hub owns
+navigation and boundaries; detailed pages own their rules and procedures.
+When a new fact changes a summary or a linked current-state page, read and update
+that owning page too. Preserve historical ticket snapshots as historical evidence;
+duplicate ownership applies to maintained KB facts, not immutable work records.
+
+Record safe provenance and the relevant scope: source file/symbol and known
+revision for code; environment, date/period and conditions for data observations.
+Do not upgrade a sample observation, proposal, or partial trace into a universal
+claim. Preserve dates, negations and exceptions during washing.
+
+Assign optional `status` per conventions/local rules. An unresolved contradiction
+can be preserved as a labeled draft with both safe sources; do not silently
+replace the maintained answer. An ownerless safe note goes to `_inbox/` with a
+short body note explaining what needs confirmation before promotion.
+
 ## Ambiguity Gate
 
 Do not ask by default, but pause before writing when a wrong choice could lose meaning or scatter ownership.
@@ -101,7 +139,7 @@ Use this when one input contains multiple durable knowledge units.
    - `append`: add to an intentionally accumulating document
    - `create`: make a new document when no existing document naturally owns it
    - `skip`: do not store broad questions, duplicates, or unsafe details
-3. Run the metadata query, then read relevant directory `README.md` files and
+3. Run metadata/body queries as needed, then read relevant directory `README.md` files and
    candidate target documents before final routing.
 4. Route clear units directly when there is no content conflict, security gate
    issue, or protected edit-mode issue.
@@ -280,8 +318,14 @@ After successful writes, run this automatic completion sequence without asking:
    use Git history and do not duplicate the entry unless local rules explicitly
    maintain both.
 3. Run `check_agent_edit_mode.py --files <touched Markdown>` in git-backed KBs.
-4. Run `kb_lint.py <root>`. Stop only for a real finding that cannot be corrected
-   safely within the requested change.
+4. Run `kb_lint.py <root> --files <touched Markdown>` for scoped checks, adding
+   `--require-status` when the local KB requires it. Run full lint after moves or
+   deletions and at migration-batch completion; inspect incoming links to moved
+   paths. Distinguish existing findings from regressions caused by this write.
+5. Search again using one realistic user phrase and one alternate phrase or code
+   identifier. Use `--content` and `--scope all` when applicable. Verify the new
+   answer/section is discoverable; fix the title/summary/alias only when that
+   field should genuinely contain the term. Do not stuff body tokens into aliases.
 
 Every write that adds, moves, renames, or deletes a document needs step 1. Skipping
 it is what makes a catalog drift: manage and lint regenerate, so a write that

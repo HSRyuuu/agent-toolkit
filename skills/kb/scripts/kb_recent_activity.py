@@ -6,10 +6,11 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
-from kb_frontmatter import date_in_range, load_docs, metadata_row, normalize_date
+from kb_frontmatter import date_in_range, load_docs, metadata_row, normalize_date, is_knowledge_doc
 
 
 def parse_args() -> argparse.Namespace:
@@ -39,7 +40,10 @@ def format_line(row: dict[str, Any]) -> str:
 def main() -> int:
     args = parse_args()
     root = Path(args.root).expanduser().resolve()
-    rows = [metadata_row(doc) for doc in load_docs(root)]
+    errors: list[str] = []
+    rows = [metadata_row(doc) for doc in load_docs(root, errors=errors) if is_knowledge_doc(doc)]
+    for path in errors:
+        print(f"Partial activity: cannot read/parse {path}", file=sys.stderr)
     range_mode = bool(args.since or args.until)
     target_date = None if range_mode else (args.date or dt.date.today().isoformat())
     if range_mode:
@@ -62,7 +66,7 @@ def main() -> int:
                 indent=2,
             )
         )
-        return 0
+        return 2 if errors else 0
 
     if range_mode:
         print(f"Range: {args.since or '-'}..{args.until or '-'}")
@@ -74,7 +78,7 @@ def main() -> int:
     print(f"Updated: {len(updated)}")
     for row in updated:
         print(format_line(row))
-    return 0
+    return 2 if errors else 0
 
 
 if __name__ == "__main__":

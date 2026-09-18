@@ -11,7 +11,7 @@ This document is the KB catalog. Check each linked source document for detailed 
 <!-- kb:documents:start -->
 ## Documents
 
-| Document | Summary | Tags | Updated |
-|---|---|---|---|
-| _(none)_ | | | |
+| Document | Summary | Tags | Updated | Status |
+|---|---|---|---|---|
+| _(none)_ | | | | |
 <!-- kb:documents:end -->

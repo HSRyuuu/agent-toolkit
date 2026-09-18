@@ -1,143 +1,77 @@
 # Search Mode
 
-## Overview
+Search a registered Markdown KB read-only. Read `conventions.md` first; root
+local guidance wins. Maintained documents supply evidence. History, drafts, and
+archives help locate evidence but do not establish current behavior.
 
-Search a curated Markdown KB in read-only mode. Maintained documents are the
-source-of-truth surface; history is only a locator, never evidence for a fact.
-Do not rely on embeddings or general web knowledge unless the user explicitly
-asks for outside-KB research.
+## Search Until the Question Is Covered
 
-**Shared rules:** Read [`conventions.md`](./conventions.md) completely and follow
-its rules for KB root resolution, frontmatter fields, uncertainty markers, `index.md` /
-`log.jsonl` rules, and bundled-resource routing.
+1. Resolve the registered root, then read its local guidance. Run helpers with
+   the dedicated interpreter from `getting-started.md`.
+2. Extract the question's subjects and identifiers. Search short phrases and
+   known alternate names separately; `--query` splits on spaces and requires
+   every term. Do not pass a whole Korean sentence as one AND query.
+3. Run `kb_meta_search.py <root> --query <terms> --limit 10`. Default scope
+   includes `maintained` and legacy `unspecified` knowledge documents.
+4. For code/table/column identifiers, always also run the query with `--content`.
+   For other questions, read candidates and run `--content` whenever any requested
+   fact is still unsupported, even if metadata returned one or more matches.
+5. Read the matching section and enough surrounding context to preserve its
+   conditions and exceptions. A title, score, or snippet alone is not evidence.
+6. If active evidence remains insufficient, repeat with `--scope all --content`.
+   Separate draft and historical results in the answer. If only those exist,
+   state that current evidence is missing. Do not turn a plan into shipped behavior.
+7. Follow a small number of useful related links. Read directory README files
+   only for folder intent, and index.md only for a repository-wide overview.
 
-**First-time recovery:** if no registered root resolves, switch to the config
-bootstrap in [`manage.md`](./manage.md); never search an unregistered absolute
-path. For missing runtime packages, follow
-[`getting-started.md`](./getting-started.md). Do not mutate config or install
-packages without approval.
+A search is complete when each requested fact has a cited section, a clearly
+marked uncertainty, or an explicit information gap. A metadata miss alone does
+not establish absence. Before reporting absence, try body search and relevant
+alternate names. `updated` is the edit date, not a verification date or an
+automatic authority tie-breaker. Compare source, environment, revision/date,
+claim scope, and uncertainty in the body. Report unresolved conflicts.
 
-## Core Principles
+## Helper Contract
 
-- Read only. Do not create, edit, delete, stage, commit, or reformat files.
-- Prefer KB evidence over memory or general knowledge.
-- Include `_archived/` documents in search results when they match. Treat them as archived historical context, not as automatically current facts.
-- Distinguish confirmed facts from `확인 필요`, `미정`, `추정`, and `과거 정보`.
-- Cite local documents with paths or KB links.
-- If the KB does not contain enough information, say so plainly.
-- Do not expose sensitive values found during search unless the user specifically needs them and the KB rules allow it.
+The scripts are executable helpers; run them rather than reimplementing them.
+Paths below are relative to this skill's directory:
 
-## Search Order
-
-1. Resolve the KB root and read local root guidance per the conventions Root
-   Resolution rules.
-2. Run `kb_meta_search.py --query <terms> --limit 10` across frontmatter and paths.
-3. Search filenames/headings, then body text when metadata candidates are weak.
-4. Read relevant directory `README.md` files only when folder intent is needed.
-5. Read the smallest useful set of candidate documents or sections.
-6. Read `index.md` only for repository-wide overviews, not ordinary lookup.
-7. Follow only clearly useful related links; avoid broad graph walks.
-
-## Useful Commands
-
-Resolve the root per conventions (`scripts/resolve_kb_root.py`), then pass the
-resolved absolute root to the search helpers bundled with this skill:
-
-- `../scripts/kb_meta_search.py <KB_ROOT> --updated 2026-07-01`
-- `../scripts/kb_meta_search.py <KB_ROOT> --query "kafka consumer" --limit 10`
-- `../scripts/kb_meta_search.py <KB_ROOT> --created 2026-07-01 --tag kafka`
-- `../scripts/kb_meta_search.py <KB_ROOT> --updated-since 2026-06-01 --updated-until 2026-06-30`
-- `../scripts/kb_recent_activity.py <KB_ROOT> --date 2026-07-01`
-- `../scripts/kb_recent_activity.py <KB_ROOT> --since 2026-06-28`
-
-Use these scripts before `rg` when the query is about structured frontmatter
-fields such as `title`, `summary`, `tags`, `aliases`, `source`, `created`,
-`updated`, or `agent_edit_mode`. Run them with the getting-started runtime; when
-it is absent or mismatched and a read-only search cannot wait for approved
-installation, fall back to `rg` and disclose that structured metadata parsing
-was unavailable.
-
-Inventory:
-
-```bash
-find "$KB_ROOT" -path '*/.*' -prune -o -path '*/node_modules' -prune -o -name '*.md' -print
+```text
+scripts/kb_meta_search.py <root> --query "refund" --content --limit 10
+scripts/kb_meta_search.py <root> --query "cache timeout" --scope all --content --json
+scripts/kb_meta_search.py <root> --tag kafka --updated-since 2026-06-01
+scripts/kb_meta_search.py <root> --query "routing" --include-guidance
+scripts/kb_recent_activity.py <root> --since 2026-07-01
 ```
 
-Structure fields and headings:
+- `--content` searches metadata, headings, and body with AND semantics across
+  them. Metadata matches rank more highly; body hits provide a file line and
+  short snippet. Search with another phrase if AND terms are too restrictive.
+- `--scope active` is the default; `--scope all` adds draft/historical documents,
+  including `_inbox/` and `_archived/`. It does not include private documents.
+- `_personal/`, gitignored documents, hidden/dependency trees, and symlinks are
+  excluded from shared reads. General lookup also excludes README, index,
+  AGENTS, CLAUDE, and Markdown asset notes. `--include-guidance` allows the latter
+  group for setup/rules questions, without bypassing private exclusions.
+- Rows include `status`, score and matched fields. Content matches also include
+  `line` and `snippet`. These are locators; inspect the actual source before citing.
+- Exit 0 means the scan completed, including a legitimate no-match result.
+  Exit 2 means invalid arguments, unreadable scope, or a partial read/parse failure.
+  Partial search still emits usable rows and value-free error paths on stderr;
+  disclose the incomplete search and do not claim absence. Exit 3 means the
+  frontmatter runtime is missing.
+- Recent activity includes all document statuses in the shared scope and uses
+  the same partial-read exit behavior. Dates do not establish factual currency.
 
-```bash
-rg -n --glob '*.md' --glob '!**/.*/**' --glob '!**/.*' --glob '!**/node_modules/**' \
-  "title:|summary:|tags:|aliases:|^#{1,6} " "$KB_ROOT"
-```
+If the dedicated runtime is unavailable, follow `getting-started.md`. For an
+urgent read-only lookup, use `rg` without `--hidden`, `--no-ignore`, or `-L`,
+explicitly exclude `_personal/**`, then distinguish draft/archive and guidance
+paths before reading. Disclose that structured metadata parsing was unavailable.
+Do not install anything merely to answer a read-only query without authorization.
 
-Body keyword search (replace `<검색어>` and `<synonym>`):
+## Answer and History
 
-```bash
-rg -n --glob '*.md' --glob '!**/.*/**' --glob '!**/.*' --glob '!**/node_modules/**' \
-  "<검색어>|<synonym>" "$KB_ROOT"
-```
-
-Recent KB activity — non-git `log.jsonl` fallback:
-
-```bash
-test -f "$KB_ROOT/log.jsonl" && tail -100 "$KB_ROOT/log.jsonl"
-test -f "$KB_ROOT/log.jsonl" && rg -n '"files":|"summary":|"datetime":|"type":|"source":|<검색어>|<synonym>' "$KB_ROOT/log.jsonl"
-test -f "$KB_ROOT/log.jsonl" && jq -c . "$KB_ROOT/log.jsonl" >/dev/null
-```
-
-If a non-git KB has no `log.jsonl`, note the gap only when the user asked about
-maintenance; normal search can rely on frontmatter dates.
-
-Git history — the work-history trail in a git-backed KB. Use it for diffs,
-blame, and change archaeology. Commits may follow the `kb:` convention from
-conventions (Work History):
-
-```bash
-git log --oneline -- path/to/doc.md          # history of one document
-git log --oneline --grep='^kb:'              # all KB work, newest first
-git log --all --grep='keyword' --oneline     # find a change by topic keyword
-git log --oneline --name-only -n 20          # recent changes with touched files
-```
-
-## Candidate Selection
-
-Prioritize:
-
-1. Documents whose title or aliases match the user's wording.
-2. Documents whose tags, summary, or path match the question.
-3. Documents with current `updated` dates or body-level 기준일.
-4. Documents with exact terms from the question.
-5. Related documents linked from the strongest candidate.
-
-When a result is under `_archived/`, include it if useful but label it as archived in the answer.
-
-Limit full reads to the smallest useful set. For broad questions, return the top matches rather than every hit.
-
-## Answer Format
-
-Answer with:
-
-- direct answer or "정보 부족"
-- evidence files
-- uncertainty or stale areas
-- suggested next search/write action only when useful
-
-Example:
-
-```markdown
-확인된 내용은 ... 입니다.
-
-근거:
-- path/to/doc.md — 핵심 기준
-- path/to/related.md — 보조 맥락
-
-확인 필요:
-- ...
-```
-
-## Do Not
-
-- Do not update `index.md` or `log.jsonl` during search.
-- Do not infer missing company/project facts from general knowledge.
-- Do not cite `log.jsonl` as evidence for a fact.
-- Do not add bulk Obsidian wikilinks while answering a search question.
+Give a direct answer, cite source files/sections, and identify relevant gaps or
+staleness. Do not expose sensitive values found in snippets or documents.
+Git log/blame or legacy log.jsonl can locate the maintained document; cite that
+document for facts. Search never edits documents, index, config, or history.

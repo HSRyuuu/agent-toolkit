@@ -1,5 +1,16 @@
 # Lint Mode
 
+## Contents
+
+- Overview
+- Default Mode
+- Deterministic Checks
+- Scope and Reserved Paths
+- Checks
+- Suggested Commands
+- Report Shape
+- Do Not
+
 ## Overview
 
 Health-check a curated Markdown KB. This lint model follows a source-of-truth document workflow: frontmatter, document clarity, `index.md`, `log.jsonl`, security hygiene, and search quality are what it checks.
@@ -41,8 +52,8 @@ Never auto-fix sensitive content. Report it and ask.
 ## Deterministic Checks
 
 `kb_lint.py` reports frontmatter completeness, invalid or duplicate metadata, date
-format, title/H1 mismatch, `index.md` link targets and coverage,
-broken relative Markdown links, broken Obsidian wikilinks (filename/path
+format, optional status validity, title/H1 mismatch, `index.md` link targets and coverage,
+broken relative Markdown and asset links, broken Obsidian wikilinks (filename/path
 resolution; code blocks excluded), absolute Markdown path warnings, applicable
 history validity, and high-confidence secret candidates. Reported body line
 numbers include YAML frontmatter.
@@ -55,26 +66,36 @@ present, `3` cannot run because the frontmatter runtime is missing (follow
 runtime. Treat its output as the factual base for the report, then add the
 judgement-only findings below.
 
-## Reserved Paths Are Out of Scope
+## Scope and Reserved Paths
 
-Any document whose path has an underscore-prefixed component (`_inbox/`,
-`_archived/`, and any future `_*` area) is **not a lint target**. These are
-staging or frozen areas, not maintained source of truth, so missing frontmatter,
-depth/`read_only` violations, broken links, and index coverage are not findings
-there — for the script pass or the judgement pass.
+Run `kb_lint.py <root> --files <paths>` to check only changed existing Markdown
+files; paths must stay inside the root. Use full lint after moves/deletions,
+and for periodic or migration-batch review. `--require-status` enforces roots
+that require document status; generic legacy KBs keep it optional.
 
-The one exception is the secret scan: it still runs on reserved paths, and a
-high-confidence hit is still reported and still exits `2`.
+`_inbox/` and `_archived/` receive title/source, status/path consistency, and
+link checks. Full normal metadata is not required there. Other reserved areas
+and gitignored documents receive secret scanning only. Search/index exclusions
+must not silently disable security scans. Hidden/dependency trees and symlinks
+remain outside discovery. Secret scanning covers discovered Markdown and the
+applicable log, not every binary or non-Markdown asset.
 
-Do not offer to "clean up" reserved-path findings. If the user wants a document
-promoted out of `_inbox/`, that is a write/manage task, not lint.
+Unreadable/malformed Markdown is a `parse-error`; other files are still checked.
+Parser source lines are not echoed. A malformed document still receives a raw
+secret scan when readable. Parse failures are never a clean result.
+
+During judgement review, inspect inbox candidates for a safe source and a body
+note explaining the hold. Flag old candidates for promotion/review, not automatic
+deletion. Check archived notes link to a replacement when one exists. Check
+asset ownership and regeneration instructions in their referring document.
 
 ## Checks
 
 If a machine can decide a check reliably, keep it in `[script]`; leave only
 judgement-heavy review in `[LLM]`.
 
-All checks below apply only outside reserved paths.
+Normal-document checks below apply outside reserved paths; reserved-path checks
+follow the scope rules above.
 
 ### Metadata
 

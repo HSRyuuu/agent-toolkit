@@ -1,5 +1,21 @@
 # KB Shared Conventions
 
+## Contents
+
+- Mode Routing
+- Installation Approval
+- KB Identity
+- Uncertainty Markers
+- Root Resolution
+- Frontmatter
+- Document Status and Evidence
+- Agent Edit Mode
+- index.md
+- Documents
+- Work History
+- Security Principles
+- Do Not
+
 Single source of truth for the rules every KB skill shares: KB identity, root
 resolution, uncertainty markers, frontmatter, `agent_edit_mode`, `index.md` /
 `log.jsonl`, security principles, and the global Do-Not list.
@@ -67,8 +83,9 @@ is what lets lint and search modes find every uncertain item.
 - `추정` — estimated / inferred
 - `과거 정보` — past information, possibly stale
 
-Do not mix confirmed facts with guesses. Put currentness and uncertainty in the
-document body, never in frontmatter.
+Do not mix confirmed facts with guesses. Keep claim-level currentness, evidence,
+environment, verification dates, and uncertainty in the body. The optional
+`status` field below classifies the document, not the truth of every claim.
 
 ## Root Resolution
 
@@ -118,8 +135,9 @@ After resolving the root, always read local guidance from the resolved root
 (not only the current shell directory), in this order: `AGENTS.md`, `CLAUDE.md`,
 `.agents/rules/*.md`. Local root guidance overrides these generic conventions.
 
-Hidden files and directories are excluded from KB document discovery, indexing,
-search results, and lint input. This includes `.agents/`, `.claude/`, `.codex/`,
+Shared reads (search, recent activity, and index) exclude `_personal/`,
+gitignored Markdown, symlinks, hidden files, and dependency directories before
+parsing. Hidden files and directories are also excluded from lint input. This includes `.agents/`, `.claude/`, `.codex/`,
 `.obsidian/`, and hidden notes. Guidance files under `.agents/rules/` are read
 explicitly during orientation, not treated as KB knowledge documents.
 
@@ -142,7 +160,8 @@ source: "user-note"
 ```
 
 Required fields: `title`, `summary`, `tags`, `aliases`, `created`, `updated`.
-Optional: `source`, `agent_edit_mode`.
+Optional: `source`, `agent_edit_mode`, `status`. Local roots may require `status`
+and use `kb_lint.py --require-status` to enforce that choice.
 
 Field rules:
 
@@ -174,6 +193,24 @@ Scope:
   skill definition files, or non-Markdown files.
 - Do not add `kind: canonical`, `kind: daily-log`, or raw-source link fields
   unless the local KB already uses them intentionally.
+
+## Document Status and Evidence
+
+`status` is optional for existing KBs; use `maintained`, `draft`, or `historical`.
+`maintained` means actively maintained reference, not universally verified facts.
+Missing or invalid status is displayed as `unspecified`; lint flags invalid
+values. `_inbox/` always displays as `draft`, `_archived/` as `historical`, even
+if a conflicting explicit value is present; lint reports that conflict.
+Editing rights still come only from `agent_edit_mode`.
+
+Keep `created` on migration. Preserve `updated` on pure moves; change it for
+meaningful edits. Neither migration nor formatting refreshes a fact's verification
+date. Preserve source environment, conditions, exceptions, dates and known
+revisions in the relevant section. Do not invent missing provenance.
+
+A parse/read failure must remain visible: search and activity report partial
+results and exit 2, lint reports a value-free finding, and index generation
+stops before writing. Never paste parser exception source lines into reports.
 
 ## Agent Edit Mode
 
@@ -251,9 +288,9 @@ Default shape:
 | [Example](./example.md) | One-line summary. | `kb` | 2026-06-30 |
 ```
 
-Listing `_inbox/` and `_archived/` documents is optional. When included, keep
-them under clearly labeled sections so readers do not mistake them for
-maintained documents.
+The generator labels document status and groups explicit drafts/historical
+notes separately, with Inbox/Archived sections for reserved paths. Ordinary
+lookup does not read this catalog. It never lists private or gitignored notes.
 
 ## Work History
 

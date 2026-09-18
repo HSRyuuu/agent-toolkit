@@ -15,7 +15,10 @@ mode's reference. Maintained documents are the source-of-truth surface.
 
 ## Routing
 
-Apply the first matching route:
+Route by the requested outcome, not incidental keywords in the input.
+Analysis, improvement proposals, and setup/layout evaluations use **Manage**
+without document/config mutations unless implementation was requested.
+For other requests, apply the first matching route:
 
 1. **Write** — save, add, file, merge, append, archive, or organize knowledge;
    Korean cues include 저장, 추가, 정리, 기록, 메모, 병합, 아카이브.

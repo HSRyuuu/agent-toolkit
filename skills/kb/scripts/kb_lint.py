@@ -8,9 +8,8 @@ wikilinks, applicable history validity, and high-confidence secret patterns.
 Judgement checks (duplicate topics, conflicting claims, split candidates) stay
 with the kb skill's lint workflow.
 
-Underscore-prefixed paths (_inbox/, _archived/, ...) are reserved staging or
-frozen areas and are exempt from every structural check; only the secret scan
-still runs on them.
+Inbox and archive documents receive minimal metadata/status and link checks.
+Other reserved paths retain secret scanning without normal document checks.
 
 Exit codes:
     0  no findings
@@ -32,7 +31,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import unquote
 
-from kb_frontmatter import IGNORED_DIRS, KbDoc, coerce_list, load_docs, normalize_date  # noqa: E402
+from kb_frontmatter import (KbDoc, coerce_list, load_docs, normalize_date,
+                            iter_files, git_ignored, VALID_STATUSES, is_knowledge_doc)  # noqa: E402
 
 REQUIRED_FIELDS = ("title", "summary", "tags", "aliases", "created", "updated")
 # aliases may be an empty list by design; only its absence is a finding.
@@ -83,8 +83,8 @@ def check_frontmatter(doc: KbDoc) -> list[Finding]:
             out.append(Finding("error", "empty-field", doc.relpath, None, f"empty `{field}`"))
 
     mode = meta.get("agent_edit_mode")
-    if mode is not None and mode not in VALID_MODES:
-        out.append(Finding("error", "invalid-edit-mode", doc.relpath, None, f"invalid agent_edit_mode: {mode}"))
+    if mode is not None and (not isinstance(mode, str) or mode not in VALID_MODES):
+        out.append(Finding("error", "invalid-edit-mode", doc.relpath, None, "invalid agent_edit_mode"))
 
     aliases = coerce_list(meta.get("aliases"))
     seen_aliases: set[str] = set()
@@ -113,6 +113,19 @@ def check_frontmatter(doc: KbDoc) -> list[Finding]:
 def is_reserved_path(relpath: str) -> bool:
     """Reserved area: any path component starting with `_` (_inbox/, _archived/, ...)."""
     return any(part.startswith("_") for part in relpath.split("/"))
+
+
+def check_status(doc: KbDoc, require_status: bool = False) -> list[Finding]:
+    status = doc.metadata.get("status")
+    out = []
+    if status is None and require_status:
+        out.append(Finding("error", "missing-status", doc.relpath, None, "missing `status`"))
+    elif status is not None and (not isinstance(status, str) or status not in VALID_STATUSES):
+        out.append(Finding("error", "invalid-status", doc.relpath, None, "expected maintained, draft, or historical"))
+    expected = {"_inbox": "draft", "_archived": "historical"}.get(doc.relpath.split("/", 1)[0])
+    if expected and status is not None and status != expected:
+        out.append(Finding("error", "status-path-conflict", doc.relpath, None, f"path requires {expected}"))
+    return out
 
 
 def normalize_link_target(target: str, allowed_exts: tuple[str, ...]) -> str | None:
@@ -204,9 +217,15 @@ def index_link_targets(root: Path, text: str) -> tuple[set[str], list[Finding]]:
 def check_links(root: Path, doc: KbDoc) -> list[Finding]:
     out: list[Finding] = []
     base = (root / doc.relpath).parent
+    in_fence = False
     for lineno, line in enumerate(doc.content.splitlines(), 1):
-        for raw_target in LINK_RE.findall(line):
-            path_part = normalize_link_target(raw_target, (".md", ".markdown"))
+        if FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        for raw_target in LINK_RE.findall(INLINE_CODE_RE.sub("", line)):
+            path_part = normalize_link_target(raw_target, ("",))
             if path_part is None:
                 continue
             file_lineno = doc.content_line_offset + lineno
@@ -226,12 +245,7 @@ def build_wikilink_index(root: Path) -> set[str]:
     vault-relative path (extension optional for Markdown, required otherwise).
     """
     keys: set[str] = set()
-    for path in root.rglob("*"):
-        if not path.is_file():
-            continue
-        rel_parts = path.relative_to(root).parts
-        if any(part.startswith(".") or part in IGNORED_DIRS for part in rel_parts):
-            continue
+    for path in iter_files(root):
         rel_posix = unicodedata.normalize("NFC", path.relative_to(root).as_posix())
         name = unicodedata.normalize("NFC", path.name)
         keys.add(rel_posix.casefold())
@@ -325,45 +339,65 @@ def check_log(root: Path) -> list[Finding]:
     return out
 
 
-def check_index(root: Path) -> list[Finding]:
+def read_index(root: Path) -> tuple[str | None, list[Finding]]:
     index_path = root / "index.md"
+    if index_path.is_symlink():
+        return None, [Finding("error", "index-symlink", "index.md", None, "refusing symlink index")]
     if not index_path.exists():
-        return []
-    text = index_path.read_text(encoding="utf-8")
-    _, findings = index_link_targets(root, text)
-    return findings
+        return None, []
+    try:
+        return index_path.read_text(encoding="utf-8"), []
+    except (OSError, UnicodeError):
+        return None, [Finding("error", "parse-error", "index.md", None, "cannot read index (source omitted)")]
 
 
-def collect(root: Path) -> list[Finding]:
+def collect(root: Path, files: set[str] | None = None, require_status: bool = False) -> list[Finding]:
     findings: list[Finding] = []
-    docs = load_docs(root)
-    listed = {doc.relpath for doc in docs}
+    errors: list[str] = []
+    docs = load_docs(root, shared=False, errors=errors, files=files)
+    ignored = git_ignored(root, [d.path for d in docs])
     wikilink_keys = build_wikilink_index(root)
+    for path in errors:
+        findings.append(Finding("error", "parse-error", path, None, "cannot read/parse Markdown (source omitted)"))
+        try:
+            findings += scan_secrets_in_text(path, (root / path).read_text(encoding="utf-8", errors="replace"))
+        except OSError:
+            pass
 
     for doc in docs:
         raw = doc.path.read_text(encoding="utf-8")
-        if is_reserved_path(doc.relpath):
-            findings += scan_secrets_in_text(doc.relpath, raw)
+        findings += scan_secrets_in_text(doc.relpath, raw)
+        top = doc.relpath.split("/", 1)[0]
+        if doc.relpath in ignored or (is_reserved_path(doc.relpath) and top not in {"_inbox", "_archived"}):
             continue
         is_entrypoint = doc.path.name.lower() in ENTRYPOINT_NAMES
         if not is_entrypoint:
-            findings += check_frontmatter(doc)
+            findings += check_status(doc, require_status)
+            if top in {"_inbox", "_archived"}:
+                for field in ("title", "source"):
+                    if not doc.metadata.get(field):
+                        findings.append(Finding("warn", "reserved-missing-field", doc.relpath, None, f"missing `{field}`"))
+            else:
+                findings += check_frontmatter(doc)
         # index.md links are validated by check_index; avoid double-reporting.
         if doc.relpath != "index.md":
             findings += check_links(root, doc)
         findings += check_wikilinks(doc, wikilink_keys)
-        findings += scan_secrets_in_text(doc.relpath, raw)
 
-    findings += check_index(root)
-    findings += check_log(root)
+    index_text, index_errors = read_index(root)
+    findings += [f for f in index_errors if f.path not in errors]
+    indexed: set[str] = set()
+    if index_text is not None:
+        indexed, index_findings = index_link_targets(root, index_text)
+        if files is None or "index.md" in files:
+            findings += index_findings
+    if files is None:
+        findings += check_log(root)
 
     # index coverage: catalog docs not linked from index.md
-    index_path = root / "index.md"
-    if index_path.exists():
-        index_text = index_path.read_text(encoding="utf-8")
-        indexed, _ = index_link_targets(root, index_text)
+    if index_text is not None:
         for doc in docs:
-            if is_reserved_path(doc.relpath) or doc.path.name.lower() in ENTRYPOINT_NAMES:
+            if is_reserved_path(doc.relpath) or not is_knowledge_doc(doc) or doc.relpath in ignored:
                 continue
             if unicodedata.normalize("NFC", doc.relpath) not in indexed:
                 findings.append(Finding("warn", "index-missing-entry", doc.relpath, None, "not listed in index.md"))
@@ -387,10 +421,25 @@ def report(findings: list[Finding], root: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Deterministic KB lint checks.")
     parser.add_argument("root", nargs="?", default=".", help="KB root directory")
+    parser.add_argument("--files", nargs="+", help="only these Markdown paths, relative to root")
+    parser.add_argument("--require-status", action="store_true", help="require status for this KB's documents")
     args = parser.parse_args()
 
     root = Path(args.root).expanduser().resolve()
-    findings = collect(root)
+    files = None
+    if args.files:
+        files = set()
+        for name in args.files:
+            path = root / name
+            if Path(name).is_absolute() or not path.resolve().is_relative_to(root) or path.is_symlink():
+                parser.error("--files must stay inside the KB root")
+            if not path.is_file() or path.suffix.lower() not in {".md", ".markdown"}:
+                parser.error("--files must name existing Markdown files; use full lint after moves/deletions")
+            relpath = path.resolve().relative_to(root).as_posix()
+            if any(p.startswith(".") or p == "node_modules" for p in Path(relpath).parts):
+                parser.error("--files cannot select hidden or dependency paths")
+            files.add(relpath)
+    findings = collect(root, files, args.require_status)
     report(findings, root)
 
     if any(f.level == "high" for f in findings):

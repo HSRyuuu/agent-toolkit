@@ -201,7 +201,7 @@ def case_archived_not_in_index_has_no_coverage_warn() -> bool:
         root,
         "_archived/old.md",
         title="Old",
-        extra_frontmatter="agent_edit_mode: read_only\n",
+        extra_frontmatter="agent_edit_mode: read_only\nsource: user-note\n",
     )
     write_index(root, ["alpha.md"])
     result = run_lint(root)
@@ -212,11 +212,11 @@ def case_archived_not_in_index_has_no_coverage_warn() -> bool:
     )
 
 
-def case_reserved_paths_skip_structural_checks() -> bool:
+def case_reserved_paths_check_minimum_and_secrets() -> bool:
     root = new_kb()
     write_doc(root, "alpha.md", title="Alpha")
     write_index(root, ["alpha.md"])
-    # no frontmatter, nested deep, broken link, not read_only — all exempt
+    # Inbox/archive need minimum metadata and working links, not all normal fields.
     for relpath in ("_inbox/batch-01/raw.md", "_archived/personal/deep/note.md"):
         path = root / relpath
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -226,8 +226,10 @@ def case_reserved_paths_skip_structural_checks() -> bool:
     (root / "_inbox/leak.md").write_text("key: AKIA" + "1234567890ABCDEF\n", encoding="utf-8")
     leaky = run_lint(root)
     return check(
-        "reserved underscore paths skip structural checks but keep secret scan",
-        clean.returncode == 0 and leaky.returncode == 2 and "[secret:aws-access-key-id] _inbox/leak.md" in leaky.stdout,
+        "reserved paths check minimum metadata and links and keep secret scan",
+        clean.returncode == 1 and "[reserved-missing-field]" in clean.stdout
+        and "[broken-link]" in clean.stdout and "[missing-field]" not in clean.stdout
+        and leaky.returncode == 2 and "[secret:aws-access-key-id] _inbox/leak.md" in leaky.stdout,
         f"clean={clean.returncode} leaky={leaky.returncode}\n{clean.stdout}",
     )
 
@@ -447,7 +449,7 @@ def main() -> int:
         case_nfd_filename_matches_nfc_link,
         case_index_coverage_exact_match,
         case_archived_not_in_index_has_no_coverage_warn,
-        case_reserved_paths_skip_structural_checks,
+        case_reserved_paths_check_minimum_and_secrets,
         case_absolute_path_link_warns,
         case_password_placeholders_not_detected,
         case_password_values_detected,

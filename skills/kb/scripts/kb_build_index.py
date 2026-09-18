@@ -19,53 +19,19 @@ Uses the frontmatter loader bundled with the unified kb skill.
 from __future__ import annotations
 
 import argparse
-import subprocess
 import sys
 from pathlib import Path
 
-from kb_frontmatter import KbDoc, coerce_list, load_docs, normalize_date  # noqa: E402
+from kb_frontmatter import KbDoc, coerce_list, load_docs, normalize_date, document_status, is_knowledge_doc  # noqa: E402
 
 START = "<!-- kb:documents:start -->"
 END = "<!-- kb:documents:end -->"
 
-# Root entrypoints and folder notes never belong in the document catalog.
-SKIP_NAMES = {"index.md", "readme.md", "agents.md", "claude.md"}
-
-
 def is_catalog_doc(doc: KbDoc) -> bool:
-    if doc.path.name.lower() in SKIP_NAMES:
+    if not is_knowledge_doc(doc):
         return False
     # A catalog entry needs at least a title or summary to be meaningful.
     return bool(doc.metadata.get("title") or doc.metadata.get("summary"))
-
-
-def git_ignored(root: Path, docs: list[KbDoc]) -> set[str]:
-    """Relpaths that git ignores, so the catalog never links to uncommitted files.
-
-    A git-ignored document (e.g. a private `_personal/` area) is deliberately not
-    part of the shared KB: listing it would publish a link nobody else can follow.
-    Returns an empty set when the KB is not a git repo or git is unavailable, so a
-    non-git KB keeps working unchanged.
-    """
-    if not docs:
-        return set()
-    try:
-        proc = subprocess.run(
-            # core.quotePath=false keeps non-ASCII paths (e.g. Korean filenames)
-            # readable instead of octal-escaped, so they match relpath.
-            ["git", "-c", "core.quotePath=false", "-C", str(root), "check-ignore", "--stdin"],
-            input="\n".join(d.relpath for d in docs),
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return set()
-    # 0 = some paths ignored, 1 = none ignored; anything else (128 = not a repo)
-    # means we cannot tell, so ignore nothing.
-    if proc.returncode not in (0, 1):
-        return set()
-    return {line.strip() for line in proc.stdout.splitlines() if line.strip()}
 
 
 def bucket(doc: KbDoc) -> str:
@@ -74,7 +40,7 @@ def bucket(doc: KbDoc) -> str:
         return "archived"
     if top == "_inbox":
         return "inbox"
-    return "documents"
+    return {"draft": "drafts", "historical": "historical"}.get(document_status(doc), "documents")
 
 
 def cell(value: str) -> str:
@@ -86,26 +52,27 @@ def row(doc: KbDoc) -> str:
     summary = cell(str(doc.metadata.get("summary") or ""))
     tags = " ".join(f"`{cell(t)}`" for t in coerce_list(doc.metadata.get("tags")))
     updated = normalize_date(doc.metadata.get("updated")) or "-"
-    return f"| [{title}](./{doc.relpath}) | {summary} | {tags} | {updated} |"
+    return f"| [{title}](./{doc.relpath}) | {summary} | {tags} | {updated} | {document_status(doc)} |"
 
 
 def table(docs: list[KbDoc]) -> str:
-    header = "| Document | Summary | Tags | Updated |\n|---|---|---|---|"
+    header = "| Document | Summary | Tags | Updated | Status |\n|---|---|---|---|---|"
     if not docs:
-        return header + "\n| _(none)_ | | | |"
+        return header + "\n| _(none)_ | | | | |"
     body = "\n".join(row(d) for d in sorted(docs, key=lambda d: d.relpath))
     return header + "\n" + body
 
 
 def build_block(root: Path) -> str:
     docs = [d for d in load_docs(root) if is_catalog_doc(d)]
-    ignored = git_ignored(root, docs)
-    docs = [d for d in docs if d.relpath not in ignored]
-    buckets: dict[str, list[KbDoc]] = {"documents": [], "inbox": [], "archived": []}
+    buckets: dict[str, list[KbDoc]] = {"documents": [], "drafts": [], "historical": [], "inbox": [], "archived": []}
     for doc in docs:
         buckets[bucket(doc)].append(doc)
 
     parts = ["## Documents", "", table(buckets["documents"]), ""]
+    for key, title in (("drafts", "Drafts"), ("historical", "Historical")):
+        if buckets[key]:
+            parts += [f"## {title}", "", table(buckets[key]), ""]
     if buckets["inbox"]:
         parts += ["## Inbox", "", table(buckets["inbox"]), ""]
     if buckets["archived"]:
@@ -150,7 +117,14 @@ def main() -> int:
 
     root = Path(args.root).expanduser().resolve()
     index_path = root / "index.md"
-    existing = index_path.read_text(encoding="utf-8") if index_path.exists() else None
+    if index_path.is_symlink():
+        print("Refusing symlink index.md", file=sys.stderr)
+        return 2
+    try:
+        existing = index_path.read_text(encoding="utf-8") if index_path.exists() else None
+    except (OSError, UnicodeError):
+        print("Cannot read index.md (source omitted)", file=sys.stderr)
+        return 2
 
     block = build_block(root)
     result = splice(existing, block)

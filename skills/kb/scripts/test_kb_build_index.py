@@ -78,16 +78,16 @@ def case_git_ignored_doc_is_excluded() -> bool:
         return ok
 
 
-def case_non_git_kb_still_lists_everything() -> bool:
-    """Without a git repo the filter must not drop anything."""
+def case_non_git_kb_excludes_private() -> bool:
+    """Private scope exclusion must not depend on git being installed."""
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         write_doc(root, "dev/public-doc.md")
         write_doc(root, "_personal/private-doc.md")
 
         out = build(root)
-        ok = "public-doc.md" in out and "private-doc.md" in out
-        print(f"non_git_kb_still_lists_everything: {'PASS' if ok else 'FAIL'}")
+        ok = "public-doc.md" in out and "private-doc.md" not in out
+        print(f"non_git_kb_excludes_private: {'PASS' if ok else 'FAIL'}")
         if not ok:
             print(out)
         return ok
@@ -111,7 +111,7 @@ def case_readme_is_never_catalogued() -> bool:
 def main() -> int:
     cases = [
         case_git_ignored_doc_is_excluded,
-        case_non_git_kb_still_lists_everything,
+        case_non_git_kb_excludes_private,
         case_readme_is_never_catalogued,
     ]
     results = [case() for case in cases]
