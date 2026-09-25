@@ -4,7 +4,7 @@
 
 ## Controller
 
-입력과 응답만 연결한다. 서비스 결과를 지역변수로 받은 뒤 응답을 만든다.
+입력과 응답만 연결한다. 서비스 결과를 그대로 응답에 싣는 한 줄은 지역변수로 쪼개지 않는다.
 
 ```java
 @RestController
@@ -15,14 +15,12 @@ public class OrderController {
 
     @GetMapping("/{id}")
     public ResponseEntity<OrderDto.Response> getOrder(@PathVariable long id) {
-        OrderDto.Response order = orderService.findById(id);
-        return ResponseEntity.ok(order);
+        return ResponseEntity.ok(orderService.findById(id));
     }
 
     @PostMapping
     public ResponseEntity<OrderDto.Response> createOrder(@Valid @RequestBody OrderDto.Request request) {
-        OrderDto.Response created = orderService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.create(request));
     }
 }
 ```
@@ -46,8 +44,7 @@ public class OrderService {
 
     @Transactional
     public OrderDto.Response create(OrderDto.Request request) {
-        OrderEntity order = request.toEntity();
-        OrderEntity saved = orderRepository.save(order);
+        OrderEntity saved = orderRepository.save(request.toEntity());
         return OrderDto.Response.fromEntity(saved);
     }
 }
@@ -75,15 +72,11 @@ public class OrderDto {
                            String productCode,
                            int quantity,
                            OrderStatus status) {
-        public Response(OrderEntity entity) {
-            this(entity.getId(),
+        public static Response fromEntity(OrderEntity entity) {
+            return new Response(entity.getId(),
                     entity.getProductCode(),
                     entity.getQuantity(),
                     entity.getStatus());
-        }
-
-        public static Response fromEntity(OrderEntity entity) {
-            return new Response(entity);
         }
     }
 }
