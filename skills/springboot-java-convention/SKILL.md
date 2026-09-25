@@ -91,7 +91,13 @@ return queryFactory.selectOne().from(orderEntity)...fetchFirst() != null;
 
 ## 데이터 객체와 매핑
 
-- 고정 필드 DTO·조회 결과·스냅샷은 **record를 우선**한다. 상태 변경, 표현 은닉, 프레임워크 제약(JPA Entity 등)이 있을 때만 클래스를 쓴다.
+- 필드가 적고 고정된 전달 값·조회 결과·스냅샷은 record가 기본이다.
+- 필요하면 일반 클래스 DTO를 쓴다. 다음 경우엔 클래스가 더 읽기 좋다.
+  - 필드가 많고 선택값이 섞여 생성 시 `@Builder`가 읽기 쉬운 경우
+  - `@ModelAttribute` 바인딩이나 `Projections.bean`처럼 기본 생성자·setter가 필요한 경우
+  - 값을 단계적으로 채우거나 공통 상위 응답을 상속하는 경우
+- 클래스 DTO는 `@Getter` + `@NoArgsConstructor(access = PROTECTED)`를 기본으로 하고, setter는 바인딩에 필요할 때만 연다.
+- 프로젝트가 이미 클래스 DTO를 쓰고 있으면 그 관례를 따르고, 한 기능 안에서 record와 클래스를 섞지 않는다.
 - record 선언이 한 줄에 들어가면 한 줄로 쓴다. 길면 컴포넌트를 한 줄에 하나씩 쓴다. 첫 컴포넌트는 `(` 바로 뒤에 두고, 다음 컴포넌트를 첫 컴포넌트 시작 열에 맞춘 뒤, 마지막 컴포넌트 뒤에 `) {`를 둔다. 어노테이션이 붙은 컴포넌트도 같다.
 - 메서드 내부 결과 두세 값을 묶는 타입은 private record로 충분하다. 한 기능 전용 조회 모델이 여러 개면 `<기능>/model` 패키지의 독립 record로 뺀다.
 - Entity → DTO 매핑은 DTO 쪽에 둔다. entity를 받는 생성자에 필드 매핑을 두고, `fromEntity(entity)` 정적 팩터리가 그 생성자를 재사용한다. `Optional.map(OrderDto::fromEntity)`처럼 메서드 참조로 쓴다.
