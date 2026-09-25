@@ -7,328 +7,206 @@ metadata:
   origin: ECC
 ---
 
-# Java 코딩 표준 (Java Coding Standards)
-
-Spring Boot 서비스에서 읽기 쉽고 유지보수가 용이한 Java 코드를 작성하기 위한 표준입니다.
+# Java 코딩 컨벤션
 
 ## 우선순위
 
-1. **프로젝트 규칙이 있으면 그것이 우선합니다.** `AGENTS.md`·`CLAUDE.md`·프로젝트 스킬·기존 코드 관례가 이 스킬과 다르면 프로젝트 쪽을 따릅니다.
-2. **프로젝트가 정하지 않은 부분은 이 스킬이 기준입니다.** 모델의 기본 습관보다 이 스킬을 먼저 따릅니다.
+1. **프로젝트 규칙이 있으면 그것이 우선한다.** `AGENTS.md`·`CLAUDE.md`·프로젝트 스킬·기존 코드 관례가 이 스킬과 다르면 프로젝트 쪽을 따른다.
+2. **프로젝트가 정하지 않은 부분은 이 스킬이 기준이다.** 모델의 기본 습관보다 이 스킬을 먼저 따른다.
 
 ## 핵심 원칙
 
-- **사람이 읽을 때의 가독성이 가장 먼저입니다.** 짧은 코드·영리한 코드·미세한 성능보다 앞섭니다. 판단이 갈리면 처음 보는 사람이 위에서 아래로 한 번에 읽을 수 있는 쪽을 고릅니다.
-- 기본적으로 불변(Immutable) 상태를 지향하며, 공유되는 가변 상태를 최소화합니다.
-- 의미 있는 예외를 통해 최대한 빨리 실패(Fail-fast)하도록 합니다.
-- 일관된 명명 규칙과 패키지 구조를 유지합니다.
-- 조회 → 검증 → 분기 → 실행 → 결과가 위에서 아래로 읽히게 씁니다. 메서드를 나누는 기준은 아래 **메서드 분리** 절을 따릅니다.
-- 리팩터링은 관찰 가능한 계약(호출 순서, 트랜잭션 전파, 응답 코드, 직렬화 형태, 실패 전파)을 보존합니다.
+- **사람이 위에서 아래로 한 번에 읽을 수 있는 코드가 가장 먼저다.** 코드가 몇 줄 길어지더라도 짧은 코드·영리한 코드·미세한 성능보다 앞선다.
+- 조회 → 검증 → 분기 → 실행 → 결과가 위에서 아래로 읽히게 쓴다.
+- 리팩터링은 관찰 가능한 계약(호출 순서, 트랜잭션 전파, 응답 코드, 직렬화 형태, 재시작 식별자, 실패 전파)을 보존한다. 구조를 단순화해도 비동기 완료 확인이나 통합 롤백을 제거하지 않는다.
 
----
+## 메서드 분리와 지역변수
 
-## 명명 규칙 (Naming)
+public 메서드는 **목차**, private 메서드는 **각 장**으로 쓴다.
 
-```java
-// 클래스/Record: PascalCase
-public class MarketService {}
-public record Money(BigDecimal amount, Currency currency) {}
-
-// 메서드/필드: camelCase
-private final MarketRepository marketRepository;
-public Market findBySlug(String slug) {}
-
-// 상수: UPPER_SNAKE_CASE
-private static final int MAX_PAGE_SIZE = 100;
-
-// 약어(Acronym)는 일반 단어처럼 처리
-XmlHttpRequest, newCustomerId, supportsIpv6OnIos
-// Bad: XMLHTTPRequest, newCustomerID, supportsIPv6OnIOS
-```
-
-- 이름에 업무 대상·수행 동작·실제 결과를 담습니다. `claim`보다 `claimRun`, JSON을 반환하면 `serializeSnapshot`처럼 전체 의미를 드러냅니다.
-- DB·API와 같은 개념에는 같은 용어를 씁니다. `key`와 `code`처럼 서로 다른 의미를 섞지 않되, 모든 내부 이름을 컬럼명에 기계적으로 맞추지는 않습니다.
-
-## 메서드 분리 (Method Composition)
-
-public 메서드는 결과의 각 부분을 지역변수로 받아 조립만 하고, 각 부분의 규칙은 그 부분 이름의 private 메서드에 둡니다.
-**메서드나 클래스를 새로 작성하기 전에 항상** `references/method-composition.md`를 읽습니다.
-
-## 불변성 및 엔티티 상태 (Immutability & State)
-
-- 고정 필드 DTO·조회 결과·스냅샷은 **record를 우선**합니다. 상태 변경, 표현 은닉, 프레임워크 제약(JPA Entity 등)이 있을 때만 클래스를 씁니다.
-- 짧은 record는 한 줄로, 여러 줄이면 컴포넌트를 한 줄에 하나씩 씁니다. 첫 컴포넌트는 `(` 바로 뒤에 두고 다음 컴포넌트를 첫 컴포넌트 시작 열에 맞춘 뒤, 마지막 컴포넌트 뒤에 `) {`를 둡니다.
-- 메서드 내부 결과 두세 값을 묶는 타입은 private record로 충분합니다. 기능 전용 조회 모델이 여러 개일 때만 독립 record로 승격합니다.
+- public 메서드는 결과의 각 부분을 이름 있는 지역변수로 받고, 마지막 줄에서 조립만 한다. 생성자·팩터리·다른 호출의 인자 안에서 계산하지 않는다.
+- 각 부분의 규칙(분기·기본값·포맷·문자열 조립)은 그 부분 이름의 private 메서드 하나에 둔다. 이름은 만들어지는 값이다(`pushTitle`, `pushBody`). 조립 메서드에 삼항·문자열 연결이 섞이지 않게 한다.
+- 긴 독립 분기는 같은 클래스의 private 메서드로 뺀다(`restartFailedRun`). 같은 객체 생성이 두 분기에 반복되면 그것도 private 메서드 하나로 모은다.
+- **체인이나 조회의 실행 결과는 지역변수로 받은 뒤 다음 문장에서 가공한다.** `Optional.ofNullable(...)`·`Set.copyOf(...)`·`!= null` 비교처럼 짧은 후처리도 체인 바깥에서 한다.
+- **인자로 넘길 값이 계산식이면 먼저 이름을 붙인다.** 조건식(`BooleanExpression predicate`), 구간(`TimeRange conversionRange`), 수정 쿼리(`JPAUpdateClause query`)를 지역변수로 만든 뒤 넘긴다.
+- 기계적으로 감싸지는 않는다. 이미 있는 메서드를 한 번 단순 호출하는 것, 이미 분리된 상수, projection 결과를 그대로 반환하는 것은 변수나 private 래퍼로 한 번 더 감싸지 않는다.
+- 여러 부분이 쓰는 범용 헬퍼(`prefixed(prefix, separator, text)` 같은)를 먼저 만들지 않는다. 부분마다 규칙을 그 자리에 풀어 쓴다 — 읽는 사람이 헬퍼 인자 순서를 해독하지 않아도 된다.
+- 데이터를 꺼내는 방법은 데이터를 가진 타입의 메서드로 둔다(`message.param(key)`). 인터페이스 static 메서드나 util 클래스에 `text(params, key)`처럼 두지 않는다.
+- 인터페이스에는 구현체가 지킬 계약만 둔다. static·default 유틸 메서드를 두지 않는다.
+- 같은 클래스의 메서드, 특히 private 메서드를 호출할 때는 `this.`를 붙인다. 호출하는 자리에서 이 클래스 안의 규칙이라는 것이 바로 보인다.
 
 ```java
-// 불변 DTO는 Record와 final 필드를 선호합니다.
-public record MarketDto(Long id, String name, MarketStatus status) {}
+@Override
+public PushContent push(Order order) {
+    String title = this.pushTitle(order);
+    String body = this.pushBody(order);
+    String deepLink = this.deepLink(order);
 
-// 여러 줄 record 포매팅
-public record MarketSummary(Long id,
-                            String name,
-                            MarketStatus status,
-                            LocalDateTime closedAt) {
+    return new PushContent(title, body, deepLink);
 }
 
-public class Market {
-  private final Long id;
-  private String name;
-  private MarketStatus status;
-  
-  // setter를 무분별하게 만들지 않고, 도메인의 행위와 의도를 나타내는 비즈니스 메서드를 제공합니다.
-  public void activate() {
-      this.status = MarketStatus.ACTIVE;
-  }
-  
-  public void close(String reason) {
-      this.status = MarketStatus.CLOSED;
-      // 관련된 비즈니스 로직 처리...
-  }
+private String pushTitle(Order order) {
+    String storeName = order.param("storeName");
+    return storeName.isEmpty() ? PUSH_TITLE : storeName + ", " + PUSH_TITLE;
 }
+
+// Bad: 조립 자리에서 계산하고, 범용 헬퍼 인자로 규칙을 숨긴다
+return new PushContent(
+        prefixed(text(order.params(), "storeName"), ", ", PUSH_TITLE),
+        prefixed(order.periodText(), " · ", PUSH_BODY),
+        deepLink(order));
 ```
 
-### JPA 엔티티 작성 시 Lombok 안티패턴 엄격 금지
-- `@Data`는 엔티티 클래스에 절대 사용하지 않습니다.
-- `@ToString` 사용 시 연관관계 필드로 인한 무한 루프나 지연 로딩(LazyLoading) 폭발 방지를 위해 `@ToString(exclude = "연관관계필드")`를 강제합니다.
-- `@EqualsAndHashCode`는 JPA 프록시 특성을 무시하므로, 비즈니스 키(Business Key)를 통해서만 재정의합니다.
-
-## Optional 사용
-
-- **클래스 필드나 메서드 파라미터로는 절대 `Optional`을 사용하지 않습니다.** 직렬화(Serializable)가 되지 않으며, 불필요한 객체 래핑 비용이 발생합니다.
-
 ```java
-// find* 메서드에서는 Optional을 반환합니다.
-Optional<Market> market = marketRepository.findBySlug(slug);
+// 조회 결과를 받은 뒤 가공한다
+Integer activeRun = queryFactory
+        .selectOne()
+        .from(orderEntity)
+        .where(orderEntity.status.in(ACTIVE_STATUSES))
+        .fetchFirst();
+return activeRun != null;
 
-// 반환된 Optional은 get() 대신 map/flatMap을 사용합니다.
-return market
-    .map(MarketResponse::from)
-    .orElseThrow(() -> new MarketException(MarketErrorCode.MARKET_NOT_FOUND, slug));
+// Bad: 체인 끝에서 바로 비교한다
+return queryFactory.selectOne().from(orderEntity)...fetchFirst() != null;
 ```
 
-## 스트림 (Streams)
+## 이름
+
+- 이름에 업무 대상·수행 동작·실제 결과를 담는다. 짧은 일반어보다 전체 의미가 드러나는 쪽을 고른다.
+
+| 대신 | 쓴다 | 이유 |
+|------|------|------|
+| `claim()`, `Claim` | `claimRun()`, `ClaimedRun` | 무엇을 선점했는지 |
+| `rejected` | `markedFailed` | boolean은 실제로 일어난 일 |
+| `currentSnapshot()` | `serializeCurrentSnapshot()` | JSON 문자열을 만든다 |
+| `previous` | `restartParameters` | fallback 값까지 담는다 |
+| `previousOccurrence()` | `firstRunBoundary()` | lookback 경계도 반환한다 |
+| `campaignClaimTransactionTemplate` | `runClaimTransaction` | 기술 타입 접미사보다 업무 역할 |
+| `ConsentWriter` | `ChannelWriter` | 이 단계의 산출물은 채널 |
+
+- DB·API와 같은 개념에는 같은 용어를 쓴다. `key`와 `code`, 동의 여부와 도달 수단처럼 서로 다른 의미를 섞지 않는다. 다만 모든 내부 이름을 컬럼명에 기계적으로 맞추지는 않는다.
+- 약어는 일반 단어처럼 쓴다: `XmlHttpRequest`, `newCustomerId`.
+- `UPPER_SNAKE_CASE`는 값 상수에만 쓴다. `static final ObjectMapper objectMapper`처럼 상태나 동작을 가진 객체는 camelCase로 쓴다.
+- 코드에 흩어진 식별 문자열(`"ORDER_PAID"`)은 enum으로 모으고 `OrderCode.ORDER_PAID.name()`으로 참조한다.
+
+## 데이터 객체와 매핑
+
+- 고정 필드 DTO·조회 결과·스냅샷은 **record를 우선**한다. 상태 변경, 표현 은닉, 프레임워크 제약(JPA Entity 등)이 있을 때만 클래스를 쓴다.
+- record 선언이 한 줄에 들어가면 한 줄로 쓴다. 길면 컴포넌트를 한 줄에 하나씩 쓴다. 첫 컴포넌트는 `(` 바로 뒤에 두고, 다음 컴포넌트를 첫 컴포넌트 시작 열에 맞춘 뒤, 마지막 컴포넌트 뒤에 `) {`를 둔다. 어노테이션이 붙은 컴포넌트도 같다.
+- 메서드 내부 결과 두세 값을 묶는 타입은 private record로 충분하다. 한 기능 전용 조회 모델이 여러 개면 `<기능>/model` 패키지의 독립 record로 뺀다.
+- Entity → DTO 매핑은 DTO 쪽에 둔다. entity를 받는 생성자에 필드 매핑을 두고, `fromEntity(entity)` 정적 팩터리가 그 생성자를 재사용한다. `Optional.map(OrderDto::fromEntity)`처럼 메서드 참조로 쓴다.
+- Repository에 `toModel`/`toDto` 필드 매핑을 남기지 않는다. 여러 소스를 합치거나 변환에 정책이 섞일 때만 `Mapper`/`Assembler`로 분리한다.
+- 정적 팩터리는 생성 의미가 이름으로 더 분명해질 때만 쓴다. 값 조합은 `of(...)`, 엔티티 변환은 `fromEntity(...)`로 쓰고, 모든 생성자마다 `of`를 덧붙이지 않는다.
+- 공통 검증과 방어 복사는 생성자(compact constructor)에 둔다. 팩터리를 거치지 않는 생성에도 불변식이 적용되어야 한다.
+- API 한 기능의 요청·응답은 `<기능>Dto.Request`·`<기능>Dto.Response`로 묶는 것을 우선한다. 프로젝트가 이미 개별 탑레벨 타입(`CreateOrderRequest`)을 쓰면 그쪽을 따르고, 한 프로젝트 안에서 섞지 않는다.
 
 ```java
-// 변환 작업에 스트림을 사용하고, 파이프라인은 짧게 유지합니다.
-List<String> names = markets.stream()
-    .map(Market::name)
-    .filter(Objects::nonNull)
-    .toList();
+public record OrderSummary(long id,
+                           String status,
+                           LocalDateTime createdAt) {
+    public OrderSummary(OrderEntity entity) {
+        this(entity.getId(),
+                entity.getStatus(),
+                entity.getCreatedAt());
+    }
 
-// 복잡하고 중첩된 스트림은 피하세요. 명확성을 위해 루프가 나을 수 있습니다.
-```
-
-## 예외 처리 (Exceptions)
-
-- 도메인 에러에는 Unchecked Exception을 사용하고, 기술적인 예외는 컨텍스트를 포함하여 래핑합니다.
-- 같은 도메인의 오류는 **도메인 예외 하나 + `ErrorCode` enum**으로 모읍니다. 사례마다 예외 하위 클래스를 만들지 않습니다.
-- HTTP 상태와 응답 문구는 `ErrorCode` 한 곳에 두고, `@RestControllerAdvice` 핸들러는 응답 변환만 담당합니다.
-- 프로그래밍 오류(`IllegalArgumentException`, `IllegalStateException` 등)는 표준 예외를 유지합니다.
-- 오류 코드 문자열이 외부로 나가면 enum 상수 이름 변경도 계약 변경입니다.
-- 중앙에서 다시 던지거나 로깅하는 경우가 아니라면 광범위한 `catch (Exception ex)`는 피합니다.
-
-```java
-throw new MarketException(MarketErrorCode.MARKET_NOT_FOUND, slug);
-```
-
-전체 구성은 `references/spring-boot-patterns.md`의 예외 처리 절을 참조하세요.
-
-## 제네릭 및 타입 안정성 (Generics)
-
-- Raw 타입을 피하고 제네릭 파라미터를 선언합니다.
-- 재사용 가능한 유틸리티에는 경계가 있는 제네릭(Bounded Generics)을 선호합니다.
-
-```java
-public <T extends Identifiable> Map<Long, T> indexById(Collection<T> items) { ... }
-```
-
----
-
-## 매핑 · 계층 · Lombok 패턴
-
-### Entity ↔ DTO 매핑 위치
-
-- 기본은 **DTO 쪽 정적 팩터리**입니다. Entity → DTO는 `UserResponse.from(user)`, Request → Entity는 `request.toEntity()`에 둡니다.
-- 여러 소스를 합치거나 변환에 정책이 섞이면 그때 `Mapper`/`Assembler`(또는 MapStruct)로 분리합니다. 단순 위임만 하는 Assembler를 기본 계층으로 두지 않습니다.
-- Repository에 `toModel`/`toDto` 필드 매핑을 남기지 않습니다. 조인 조회는 DTO 생성자 projection을 먼저 고려합니다.
-- 프로젝트가 계층 의존을 명시적으로 제한하면(DTO가 도메인 타입을 몰라야 하면) 그 경계를 따라 Mapper를 씁니다.
-- DTO 네이밍은 두 방식 모두 허용합니다. 개별 탑레벨 타입(`CreateUserRequest`·`UserResponse`)과 기능 단위 묶음(`UserDto.Request`·`UserDto.Response`) 중 프로젝트가 이미 쓰는 쪽을 따르고, 한 프로젝트 안에서 섞지 않습니다.
-- record는 Jackson 역직렬화를 지원합니다. 클래스를 써야 한다면 `PROTECTED` 기본 생성자를 둡니다.
-
-```java
-public record CreateUserRequest(@NotBlank @Size(min = 2, max = 50) String name,
-                                @NotBlank @Email String email) {
-    public User toEntity() {
-        return User.builder()
-                .name(name)
-                .email(email)
-                .build();
+    public static OrderSummary fromEntity(OrderEntity entity) {
+        return new OrderSummary(entity);
     }
 }
 
-public record UserResponse(Long id,
-                           String name,
-                           String email) {
-    public static UserResponse from(User user) {
-        return new UserResponse(user.getId(), user.getName(), user.getEmail());
-    }
+public class OrderRunDto {
+    private OrderRunDto() {}
+
+    public record Request(@NotBlank String orderCode, OffsetDateTime referenceAt) {}
+
+    public record Response(long runId, String status) {}
 }
 ```
 
-### 인터페이스는 필요할 때만
+## 계층과 인터페이스
 
-- 구현이 하나뿐인 `XxxService` + `XxxServiceImpl` 쌍을 관성으로 만들지 않습니다. 구체 클래스 하나로 시작합니다.
-- 실제로 늘어나는 전략, 독립적인 전송 방식, 의존성 격리가 필요해질 때 인터페이스를 도입합니다.
-- 같은 동작의 활성/비활성만 다른 구현은 한 구체 클래스와 조기 반환으로 합칩니다.
-- 단순 위임만 늘리는 계층은 만들지 않습니다. Controller는 입력과 응답을 연결하고, 순서·검증·트랜잭션은 Service, 쿼리는 Repository가 맡습니다.
+- Controller는 입력과 응답을 연결한다. 여러 저장소 작업의 순서·검증·트랜잭션은 Service, 조회와 변경 쿼리는 Repository가 맡는다. Controller에 SQL·트랜잭션이 있으면 Service/Repository로 옮긴다.
+- 단순 위임만 늘리는 계층은 만들지 않는다.
+- 구현이 하나뿐인 `XxxService` + `XxxServiceImpl` 쌍을 관성으로 만들지 않는다. 구체 클래스 하나로 시작한다.
+- 같은 동작의 활성/비활성만 다른 구현(`KafkaPublisher` + `NoopPublisher`)은 한 구체 클래스와 `enabled` 플래그 조기 반환으로 합친다. 실제로 늘어나는 전략이나 독립 전송 방식은 인터페이스로 유지한다.
+- 패키지는 기술 종류(`service`·`model`·`util`)로 전역에 모으기보다 기능과 실행 단계 가까이에 둔다. 기능 전용 쿼리·모델·계산기는 그 기능 안에 두고, 여러 기능이 실제로 공유할 때만 공통 패키지로 올린다.
+- 기존 프로젝트의 패키지 구조를 따른다. 구조를 바꾸자는 판단은 따로 제안한다. 따를 구조가 없는 새 프로젝트면 기능 단위 패키지로 시작한다.
 
-### 필드 주입 금지 및 생성자 주입 강제
-- `@Autowired` 등을 이용한 **필드 주입(Field Injection)은 엄격히 금지**합니다. (의존성 숨김 현상, 순환 참조 방지 및 테스트 용이성 측면)
-- 항상 생성자 주입을 사용해야 합니다.
+## Repository와 SQL
 
-```java
-@Service
-@RequiredArgsConstructor
-public class UserService {
-    private final UserRepository userRepository;
-}
-```
+- QueryDSL 조회는 `fetchFirst()`·`fetchOne()`·`fetch()`까지 실행한 결과를 지역변수로 받은 뒤 Optional 변환·매핑·방어 복사를 한다.
+- 여러 소스를 합친 조회는 생성자 projection을 먼저 쓴다. DTO 생성자를 쓸 수 있으면 Tuple 해체용 helper를 만들지 않는다.
+- update/delete는 clause를 `query` 지역변수로 구성한 뒤 실행한다. bulk 쿼리는 flush/clear와 트랜잭션 경계를 보존한다.
+- 긴 SQL이 로직을 가리면 같은 패키지의 `<사용클래스>Sql`로 옮긴다(package-private final class, `static final String`, private 생성자).
+- JDBC는 실제 bulk insert/upsert나 ORM으로 표현하기 어려운 쿼리에만 쓴다. 조회 전체를 JDBC로 바꾸거나 공통 repository 프레임워크를 만들지 않는다.
 
----
+예시: `references/jpa-patterns.md`
 
-## 포매팅 및 스타일 (Formatting)
+## 값 객체와 시간
 
-- 프로젝트 표준에 따라 2칸 또는 4칸 공백을 일관되게 사용합니다.
-- 컬럼 제한: 120자 (package/import 문 예외).
-- K&R 스타일 중괄호를 사용하며, 단일 문장에도 중괄호 필수입니다.
-- 파일당 하나의 public 탑레벨 타입을 유지합니다.
-- 멤버 순서: 상수 → 필드 → 생성자 → public 메서드 → protected → private.
+- 여러 계층에서 함께 전달되는 값은 의미 있는 값 객체로 묶는다. `from`·`to` 파라미터 쌍은 구간 타입 하나로 바꾸고, 조회부터 저장 직전까지 구간으로 전달한 뒤 DB 컬럼·외부 파라미터 경계에서만 분해한다.
+- 구간 타입은 null·역전·양 끝 포함 여부·빈 구간 허용 여부를 명시하고 생성 시 검증한다. 기존 `[from, to)` 계약이 같은 경계의 빈 구간을 허용하면 이를 거부하도록 바꾸지 않는다.
+- 시간 변환은 방향이 이름에 드러나는 공통 메서드로 모은다(`toUtcLocalDateTime`, `utcToInstant`). `ZoneId.systemDefault()`에 의존하지 않고, 반복되는 시간대는 상수로 둔다(`TimeZoneUtil.SEOUL`).
+- `Instant`와 `LocalDateTime`의 선택은 그 시스템의 저장·도메인 계약을 따른다. 시간 util은 변환만 맡고, 업무 정책은 계산기가 맡는다.
+- 코드로 관리되는 고정 집합은 enum을 한 출처로 삼는다. DB/API 경계가 String이면 기존 문자열 계약을 유지하고, 운영 데이터로 자유롭게 늘어나는 값을 임의로 enum화하지 않는다.
 
 ```java
-// 중괄호 필수
-if (condition) {
-  return value;
-}
-```
-
-## Import 규칙
-
-- 와일드카드 import(`*`)를 사용하지 않습니다.
-- 순서: static import → non-static import (그룹 내 ASCII 정렬, 그룹 간 빈 줄 하나).
-
-```java
-import java.util.List;
-import java.util.Map;
-// Bad: import java.util.*;
-```
-
-## Switch 문
-
-모든 switch는 `default`를 포함합니다 (enum 전체 매칭 제외).
-
----
-
-## 피해야 할 코드 스멜 (Code Smells)
-
-- 긴 파라미터 리스트 → DTO나 빌더(Builder)를 사용하세요.
-- 깊은 중첩 → Early Return을 사용하세요.
-- 매직 넘버 → 명명된 상수를 사용하세요.
-- 정적 가변 상태 → 의존성 주입(Dependency Injection)을 선호하세요.
-- 비어있는 catch 블록 → 로깅 후 조치를 취하거나 다시 던지세요.
-
-## 로깅 (Logging)
-
-단일 요청이 여러 스레드나 서비스를 오가는 환경(MSA, 비동기 등)을 고려하여 `MDC (Mapped Diagnostic Context)`를 활용해 모든 로그 라인에 `trace-id`나 `user-id`가 남도록 로깅 정책을 설정하는 것을 권장합니다.
-
-```java
-private static final Logger log = LoggerFactory.getLogger(MarketService.class);
-
-// MDC 활용 예시 (일반적으로 Filter, Interceptor 등 앞단에서 설정)
-MDC.put("traceId", UUID.randomUUID().toString());
-
-log.info("fetch_market slug={}", slug);
-log.error("failed_fetch_market slug={}", slug, ex);
-
-MDC.clear();
-```
-
-## Null 처리 (Null Handling)
-
-- 불가피한 경우에만 `@Nullable`을 허용하며, 그 외에는 `@NonNull`을 사용합니다.
-- 입력값에 대해 Bean Validation (`@NotNull`, `@NotBlank` 등)을 사용합니다.
-
-## 값 객체와 시간 (Value Objects & Time)
-
-- 여러 계층에서 함께 전달되는 값은 의미 있는 값 객체로 묶습니다. 시간 구간은 조회부터 저장 직전까지 구간 타입으로 전달하고, DB 컬럼·외부 파라미터 경계에서만 분해합니다.
-- 구간 타입은 null·역전·양 끝 포함 여부·빈 구간 허용 여부를 명시하고 생성 시 검증합니다. 기존 `[from, to)` 계약이 같은 경계의 빈 구간을 허용한다면 이를 거부하도록 바꾸지 않습니다.
-- 시간 변환은 출발·도착 의미가 드러나는 공통 메서드로 모읍니다. `toUtcLocalDateTime`·`utcToInstant`처럼 방향을 이름에 담고, `ZoneId.systemDefault()`에 의존하지 않습니다.
-- `Instant`와 `LocalDateTime`의 선택은 그 시스템의 저장·도메인 계약을 따릅니다. 시간 util은 변환만 맡고, 업무 정책은 계산기가 맡습니다.
-- 코드로 관리되는 고정 집합은 enum을 한 출처로 삼습니다. DB/API 경계가 String이면 기존 문자열 계약을 유지하고, 운영 데이터로 자유롭게 늘어나는 값을 임의로 enum화하지 않습니다.
-
-```java
-/** UTC 기준 [from, to). 같은 경계는 빈 구간으로 허용한다. */
-public record TimeRange(LocalDateTime from,
-                        LocalDateTime to) {
+/** UTC 기준 반개구간 [from, to). 두 경계가 같으면 빈 구간이다. */
+public record TimeRange(LocalDateTime from, LocalDateTime to) {
     public TimeRange {
-        Objects.requireNonNull(from, "from");
-        Objects.requireNonNull(to, "to");
-        if (to.isBefore(from)) {
-            throw new IllegalArgumentException("to must not be before from: " + from + " ~ " + to);
+        Objects.requireNonNull(from, "from must not be null");
+        Objects.requireNonNull(to, "to must not be null");
+        if (from.isAfter(to)) {
+            throw new IllegalArgumentException("from must not be after to");
         }
     }
 }
 ```
 
-## 주석 (Comments)
+## 예외
 
-- 코드만으로 알 수 없는 제약·경계·상태 변경 주체에 씁니다 (구간의 포함 관계, 트랜잭션 밖 호출 금지 이유 등).
-- 이름을 풀어 쓴 설명이나 변경 이력은 남기지 않습니다.
+- 같은 도메인의 오류는 **도메인 예외 하나 + `ErrorCode` enum**으로 모은다. 사례마다 예외 하위 클래스를 만들지 않는다.
+- HTTP 상태와 기본 문구는 `ErrorCode` enum에 두고, `@RestControllerAdvice` 핸들러는 `ErrorCode` → 응답 변환만 한다. 핸들러에 상태 코드나 문구 리터럴을 두지 않는다.
+- 호출자가 실패 종류로 갈라야 하면 타입을 새로 만들지 않고 `exception.errorCode()`를 본다.
+- 오류 코드 이름이 응답으로 나가면 enum 상수 이름 변경도 계약 변경이다.
+- 프로그래밍 오류(`IllegalArgumentException`, `IllegalStateException` 등)는 표준 예외를 유지한다.
 
-## 유틸리티 클래스 (Utility Class)
+예시: `references/spring-boot-patterns.md`의 예외 처리 절
 
-인스턴스화를 방지합니다:
-```java
-public final class DateUtils {
-    private DateUtils() {
-        throw new AssertionError("Utility class cannot be instantiated");
-    }
+## Entity와 Lombok
 
-    public static LocalDateTime startOfDay(LocalDate date) {
-        return date.atStartOfDay();
-    }
-}
-```
+- Entity는 `@NoArgsConstructor(access = PROTECTED)` + `@Getter`를 기본으로 하고, 상태 변경은 의도가 드러나는 메서드로 제한한다. 상태 판정을 호출자의 문자열 비교로 흩뜨리지 않는다(`order.isPaid()`).
+- Entity에 `@Data`·`@Setter`·클래스 레벨 `@EqualsAndHashCode`를 쓰지 않는다. `@ToString`을 쓰면 연관 필드는 `@ToString.Exclude`로 뺀다.
+- Lombok은 반복 코드를 줄이는 데 쓴다. 생성되는 setter·equals·생성자가 객체 계약을 깨지 않는지 확인한다.
 
----
+## Spring과 실행 상태
 
-## 테스트 (Testing)
+- 순수 계산기는 Spring 없이 실행 가능하게 둔다.
+- 실행별 상태는 실행 범위 객체(`@StepScope` 빈, 요청 객체 등)에 두고 싱글턴 필드에 저장하지 않는다.
+- Optional은 반환 타입에만 쓴다. 필드·파라미터로 쓰지 않는다.
 
-깊은 Mock 지향 테스트와 리플렉션을 이용한 구조를 지양하고, **객체 행위와 상태 검증** 중심의 테스트 작성을 위해 별도로 분리된 패턴을 따릅니다.
+## 주석
 
-- 변경된 동작의 경계와 실패 경로를 그 프로젝트의 기존 테스트 방식으로 검증합니다.
-- 순수 계산은 Spring 컨텍스트 없이, DB 원자성은 필요한 만큼의 통합 테스트로 확인합니다.
-- 포맷 변경에 전용 테스트를 새로 만들지 않습니다.
+- 코드만으로 알 수 없는 제약·경계·상태 변경 주체에 쓴다. 분기의 이유가 코드로 드러나지 않으면 그 자리에 한 줄 주석을 둔다. 예: `// worker가 시작한 실행의 상태는 listener가 관리한다.`
+- 정책을 계산하는 메서드는 그 메서드가 지키는 정책을 한 줄로 적을 수 있다. 예: `// 성공 이력이 없으면 최초 경계에서 조회 오프셋을 뺀 시각을 조회 시작점으로 삼는다.`
+- 이름을 풀어 쓴 설명, 결정 근거, 변경 이력은 남기지 않는다.
 
-참조: `references/junit-test-patterns.md`
+## 포매팅
 
----
+- 프로젝트에 formatter·Checkstyle·`.editorconfig`가 있으면 그것을 따른다.
+- 없으면: 120자, K&R 중괄호, 단일 문장에도 중괄호, 와일드카드 import 금지, static import → 일반 import 순서.
 
-## 프로젝트 구조 (Project Structure)
+## 테스트
 
-- **기존 프로젝트의 패키지 구조를 따릅니다.** 새 클래스는 같은 역할의 기존 클래스 옆에 두고, 구조를 바꾸자는 판단은 따로 제안합니다.
-- 기능 전용 쿼리·조회 모델·계산기는 그 기능 안에 둡니다. 실제로 여러 기능이 공유할 때만 공통 패키지로 올립니다.
-- 따를 구조가 없는 새 프로젝트라면 기능 단위 패키지(Package-by-Feature)로 시작합니다.
+- 변경된 동작의 경계와 실패 경로를 그 프로젝트의 기존 테스트 방식으로 검증한다.
+- 순수 계산은 Spring 컨텍스트 없이, DB 원자성은 필요한 만큼의 통합 테스트로 확인한다.
+- 리플렉션으로 필드를 주입하지 않는다. 포맷 변경에 전용 테스트를 새로 만들지 않는다.
 
----
+예시: `references/junit-test-patterns.md`
 
 ## 상세 참조
 
-상황에 맞는 레퍼런스를 참조하세요:
-
-- **Spring Boot 컨트롤러/서비스/DTO/예외처리 패턴**: `references/spring-boot-patterns.md`
-- **JPA Entity/Repository/QueryDSL 패턴**: `references/jpa-patterns.md`
-- **JUnit 및 상태 검증 테스트 패턴**: `references/junit-test-patterns.md`
-- **메서드 분리 규칙과 예시**: `references/method-composition.md`
-
-**기억하세요**: 코드는 의도적이고, 타입이 지정되어 있으며, 관찰 가능해야 합니다. 입증된 필요성이 없는 한, 미세 최적화(Micro-optimization)보다는 유지보수성을 위해 최적화하세요.
+- **Controller/Service/DTO/예외 처리 예시**: `references/spring-boot-patterns.md`
+- **JPA Entity/Repository/QueryDSL 예시**: `references/jpa-patterns.md`
+- **JUnit 테스트 예시**: `references/junit-test-patterns.md`

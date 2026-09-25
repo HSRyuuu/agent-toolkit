@@ -1,400 +1,229 @@
-# Spring Boot 3.x 패턴
+# Spring Boot 패턴 예시
 
-## API 구현 워크플로우
-
-새 REST API를 구축할 때 아래 순서를 따릅니다:
-
-```
-Entity → DTO → Repository → ErrorCode/Exception → Service → Controller → Test
-```
-
-### 요구사항 체크리스트
-
-**필수 확인:**
-- 리소스/엔티티명 (예: User, Product, Order)
-- 필요한 작업 (GET, POST, PUT, DELETE, PATCH)
-- 언어 선택 (Java / Kotlin)
-
-**선택적 확인:**
-- 엔티티 필드 및 관계
-- 유효성 검사 규칙
-- 페이지네이션 필요 여부
-- 테스트 코드 생성 여부
-
----
+규칙은 `SKILL.md`에 있다. 이 파일은 규칙을 적용한 모양만 보여준다.
 
 ## Controller
 
+입력과 응답만 연결한다. 서비스 결과를 지역변수로 받은 뒤 응답을 만든다.
+
 ```java
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
-@Validated
-public class UserController {
-    private final UserService userService;
+public class OrderController {
+    private final OrderService orderService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.findById(id));
+    public ResponseEntity<OrderDto.Response> getOrder(@PathVariable long id) {
+        OrderDto.Response order = orderService.findById(id);
+        return ResponseEntity.ok(order);
     }
 
     @PostMapping
-    public ResponseEntity<UserResponse> createUser(
-            @Valid @RequestBody CreateUserRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(userService.create(request));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<UserResponse> updateUser(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateUserRequest request) {
-        return ResponseEntity.ok(userService.update(id, request));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userService.delete(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<OrderDto.Response> createOrder(@Valid @RequestBody OrderDto.Request request) {
+        OrderDto.Response created = orderService.create(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 }
 ```
 
 ## Service
 
-구현이 하나면 구체 클래스 하나로 시작합니다. `XxxService` 인터페이스 + `XxxServiceImpl` 쌍은 실제로 구현이 둘 이상 생기거나 의존성 격리가 필요해질 때 도입합니다.
-
-클래스 레벨 `@Transactional(readOnly = true)`, 쓰기 메서드만 `@Transactional`:
+클래스 레벨 `@Transactional(readOnly = true)`, 쓰기 메서드만 `@Transactional`.
 
 ```java
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class UserService {
-    private final UserRepository userRepository;
+public class OrderService {
+    private final OrderRepository orderRepository;
 
-    public UserResponse findById(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND, id));
-        return UserResponse.from(user);
-    }
-
-    public List<UserResponse> findAll() {
-        return userRepository.findAll().stream()
-                .map(UserResponse::from)
-                .toList();
+    public OrderDto.Response findById(long id) {
+        OrderEntity order = orderRepository.findById(id)
+                .orElseThrow(() -> new OrderException(ORDER_NOT_FOUND, id));
+        return OrderDto.Response.fromEntity(order);
     }
 
     @Transactional
-    public UserResponse create(CreateUserRequest request) {
-        User saved = userRepository.save(request.toEntity());
-        return UserResponse.from(saved);
-    }
-
-    @Transactional
-    public UserResponse update(Long id, UpdateUserRequest request) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND, id));
-        request.applyTo(user);
-        return UserResponse.from(user);
-    }
-
-    @Transactional
-    public void delete(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new UserException(UserErrorCode.USER_NOT_FOUND, id);
-        }
-        userRepository.deleteById(id);
+    public OrderDto.Response create(OrderDto.Request request) {
+        OrderEntity order = request.toEntity();
+        OrderEntity saved = orderRepository.save(order);
+        return OrderDto.Response.fromEntity(saved);
     }
 }
 ```
 
----
+## DTO
 
-## DTO 패턴
-
-고정 필드 DTO는 record가 기본입니다. 네이밍은 개별 탑레벨 타입(`CreateUserRequest`)과 기능 단위 묶음(`UserDto.Request`) 중 프로젝트가 이미 쓰는 쪽을 따릅니다.
-
-### Request DTO
+기능 단위로 `Request`·`Response`를 묶는다. 매핑은 DTO가 갖는다.
 
 ```java
-public record CreateUserRequest(@NotBlank(message = "Name is required")
-                                @Size(min = 2, max = 50) String name,
+public class OrderDto {
+    private OrderDto() {}
 
-                                @NotBlank @Email String email,
-
-                                @NotNull @Min(18) Integer age) {
-    public User toEntity() {
-        return User.builder()
-                .name(name)
-                .email(email)
-                .age(age)
-                .build();
-    }
-}
-```
-
-### Update DTO (Partial Update / PATCH)
-
-null 체크로 부분 업데이트:
-
-```java
-public record UpdateUserRequest(String name,
-                                Integer age) {
-    public void applyTo(User user) {
-        if (name != null) {
-            user.updateName(name);
+    public record Request(@NotBlank String productCode,
+                          @NotNull @Min(1) Integer quantity) {
+        public OrderEntity toEntity() {
+            return OrderEntity.builder()
+                    .productCode(productCode)
+                    .quantity(quantity)
+                    .build();
         }
-        if (age != null) {
-            user.updateAge(age);
+    }
+
+    public record Response(long id,
+                           String productCode,
+                           int quantity,
+                           OrderStatus status) {
+        public Response(OrderEntity entity) {
+            this(entity.getId(),
+                    entity.getProductCode(),
+                    entity.getQuantity(),
+                    entity.getStatus());
+        }
+
+        public static Response fromEntity(OrderEntity entity) {
+            return new Response(entity);
         }
     }
 }
 ```
 
-### Response DTO
-
-```java
-public record UserResponse(Long id,
-                           String name,
-                           String email,
-                           UserStatus status,
-                           LocalDateTime createdAt) {
-    public static UserResponse from(User user) {
-        return new UserResponse(user.getId(), user.getName(), user.getEmail(),
-                user.getStatus(), user.getCreatedAt());
-    }
-}
-```
-
-### 페이지네이션 Response
-
-```java
-public record PageResponse<T>(List<T> content,
-                              int totalPages,
-                              long totalElements,
-                              int number,
-                              int size) {
-    public static <T, R> PageResponse<R> from(Page<T> page, Function<T, R> mapper) {
-        List<R> content = page.getContent().stream()
-                .map(mapper)
-                .toList();
-        return new PageResponse<>(content, page.getTotalPages(), page.getTotalElements(),
-                page.getNumber(), page.getSize());
-    }
-}
-```
-
-### Mapper / Assembler (복잡한 변환 시)
-
-기본은 DTO 내 `toEntity()`, `from()`입니다. 여러 소스를 합치거나 변환에 정책이 섞일 때만 별도 Mapper(또는 Assembler, MapStruct)를 분리합니다. 단순 위임만 하는 매핑 계층은 만들지 않습니다.
+### Mapper (여러 소스를 합칠 때만)
 
 ```java
 @Component
 @RequiredArgsConstructor
-public class UserMapper {
+public class OrderDetailMapper {
     private final MembershipRepository membershipRepository;
 
-    // 여러 소스를 합치므로 DTO 정적 팩터리로는 표현이 어렵다
-    public UserDetailResponse toDetailResponse(User user) {
-        Membership membership = membershipRepository.findActiveByUserId(user.getId())
+    // 주문과 회원 등급을 합치므로 DTO 정적 팩터리로는 표현하기 어렵다
+    public OrderDetailResponse toDetailResponse(OrderEntity order) {
+        Membership membership = membershipRepository.findActiveByUserId(order.getUserId())
                 .orElse(Membership.none());
-        return new UserDetailResponse(user.getId(), user.getName(), membership.grade());
+        return new OrderDetailResponse(order.getId(), order.getProductCode(), membership.grade());
     }
 }
 ```
 
----
+## 예외 처리
 
-## 예외 처리 (Exception Handling)
-
-같은 도메인의 오류는 **도메인 예외 하나 + `ErrorCode` enum**으로 모읍니다. 사례마다 예외 하위 클래스를 만들지 않습니다.
+도메인 예외 하나 + `ErrorCode` enum. 핸들러는 `ErrorCode`를 응답으로 옮기기만 한다.
 
 ```java
-// 에러 코드 계약 (name()은 enum이 자동 제공)
-public interface ErrorCode {
-    HttpStatus getStatus();
-    String getMessage();
-    String name();
-}
-
-@Getter
-@RequiredArgsConstructor
-public enum UserErrorCode implements ErrorCode {
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "User not found"),
-    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "Email already exists");
+/**
+ * 이름은 호출자와의 계약이므로 바꾸면 안 된다. 메시지는 계약이 아니다.
+ */
+public enum OrderErrorCode {
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "Invalid request."),
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Order not found."),
+    ORDER_ALREADY_PAID(HttpStatus.CONFLICT, "Order is already paid."),
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error.");
 
     private final HttpStatus status;
-    private final String message;
-}
+    private final String defaultMessage;
 
-// 도메인 예외 하나
-@Getter
-public class UserException extends RuntimeException {
-    private final ErrorCode errorCode;
-
-    public UserException(ErrorCode errorCode, Object detail) {
-        super(errorCode.getMessage() + ": " + detail);
-        this.errorCode = errorCode;
+    OrderErrorCode(HttpStatus status, String defaultMessage) {
+        this.status = status;
+        this.defaultMessage = defaultMessage;
     }
 
-    public UserException(ErrorCode errorCode) {
-        super(errorCode.getMessage());
-        this.errorCode = errorCode;
+    public HttpStatus status() {
+        return status;
+    }
+
+    public String defaultMessage() {
+        return defaultMessage;
     }
 }
 
-// 글로벌 핸들러는 응답 변환만 담당
-@RestControllerAdvice
+/** 호출자가 실패 종류로 갈라야 하면 타입을 새로 만들지 않고 {@link #errorCode()}를 본다. */
+public class OrderException extends RuntimeException {
+    private final OrderErrorCode errorCode;
+
+    public OrderException(OrderErrorCode errorCode, Object detail) {
+        this(errorCode, detail, null);
+    }
+
+    public OrderException(OrderErrorCode errorCode, Object detail, Throwable cause) {
+        super(errorCode.name() + ": " + detail, cause);
+        this.errorCode = errorCode;
+    }
+
+    public OrderErrorCode errorCode() {
+        return errorCode;
+    }
+}
+
 @Slf4j
-public class GlobalExceptionHandler {
+@RequiredArgsConstructor
+@RestControllerAdvice
+public class OrderExceptionHandler {
+    private final Clock clock;
 
-    @ExceptionHandler(UserException.class)
-    public ResponseEntity<ErrorResponse> handleDomain(UserException e) {
-        ErrorCode errorCode = e.getErrorCode();
-        log.warn("domain_error code={} message={}", errorCode.name(), e.getMessage());
-        return ResponseEntity.status(errorCode.getStatus())
-                .body(ErrorResponse.of(errorCode, e.getMessage()));
+    @ExceptionHandler(OrderException.class)
+    public ResponseEntity<ProblemResponse> handleOrderFailure(OrderException exception) {
+        return this.problem(exception.errorCode());
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidation(
-            MethodArgumentNotValidException e) {
-        String message = e.getBindingResult().getAllErrors().stream()
-                .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                .collect(Collectors.joining(", "));
-        return ResponseEntity.badRequest()
-                .body(new ErrorResponse("INVALID_REQUEST", message, LocalDateTime.now()));
-    }
-}
-
-// 에러 응답 DTO
-public record ErrorResponse(String code,
-                            String message,
-                            LocalDateTime timestamp) {
-    public static ErrorResponse of(ErrorCode errorCode, String message) {
-        return new ErrorResponse(errorCode.name(), message, LocalDateTime.now());
-    }
-}
-```
-
-- HTTP 상태와 기본 문구는 `ErrorCode` 한 곳에만 둡니다.
-- 응답의 `code` 값이 외부 계약이면 enum 상수 이름 변경도 계약 변경입니다.
-- 프로그래밍 오류(`IllegalArgumentException`, `IllegalStateException` 등)는 표준 예외를 유지합니다.
-
----
-
-## 레이어별 테스트
-
-### Controller 테스트
-
-```java
-@WebMvcTest(UserController.class)
-class UserControllerTest {
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
-    private UserService userService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Test
-    @DisplayName("GET /users/{id} returns 200")
-    void getUser_success() throws Exception {
-        Long userId = 1L;
-        UserResponse response = new UserResponse(userId, "John", "john@test.com",
-                UserStatus.ACTIVE, LocalDateTime.now());
-
-        when(userService.findById(userId)).thenReturn(response);
-
-        mockMvc.perform(get("/api/v1/users/{id}", userId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(userId))
-                .andExpect(jsonPath("$.name").value("John"));
+    @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
+    public ResponseEntity<ProblemResponse> handleInvalidRequest() {
+        return this.problem(INVALID_REQUEST);
     }
 
-    @Test
-    @DisplayName("POST /users returns 201")
-    void createUser_success() throws Exception {
-        CreateUserRequest request = new CreateUserRequest("John", "john@test.com", 25);
-        UserResponse response = new UserResponse(1L, "John", "john@test.com",
-                UserStatus.ACTIVE, LocalDateTime.now());
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ProblemResponse> handleUnexpected(RuntimeException exception) {
+        log.error("order_request_failed", exception);
+        return this.problem(INTERNAL_SERVER_ERROR);
+    }
 
-        when(userService.create(any())).thenReturn(response);
+    private ResponseEntity<ProblemResponse> problem(OrderErrorCode code) {
+        ProblemResponse body = new ProblemResponse(code.name(), code.defaultMessage(), clock.instant());
+        return ResponseEntity.status(code.status()).body(body);
+    }
 
-        mockMvc.perform(post("/api/v1/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1L));
+    public record ProblemResponse(String code, String message, Instant timestamp) {
     }
 }
 ```
 
-### Service 테스트
+실패 종류로 분기할 때는 타입이 아니라 코드를 본다.
 
 ```java
-@ExtendWith(MockitoExtension.class)
-class UserServiceTest {
-    @Mock
-    private UserRepository userRepository;
-
-    @InjectMocks
-    private UserService userService;
-
-    @Test
-    @DisplayName("findById throws when not found")
-    void findById_notFound() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> userService.findById(1L))
-                .isInstanceOf(UserException.class)
-                .extracting("errorCode")
-                .isEqualTo(UserErrorCode.USER_NOT_FOUND);
+} catch (RuntimeException exception) {
+    if (exception instanceof OrderException order && order.errorCode() == ORDER_ALREADY_PAID) {
+        log.debug("order_already_paid orderId={}", orderId);
+        return;
     }
-
-    @Test
-    @DisplayName("create saves and returns response")
-    void create_success() {
-        CreateUserRequest request = new CreateUserRequest("John", "john@test.com", 25);
-        User savedUser = User.builder()
-                .name("John").email("john@test.com").age(25).build();
-
-        when(userRepository.save(any(User.class))).thenReturn(savedUser);
-
-        UserResponse response = userService.create(request);
-
-        assertThat(response.name()).isEqualTo("John");
-        assertThat(response.email()).isEqualTo("john@test.com");
-        verify(userRepository).save(any(User.class));
-    }
+    log.error("failed_pay_order orderId={}", orderId, exception);
 }
 ```
 
-생성된 ID처럼 영속화 이후에만 존재하는 값은 `ReflectionTestUtils`로 주입하지 말고 `@DataJpaTest`에서 실제 저장 후 확인합니다.
+여러 도메인의 ErrorCode enum을 한 핸들러가 받아야 할 때만 공통 `ErrorCode` 인터페이스(`status()`, `defaultMessage()`, `name()`)를 둔다.
 
-### Repository 테스트
+## 활성/비활성만 다른 구현
+
+인터페이스 + 실제 구현 + Noop 구현을 두지 않고 한 클래스로 합친다.
 
 ```java
-@DataJpaTest
-@AutoConfigureTestDatabase(replace = Replace.NONE)
-class UserRepositoryTest {
-    @Autowired
-    private UserRepository userRepository;
+@Slf4j
+@Component
+public class OrderEventPublisher {
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final boolean enabled;
 
-    @Test
-    @DisplayName("findByEmail returns user")
-    void findByEmail_success() {
-        User user = User.builder()
-                .name("John").email("john@test.com").age(25).build();
-        userRepository.save(user);
+    public OrderEventPublisher(KafkaTemplate<String, String> kafkaTemplate,
+                               @Value("${order.publisher.enabled:false}") boolean enabled) {
+        this.kafkaTemplate = kafkaTemplate;
+        this.enabled = enabled;
+    }
 
-        Optional<User> found = userRepository.findByEmail("john@test.com");
-
-        assertThat(found).isPresent();
-        assertThat(found.get().getName()).isEqualTo("John");
+    public void publish(List<OrderEvent> events) {
+        if (!enabled) {
+            log.info("order_event_publish_skipped events={} reason=publisher_disabled", events.size());
+            return;
+        }
+        ...
     }
 }
 ```

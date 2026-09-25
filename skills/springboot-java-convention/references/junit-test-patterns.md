@@ -1,67 +1,100 @@
-# JUnit 테스트 패턴 (JUnit Test Patterns)
+# JUnit 테스트 패턴 예시
 
-Java Spring Boot 애플리케이션에서 테스트 품질을 높이고 유지보수성을 확보하기 위한 테스트 작성 가이드입니다.
+규칙은 `SKILL.md`의 테스트 절에 있다.
 
-## 핵심 원칙
+## 원칙
 
-- **리플렉션 금지**: `ReflectionTestUtils.setField()`와 같이 캡슐화를 깨뜨리는 리플렉션 사용을 자제합니다. 리팩토링 시 테스트가 깨지는 주 원인이 됩니다.
-- **깊은 Mock 지양**: 모든 의존성을 Mocking하기보다는 상태 기반의 테스트(State-based target)나 통합 슬라이스 테스트 환경을 권장합니다.
-- **부분 모킹(Partial Mocks) 지양**: 스파이(Spy) 사용은 객체의 역할이 불분명함을 의미할 수 있으므로 피합니다.
-- **검증 범위**: 변경된 동작의 경계와 실패 경로를 그 프로젝트의 기존 테스트 방식으로 확인합니다. 순수 계산은 Spring 컨텍스트 없이, DB 원자성은 필요한 만큼의 통합 테스트로 확인합니다. 포맷 변경에 전용 테스트를 새로 만들지 않습니다.
+- 리플렉션(`ReflectionTestUtils.setField()`)으로 필드를 주입하지 않는다. 생성 이후에만 생기는 값(ID 등)은 실제로 저장한 뒤 확인한다.
+- 순수 계산기와 도메인 객체는 Spring 컨텍스트나 Mock 없이 POJO로 검증한다.
+- 부분 모킹(Spy)은 쓰지 않는다. 필요하다는 느낌이 들면 객체 역할이 섞였는지 먼저 본다.
+- Mock은 협력 객체 경계에서만 쓴다. `mock()`으로 만든 뒤 테스트 대상에 생성자로 넣는다.
 
-## 테스트 픽스처 (Test Fixtures)
-
-식별자(ID)가 없어도 비즈니스 로직을 검증할 수 있도록 설계하고, 생성자나 빌더를 통해 안전하게 테스트용 픽스처(Fixture)를 생성하세요.
+## 도메인·계산기
 
 ```java
-// 좋은 예: 생성자나 팩토리 메서드를 활용해 유효한 객체 상태를 구성할 수 있어야 함
-var user = User.builder().name("John").build();
-user.activate(); // 도메인 로직 검증에 집중
-```
-
-## 계층별 테스트 전략
-
-### 도메인(Entity) 테스트 (POJO)
-- 도메인 단위의 핵심 비즈니스 로직(예: 상태 변경)을 검증합니다.
-- 외부 프레임워크나 Mocking 없이 순수한 Java 객체(POJO)로 아주 빠르게 실행되어야 합니다.
-
-### Repository 테스트 (`@DataJpaTest`)
-- Mockito를 통한 쿼리 모킹 대신 실제 동작하는 DB(Testcontainers 등) 환경에서의 슬라이스 테스트를 강력히 권장합니다.
-- 영속성 관리가 예상대로 동작하는지 확인합니다.
-
-### Controller 테스트 (`@WebMvcTest`)
-- Spring Security, Interceptor, DTO 유효성 검증(Bean Validation), 직렬화/역직렬화를 검증합니다.
-- `MockMvc`를 활용하고, Service 계층의 비즈니스 로직은 `@MockBean`으로 격리합니다.
-
-## (AS-IS) 레거시 Mock 지향 테스트 참고
-
-아래는 제한적인 환경에서 여전히 사용되는 Mockito 기반의 단위 테스트입니다. 가급적 위 전략에 맞춰 리팩토링해 나가는 것을 권장합니다.
-
-```java
-@ExtendWith(MockitoExtension.class)
-class UserServiceTest {
-    @Mock
-    private UserRepository userRepository;
-
-    @InjectMocks
-    private UserService userService;
-
+class TimeRangeTest {
     @Test
-    void createUser_success() {
-        // given
-        var request = new CreateUserRequest("John", "john@test.com", 25);
-        var user = User.builder().name("John").email("john@test.com").age(25).build();
+    void acceptsOrderedAndEmptyRangesAndRejectsReversedBounds() {
+        LocalDateTime from = LocalDateTime.of(2026, 9, 1, 4, 0);
+        LocalDateTime to = from.plusMinutes(10);
 
-        when(userRepository.save(any(User.class))).thenReturn(user);
-
-        // when
-        var result = userService.create(request);
-
-        // then
-        assertThat(result.name()).isEqualTo("John");
-        verify(userRepository).save(any(User.class));
+        assertThat(new TimeRange(from, from).to()).isEqualTo(from);
+        assertThatThrownBy(() -> new TimeRange(to, from))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
 ```
 
-변환을 `Mapper`/`Assembler`로 분리한 프로젝트라면 그 빈도 `@Mock`으로 두되, 매핑 자체는 mock stubbing 대신 매퍼 단위 테스트에서 검증합니다.
+## 도메인 예외는 errorCode로 검증
+
+```java
+assertThatThrownBy(() -> orderService.pay(orderId))
+        .asInstanceOf(throwable(OrderException.class))
+        .returns(ORDER_ALREADY_PAID, OrderException::errorCode);
+```
+
+## 협력 객체 경계의 Mock
+
+```java
+class OrderResetServiceTest {
+    private final OrderResetRepository repository = mock(OrderResetRepository.class);
+    private final OrderResetService service = new OrderResetService(repository);
+
+    @Test
+    void resetDeletesEveryRowOfTheRun() {
+        when(repository.findRecentRuns(anyInt())).thenReturn(List.of(RUN));
+        when(repository.deleteItems(anyLong())).thenReturn(1);
+
+        OrderResetService.Deleted deleted = service.reset(RUN_CODE);
+
+        assertThat(deleted.items()).isEqualTo(1);
+        verify(repository).deleteItems(RUN.id());
+    }
+}
+```
+
+## Repository (`@DataJpaTest`)
+
+Mock 대신 실제 DB(Testcontainers 등) 슬라이스로 쿼리와 영속성 동작을 확인한다.
+
+```java
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = Replace.NONE)
+class OrderRepositoryTest {
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Test
+    void findByIdReturnsSavedOrder() {
+        OrderEntity saved = orderRepository.save(new OrderEntity("P-1", 2));
+
+        Optional<OrderSummary> found = orderRepository.findSummaryById(saved.getId());
+
+        assertThat(found).map(OrderSummary::quantity).contains(2);
+    }
+}
+```
+
+## Controller (`@WebMvcTest`)
+
+Bean Validation, 직렬화, 오류 응답 변환을 검증한다. Service는 `@MockitoBean`으로 격리한다(`@MockBean`은 Boot 3.4에서 deprecated).
+
+```java
+@WebMvcTest(OrderController.class)
+class OrderControllerTest {
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private OrderService orderService;
+
+    @Test
+    void reportsMissingOrderWithItsErrorCode() throws Exception {
+        when(orderService.findById(1L)).thenThrow(new OrderException(ORDER_NOT_FOUND, 1L));
+
+        mockMvc.perform(get("/api/v1/orders/{id}", 1L))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ORDER_NOT_FOUND"));
+    }
+}
+```
