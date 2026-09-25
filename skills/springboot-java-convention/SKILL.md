@@ -1,34 +1,28 @@
 ---
-name: springboot-java-standards
+name: springboot-java-convention
 description: >
-  Use when writing or reviewing Java 17+ code in a Spring Boot project,
-  especially naming, package structure, immutability, Optional, streams,
-  records/sealed classes, generics, Lombok, exceptions, tests, JPA/QueryDSL, or
-  service-layer design. Triggers: "Java 코드 리뷰", "Spring Boot 서비스 작성",
-  "Optional 써도 돼?", "JPA/QueryDSL 패턴". Do NOT use for Kotlin projects.
+  Use whenever writing, modifying, or reviewing Java code in a Spring Boot
+  project. Do NOT use for Kotlin projects.
 metadata:
   origin: ECC
 ---
 
 # Java 코딩 표준 (Java Coding Standards)
 
-Spring Boot 서비스에서 읽기 쉽고 유지보수가 용이한 Java(17+) 코드를 작성하기 위한 표준입니다.
+Spring Boot 서비스에서 읽기 쉽고 유지보수가 용이한 Java 코드를 작성하기 위한 표준입니다.
 
-## 적용 시점
+## 우선순위
 
-- Spring Boot 프로젝트에서 Java 코드를 작성하거나 리뷰할 때
-- 명명 규칙, 불변성 또는 예외 처리 컨벤션을 강제할 때
-- Record, Sealed 클래스 또는 패턴 매칭(Java 17+)을 사용할 때
-- Optional, 스트림 또는 제네릭 사용을 검토할 때
-- 패키지 구조 및 프로젝트 레이아웃을 구성할 때
+1. **프로젝트 규칙이 있으면 그것이 우선합니다.** `AGENTS.md`·`CLAUDE.md`·프로젝트 스킬·기존 코드 관례가 이 스킬과 다르면 프로젝트 쪽을 따릅니다.
+2. **프로젝트가 정하지 않은 부분은 이 스킬이 기준입니다.** 모델의 기본 습관보다 이 스킬을 먼저 따릅니다.
 
 ## 핵심 원칙
 
-- 기교보다는 명확함을 우선시합니다.
+- **사람이 읽을 때의 가독성이 가장 먼저입니다.** 짧은 코드·영리한 코드·미세한 성능보다 앞섭니다. 판단이 갈리면 처음 보는 사람이 위에서 아래로 한 번에 읽을 수 있는 쪽을 고릅니다.
 - 기본적으로 불변(Immutable) 상태를 지향하며, 공유되는 가변 상태를 최소화합니다.
 - 의미 있는 예외를 통해 최대한 빨리 실패(Fail-fast)하도록 합니다.
 - 일관된 명명 규칙과 패키지 구조를 유지합니다.
-- 조회 → 검증 → 분기 → 실행 → 결과가 위에서 아래로 읽히게 씁니다. 긴 체인을 다른 호출의 인자에 중첩하지 않고, 실행 결과를 의미 있는 지역변수로 받습니다.
+- 조회 → 검증 → 분기 → 실행 → 결과가 위에서 아래로 읽히게 씁니다. 메서드를 나누는 기준은 아래 **메서드 분리** 절을 따릅니다.
 - 리팩터링은 관찰 가능한 계약(호출 순서, 트랜잭션 전파, 응답 코드, 직렬화 형태, 실패 전파)을 보존합니다.
 
 ---
@@ -54,7 +48,11 @@ XmlHttpRequest, newCustomerId, supportsIpv6OnIos
 
 - 이름에 업무 대상·수행 동작·실제 결과를 담습니다. `claim`보다 `claimRun`, JSON을 반환하면 `serializeSnapshot`처럼 전체 의미를 드러냅니다.
 - DB·API와 같은 개념에는 같은 용어를 씁니다. `key`와 `code`처럼 서로 다른 의미를 섞지 않되, 모든 내부 이름을 컬럼명에 기계적으로 맞추지는 않습니다.
-- 긴 독립 분기는 먼저 같은 클래스의 private 메서드로 나눕니다. 짧은 단순 호출까지 지역변수나 래퍼로 감싸지 않습니다.
+
+## 메서드 분리 (Method Composition)
+
+public 메서드는 결과의 각 부분을 지역변수로 받아 조립만 하고, 각 부분의 규칙은 그 부분 이름의 private 메서드에 둡니다.
+**메서드나 클래스를 새로 작성하기 전에 항상** `references/method-composition.md`를 읽습니다.
 
 ## 불변성 및 엔티티 상태 (Immutability & State)
 
@@ -202,7 +200,7 @@ public class UserService {
 ## 포매팅 및 스타일 (Formatting)
 
 - 프로젝트 표준에 따라 2칸 또는 4칸 공백을 일관되게 사용합니다.
-- 컬럼 제한: 100자 (package/import 문 예외).
+- 컬럼 제한: 120자 (package/import 문 예외).
 - K&R 스타일 중괄호를 사용하며, 단일 문장에도 중괄호 필수입니다.
 - 파일당 하나의 public 탑레벨 타입을 유지합니다.
 - 멤버 순서: 상수 → 필드 → 생성자 → public 메서드 → protected → private.
@@ -318,35 +316,9 @@ public final class DateUtils {
 
 ## 프로젝트 구조 (Project Structure)
 
-**도메인형 패키지 구조(Package-by-Feature)**를 디폴트로 강력히 권장합니다. 응집도를 높이고 변경 범위를 최소화할 수 있습니다.
-
-```
-src/main/java/com/example/app/
-  global/               // 글로벌 설정, 예외 처리, 공통 유틸리티
-    config/
-    exception/
-    util/
-  market/               // 특정 도메인 모듈 (Package-by-Feature)
-    controller/
-    service/
-    repository/
-    domain/
-    dto/
-  user/                 // 또 다른 도메인 모듈
-    controller/
-    service/
-    repository/
-    ...
-src/main/resources/
-  application.yml
-src/test/java/... (mirrors main)
-```
-
-- 기술 종류만으로 전역 `service`·`model`·`util`에 모으지 않습니다. 기능 전용 쿼리·조회 모델·계산기는 해당 기능 안에 둡니다.
-- 기능 전용 조회 모델이 여러 개이면 `<기능>/model`의 독립 record로 둡니다.
-- 변환이 복잡해 Mapper/Assembler를 분리한 경우에만 `assembler/`(또는 `mapper/`)를 만듭니다.
-- 위 하위 레이어는 관례이지 고정 틀이 아닙니다. 실행 단계가 뚜렷한 모듈(배치 Job 등)은 레이어 대신 실행 단계 이름으로 나눕니다.
-- 공통화는 실제 공유 의미를 기준으로 합니다. 기능 정책까지 범용 util로 끌어올리지 않습니다.
+- **기존 프로젝트의 패키지 구조를 따릅니다.** 새 클래스는 같은 역할의 기존 클래스 옆에 두고, 구조를 바꾸자는 판단은 따로 제안합니다.
+- 기능 전용 쿼리·조회 모델·계산기는 그 기능 안에 둡니다. 실제로 여러 기능이 공유할 때만 공통 패키지로 올립니다.
+- 따를 구조가 없는 새 프로젝트라면 기능 단위 패키지(Package-by-Feature)로 시작합니다.
 
 ---
 
@@ -357,5 +329,6 @@ src/test/java/... (mirrors main)
 - **Spring Boot 컨트롤러/서비스/DTO/예외처리 패턴**: `references/spring-boot-patterns.md`
 - **JPA Entity/Repository/QueryDSL 패턴**: `references/jpa-patterns.md`
 - **JUnit 및 상태 검증 테스트 패턴**: `references/junit-test-patterns.md`
+- **메서드 분리 규칙과 예시**: `references/method-composition.md`
 
 **기억하세요**: 코드는 의도적이고, 타입이 지정되어 있으며, 관찰 가능해야 합니다. 입증된 필요성이 없는 한, 미세 최적화(Micro-optimization)보다는 유지보수성을 위해 최적화하세요.
