@@ -1,6 +1,6 @@
 {
   "name": "slack-helper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Slack 검색, 요약, 메시지 발송.",
   "author": {
     "name": "happyhsryu"
