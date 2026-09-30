@@ -1,0 +1,23 @@
+{
+  "name": "create-mermaid-erd",
+  "version": "1.0.0",
+  "description": "PRD·DDL 등에서 Mermaid ERD 생성.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "create-mermaid-erd",
+    "shortDescription": "PRD·DDL 등에서 Mermaid ERD 생성.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

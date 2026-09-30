@@ -1,0 +1,23 @@
+{
+  "name": "datadog-helper",
+  "version": "1.0.0",
+  "description": "Datadog 로그·APM 조회.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "datadog-helper",
+    "shortDescription": "Datadog 로그·APM 조회.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

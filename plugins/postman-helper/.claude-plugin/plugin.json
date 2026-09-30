@@ -1,0 +1,10 @@
+{
+  "name": "postman-helper",
+  "version": "1.0.0",
+  "description": "Postman 엔드포인트 검색과 실행.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}

@@ -1,0 +1,23 @@
+{
+  "name": "ui-test-runner",
+  "version": "1.0.0",
+  "description": "라이브 dev 서버 대상 브라우저 UI 검증.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "ui-test-runner",
+    "shortDescription": "라이브 dev 서버 대상 브라우저 UI 검증.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

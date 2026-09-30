@@ -1,0 +1,10 @@
+{
+  "name": "api-spec-docs",
+  "version": "1.0.0",
+  "description": "프론트엔드·QA 전달용 REST API 명세서 작성.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}

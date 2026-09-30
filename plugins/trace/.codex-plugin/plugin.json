@@ -1,0 +1,23 @@
+{
+  "name": "trace",
+  "version": "1.0.0",
+  "description": "관찰된 결과의 원인을 증거 기반으로 추적한다.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "trace",
+    "shortDescription": "관찰된 결과의 원인을 증거 기반으로 추적한다.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "datadog-helper",
+  "version": "1.0.0",
+  "description": "Datadog 로그·APM 조회.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}

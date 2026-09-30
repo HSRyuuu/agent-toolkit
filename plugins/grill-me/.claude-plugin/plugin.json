@@ -1,0 +1,10 @@
+{
+  "name": "grill-me",
+  "version": "1.0.0",
+  "description": "계획·결정을 집요하게 캐묻는다.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}

@@ -1,0 +1,23 @@
+{
+  "name": "slack-helper",
+  "version": "1.0.0",
+  "description": "Slack 검색, 요약, 메시지 발송.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "slack-helper",
+    "shortDescription": "Slack 검색, 요약, 메시지 발송.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

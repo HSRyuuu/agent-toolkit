@@ -1,8 +1,8 @@
 # 설치 · 업데이트 · 배포
 
-`agent-toolkit` 플러그인을 머신에 올리고, 바꾼 내용을 다른 머신까지 전달하는 방법.
+`hsryuuu` marketplace의 플러그인을 머신에 올리고, 바꾼 내용을 다른 머신까지 전달하는 방법.
 
-대상 범위: Claude Code / Codex · marketplace `hsryuuu` · plugin `agent-toolkit`
+대상 범위: Claude Code / Codex · marketplace `hsryuuu` · 플러그인은 스킬(묶음) 단위 (`docs/catalog.md` 참고)
 
 ## 설치
 
@@ -17,14 +17,14 @@ Claude Code — 채팅창에 입력한다.
 
 ```text
 /plugin marketplace add HSRyuuu/agent-toolkit
-/plugin install agent-toolkit@hsryuuu
+/plugin install <plugin>@hsryuuu
 ```
 
 Codex — 터미널에서 실행한다.
 
 ```bash
 codex plugin marketplace add HSRyuuu/agent-toolkit
-codex plugin add agent-toolkit@hsryuuu
+codex plugin add <plugin>@hsryuuu
 ```
 
 ### 방식 2 — 로컬 디렉토리로 설치 (개발 머신)
@@ -42,20 +42,23 @@ Claude Code — 채팅창에 입력한다.
 
 ```text
 /plugin marketplace add ~/your-dir/agent-toolkit
-/plugin install agent-toolkit@hsryuuu
+/plugin install <plugin>@hsryuuu
 ```
 
 Codex — 터미널에서 실행한다.
 
 ```bash
 codex plugin marketplace add ~/your-dir/agent-toolkit
-codex plugin add agent-toolkit@hsryuuu
+codex plugin add <plugin>@hsryuuu
 codex plugin list --available --json
 ```
 
-Claude Code는 `.claude-plugin/plugin.json`, Codex는 `.agents/plugins/marketplace.json`과
-`.codex-plugin/plugin.json`을 사용한다. 두 도구 모두 활성 스킬 루트는 `skills/`
-하나이며, 모든 플러그인 스킬은 `skills/<name>/SKILL.md` 형태로 둔다.
+Claude Code는 `.claude-plugin/marketplace.json`과 `plugins/<name>/.claude-plugin/plugin.json`,
+Codex는 `.agents/plugins/marketplace.json`과 `plugins/<name>/.codex-plugin/plugin.json`을
+사용한다. 모든 스킬은 `plugins/<name>/skills/<skill>/SKILL.md` 형태로 둔다.
+
+예전의 단일 `agent-toolkit@hsryuuu` 플러그인을 쓰던 머신은 먼저 제거한다
+(`/plugin uninstall agent-toolkit@hsryuuu`). 남겨 두면 스킬이 중복 로드된다.
 
 ## 업데이트 (GitHub 설치 시)
 
@@ -64,8 +67,8 @@ Claude Code는 `.claude-plugin/plugin.json`, Codex는 `.agents/plugins/marketpla
 ```bash
 # Claude Code — 카탈로그 갱신 후 플러그인 업데이트
 claude plugin marketplace update hsryuuu
-claude plugin update agent-toolkit@hsryuuu
-claude plugin details agent-toolkit@hsryuuu
+claude plugin update <plugin>@hsryuuu
+claude plugin details <plugin>@hsryuuu
 
 # Codex — 마켓플레이스 스냅샷 갱신
 codex plugin marketplace upgrade hsryuuu
@@ -81,21 +84,23 @@ codex plugin list
 두 도구 모두 플러그인 `version`을 캐시 키로 쓴다.
 
 ```text
-~/.claude/plugins/cache/hsryuuu/agent-toolkit/<version>/
-~/.codex/plugins/cache/hsryuuu/agent-toolkit/<version>/
+~/.claude/plugins/cache/hsryuuu/<plugin>/<version>/
+~/.codex/plugins/cache/hsryuuu/<plugin>/<version>/
 ```
 
 그래서 **push만으로는 설치된 머신에 아무 변화가 없다. 버전 범프가 곧 릴리스다.**
 
-- `.claude-plugin/plugin.json`과 `.codex-plugin/plugin.json`의 `version`을 **같은
-  값으로** 올린다. 기본은 patch, 기능 단위 릴리스면 minor.
+- 바뀐 플러그인만, `plugins/<plugin>/.claude-plugin/plugin.json`과
+  `.codex-plugin/plugin.json`의 `version`을 **같은 값으로** 올린다.
+  `scripts/bump-plugin.sh <plugin> [patch|minor|major]`가 둘을 함께 올린다.
+  기본은 patch, 기능 단위 릴리스면 minor.
 - `marketplace.json`의 `plugins[]`에는 version을 넣지 않는다. 넣으면 `plugin.json`
   값이 경고 없이 이기고 캐시 디버깅이 꼬인다.
 
 ## 배포
 
 이 저장소의 변경을 다른 머신까지 전달하는 절차는 프로젝트 로컬
-`publish-workflow` 스킬이 소유한다. 순서는 verify-secrets → 커밋 → 버전 범프 →
+`publish-workflow` 스킬이 소유한다. 순서는 verify-secrets → 커밋 → 바뀐 플러그인 버전 범프 →
 `git push origin main` → 위 업데이트 명령.
 
 다른 머신은 이 루프에서 닿지 않는다. 각 머신에서 업데이트 명령을 직접 실행해야

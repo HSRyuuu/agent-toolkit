@@ -1,0 +1,10 @@
+{
+  "name": "html-tools",
+  "version": "1.0.0",
+  "description": "자기완결형 HTML 치트시트, DB 스키마 뷰어, 문서 생성.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}

@@ -1,0 +1,10 @@
+{
+  "name": "node-backend-patterns",
+  "version": "1.0.0",
+  "description": "Express, Next.js API, NestJS 백엔드 패턴.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}

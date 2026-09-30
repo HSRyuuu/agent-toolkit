@@ -1,0 +1,23 @@
+{
+  "name": "kb",
+  "version": "1.0.0",
+  "description": "개인·업무 Markdown 지식베이스 저장·검색·점검.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "kb",
+    "shortDescription": "개인·업무 Markdown 지식베이스 저장·검색·점검.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

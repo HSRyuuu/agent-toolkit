@@ -1,0 +1,23 @@
+{
+  "name": "prompt-tools",
+  "version": "1.0.0",
+  "description": "프롬프트 작성·진단과 스킬 작성 가이드.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "prompt-tools",
+    "shortDescription": "프롬프트 작성·진단과 스킬 작성 가이드.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

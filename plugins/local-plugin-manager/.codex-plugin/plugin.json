@@ -1,0 +1,23 @@
+{
+  "name": "local-plugin-manager",
+  "version": "1.0.0",
+  "description": "로컬 Claude Code/Codex 플러그인·마켓플레이스 관리.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "local-plugin-manager",
+    "shortDescription": "로컬 Claude Code/Codex 플러그인·마켓플레이스 관리.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

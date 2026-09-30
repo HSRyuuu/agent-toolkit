@@ -7,53 +7,50 @@
 
 ## 설치
 
-marketplace 이름은 `hsryuuu`, 플러그인 이름은 `agent-toolkit`이다. 설치 방식은 GitHub 설치와 로컬 디렉토리 설치 두 가지이며 **한 머신에는 하나만** 쓴다.
+marketplace 이름은 `hsryuuu`이고, **플러그인 단위로 골라 설치한다.** 관련 스킬은 한 플러그인에 묶여 함께 설치된다 (예: `coding-convention` = Java + Kotlin 컨벤션).
 
-설치 명령, 업데이트 명령, 버전 범프 규칙, 문제 해결은 [docs/how-to-install.md](docs/how-to-install.md)를 본다.
+```text
+/plugin marketplace add HSRyuuu/agent-toolkit
+/plugin install kb@hsryuuu
+```
+
+설치 방식(GitHub / 로컬 디렉토리), 업데이트, 버전 범프 규칙, 문제 해결은 [docs/how-to-install.md](docs/how-to-install.md)를 본다.
 
 ## 무엇이 들어 있나
 
-- `skills/` - Claude Code와 Codex가 함께 읽는 단일 플러그인 스킬 루트
-- `templates/` - 스킬이 대상 프로젝트에 복사하거나 참고하는 템플릿
-- `docs/catalog.md` - 현재 `skills/*/SKILL.md` frontmatter에서 생성한 사람용 카탈로그
+- `plugins/<name>/` - 플러그인 하나. `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `skills/<skill>/SKILL.md`를 가진다
+- `docs/catalog.md` - 플러그인·스킬 카탈로그 (`plugins/*/skills/*/SKILL.md` frontmatter에서 생성)
 - `docs/how-to-install.md` - 설치, 업데이트, 버전 범프, 배포, 문제 해결
-- `.claude-plugin/` - Claude Code 플러그인 메타데이터
-- `.codex-plugin/` - Codex 플러그인 메타데이터
-- `.agents/plugins/` - Codex 로컬 marketplace 메타데이터
+- `scripts/bump-plugin.sh` - 플러그인 한 개의 두 manifest 버전을 같은 값으로 올린다
+- `templates/rules/` - 외부 가이드라인 사본
+- `.claude-plugin/marketplace.json` - Claude Code marketplace
+- `.agents/plugins/marketplace.json` - Codex marketplace
 
-전체 스킬 목록과 트리거는 [docs/catalog.md](docs/catalog.md)를 본다. 스킬의 카테고리는 문서상의 메타데이터일 뿐이며, 로더 구조를 나누는 디렉토리 기준이 아니다.
+전체 목록과 트리거는 [docs/catalog.md](docs/catalog.md)를 본다.
 
 KB 스킬의 최초 설정과 선택적 Obsidian 연동은
-[`skills/kb/README.md`](skills/kb/README.md)를 본다.
+[`plugins/kb/skills/kb/README.md`](plugins/kb/skills/kb/README.md)를 본다.
 
 ## 갱신
 
-스킬을 추가·이동·삭제했거나 manifest의 스킬 루트를 바꿨으면 `update-project-docs` 스킬로 문서를 동기화한다.
+플러그인이나 스킬을 추가·이동·삭제했거나 manifest를 바꿨으면 `update-project-docs` 스킬로 문서를 동기화한다.
 
 기본 점검 명령:
 
 ```bash
-find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print | sort | wc -l
-grep -oE '\(\.\./skills/[^)]+/SKILL\.md\)' docs/catalog.md | tr -d '()' | sed 's#^../##' | while read p; do test -f "$p" || echo "MISSING: $p"; done
-python3 /Users/happyhsryu/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py /Users/happyhsryu/dev/personal/agent-toolkit
+find plugins -mindepth 4 -maxdepth 4 -path '*/skills/*' -name SKILL.md -print | sort | wc -l
+grep -oE '\(\.\./plugins/[^)]+/SKILL\.md\)' docs/catalog.md | tr -d '()' | sed 's#^../##' | while read p; do test -f "$p" || echo "MISSING: $p"; done
+jq empty .claude-plugin/marketplace.json .agents/plugins/marketplace.json plugins/*/.claude-plugin/plugin.json plugins/*/.codex-plugin/plugin.json
 ```
 
-## 구성
+## 플러그인 묶음
 
-### skills/
-
-모든 플러그인 스킬의 실제 위치다. 현재 inventory는 `skills/*/SKILL.md`만 스캔해서 계산한다.
-`SKILL.md` 없는 보조 디렉토리는 공유 자산으로만 취급하고 inventory에 포함하지 않는다.
-
-```bash
-find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print | sort
-```
-
-### templates/
-
-다른 스킬이 골격 원본으로 사용하는 템플릿 모음. 직접 플러그인 스킬로 로드되지 않는다.
-
-| 이름 | 설명 |
+| 플러그인 | 포함 스킬 |
 |---|---|
-| [project-setup/](templates/project-setup/) | `setup-*` 계열 스킬이 대상 프로젝트에 설치하거나 참고하는 작업 문서와 보조 스킬 템플릿 |
-| [rules/](templates/rules/) | 외부 가이드라인 사본 |
+| `coding-convention` | springboot-java-convention, springboot-kotlin-standards |
+| `project-setup` | setup-* 6개, si-project-docs, update-project-docs (+ `templates/`) |
+| `html-tools` | html-cheat-sheet-creator, html-db-schema-viewer-creator, html-docs-creator |
+| `excel-docs` | excel-doc-updater, excel-ui-test-doc-creator |
+| `prompt-tools` | prompt-master, prompt-modernizer, writing-great-skill |
+
+나머지는 스킬 이름 = 플러그인 이름인 1:1 플러그인이다.

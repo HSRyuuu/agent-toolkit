@@ -9,7 +9,7 @@ description: Use before any git commit, push, pull request, or release when chan
 
 Run this skill before every commit. Do not commit until the scan passes or the user explicitly confirms each remaining finding is intentional.
 
-This project is allowed to mention the target company identifiers only inside this local verify skill. Those identifiers must not appear under the plugin skill root at `skills/`.
+This project is allowed to mention the target company identifiers only inside this local verify skill. Those identifiers must not appear under the plugin root `plugins/`.
 
 ## What to Catch
 
@@ -38,10 +38,10 @@ git diff --cached --name-only
 rg -n -i --hidden --glob '!.git/**' --glob '!.claude/skills/verify-secrets/**' --glob '!.codex/skills/verify-secrets/**' '\b(tripbtoz|tbz)\b|tripbtoz'
 ```
 
-3. Scan the plugin skill root with zero exceptions. Any company identifier under `skills/` is a hard failure.
+3. Scan the plugin root with zero exceptions. Any company identifier under `plugins/` is a hard failure.
 
 ```bash
-rg -n -i '\b(tripbtoz|tbz)\b|tripbtoz' skills
+rg -n -i '\b(tripbtoz|tbz)\b|tripbtoz' plugins
 ```
 
 4. Scan likely secret patterns.
@@ -67,7 +67,7 @@ git diff --cached
 ## PASS Criteria
 
 - No company identifier appears outside `.claude/skills/verify-secrets/` and `.codex/skills/verify-secrets/`.
-- No company identifier appears anywhere under `skills/`.
+- No company identifier appears anywhere under `plugins/`.
 - No real credential, token, key, private URL, or realistic fake secret remains in the files to be committed.
 - Staged diff has been inspected after automated scans.
 
@@ -80,11 +80,11 @@ These may be marked as false positives after inspection:
 - Obviously abbreviated tokens containing ellipses, such as `Bearer eyJ...`
 - Test-only values such as `password123` or `encodedPassword` when they appear in test fixtures or teaching examples
 
-Do not exempt company identifiers under `skills/`.
+Do not exempt company identifiers under `plugins/`.
 
 ## FAIL Criteria
 
-- Any hit under `skills/` for the company identifiers.
+- Any hit under `plugins/` for the company identifiers.
 - Any secret-like value that could plausibly work outside a toy example.
 - Any `.env`, credentials file, key file, or generated few-shot file that contains private values.
 - Any finding the agent cannot confidently classify as a false positive.

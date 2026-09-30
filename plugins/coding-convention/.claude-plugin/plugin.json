@@ -1,0 +1,10 @@
+{
+  "name": "coding-convention",
+  "version": "1.0.0",
+  "description": "Spring Boot 코딩 컨벤션 (Java, Kotlin).",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}

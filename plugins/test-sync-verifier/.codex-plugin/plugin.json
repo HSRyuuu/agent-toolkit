@@ -1,0 +1,23 @@
+{
+  "name": "test-sync-verifier",
+  "version": "1.0.0",
+  "description": "코드 변경에 맞춰 테스트 검증·수정.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "test-sync-verifier",
+    "shortDescription": "코드 변경에 맞춰 테스트 검증·수정.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

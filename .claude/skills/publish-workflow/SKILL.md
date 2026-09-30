@@ -16,7 +16,7 @@ description: Use only when the user explicitly asks to publish or release this r
 먼저 확인한다. 하나라도 어긋나면 멈추고 이유를 보고한다.
 
 ```bash
-jq -r '.name' .codex-plugin/plugin.json   # agent-toolkit 이어야 한다
+jq -r '.name' .claude-plugin/marketplace.json   # hsryuuu 여야 한다
 git branch --show-current                 # main 이어야 한다
 git status --short
 ```
@@ -28,7 +28,7 @@ git status --short
 ## 1. 문서 동기화
 
 스킬을 추가·이동·삭제했거나 `SKILL.md` frontmatter 또는 manifest를 바꿨으면 커밋
-전에 `agent-toolkit:update-project-docs`로 `README.md`, `docs/catalog.md`,
+전에 `update-project-docs`로 `README.md`, `docs/catalog.md`,
 `AGENTS.md`, `.claude/CLAUDE.md`를 맞춘다. 해당 없으면 건너뛴다.
 
 ## 2. verify-secrets
@@ -39,7 +39,7 @@ git status --short
 
 ## 3. 커밋
 
-`agent-toolkit:git-actions`의 커밋 규칙을 따른다.
+`git-actions`의 커밋 규칙을 따른다.
 
 - `git status --short`, `git diff --stat`, 관련 diff를 먼저 본다.
 - 현재 작업과 관련된 파일만 스테이징한다.
@@ -49,16 +49,20 @@ git status --short
 
 ## 4. 버전 범프
 
-배포 대상 커밋이 플러그인에 보이는 내용(`skills/`, `templates/`, hooks, 두
-manifest 중 하나)을 바꿨고 아직 범프하지 않았다면:
+플러그인은 스킬(묶음)마다 따로 배포된다. 배포 대상 커밋이 `plugins/<name>/` 아래 파일을
+바꿨고 아직 범프하지 않았다면, **바뀐 플러그인만** 범프한다.
 
-- `.claude-plugin/plugin.json`과 `.codex-plugin/plugin.json`의 `version`을 **같은
-  값으로** 올린다. 기본은 patch, 사용자가 기능 릴리스라고 하면 minor.
+```bash
+git diff --name-only origin/main..HEAD | grep '^plugins/' | cut -d/ -f2 | sort -u
+scripts/bump-plugin.sh <plugin> [patch|minor|major]   # 두 plugin.json을 같은 값으로 올린다
+```
+
+- 기본은 patch, 사용자가 기능 릴리스라고 하면 minor.
 - `marketplace.json`의 `plugins[]`에는 version을 넣지 않는다.
-- `chore: bump plugin version to X.Y.Z` 형식으로 커밋한다.
+- `chore: bump <plugin> version to X.Y.Z` 형식으로 커밋한다 (여럿이면 한 커밋에 묶고 제목에 나열).
 
-플러그인에 안 보이는 변경(저장소 문서, 로컬 전용 파일)만 있으면 범프를 건너뛰고
-보고에 그 이유를 적는다.
+`plugins/` 밖 변경(저장소 문서, 로컬 전용 파일)만 있으면 범프를 건너뛰고 보고에 그
+이유를 적는다.
 
 ## 5. push
 
@@ -75,8 +79,8 @@ git push origin main
 
 ```bash
 claude plugin marketplace update hsryuuu
-claude plugin update agent-toolkit@hsryuuu
-claude plugin details agent-toolkit@hsryuuu
+claude plugin update <plugin>@hsryuuu      # 바뀐 플러그인마다, 설치돼 있는 것만
+claude plugin details <plugin>@hsryuuu
 
 codex plugin marketplace upgrade hsryuuu
 codex plugin list
@@ -93,7 +97,7 @@ codex plugin list
 
 - verify-secrets 결과
 - 커밋 해시와 메시지, 또는 커밋이 필요 없었다는 사실
-- 버전 범프 `old → new`, 또는 건너뛴 이유
+- 플러그인별 버전 범프 `name old → new`, 또는 건너뛴 이유
 - push 대상과 결과
 - 호스트별 업데이트 결과와 각 호스트가 보고한 버전, 또는 건너뛴 이유
 - 모든 머신에서 새 세션이 필요하고, 다른 머신은 업데이트 명령을 직접 실행해야

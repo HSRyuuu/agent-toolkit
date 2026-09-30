@@ -1,0 +1,10 @@
+{
+  "name": "ui-test-runner",
+  "version": "1.0.0",
+  "description": "라이브 dev 서버 대상 브라우저 UI 검증.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}

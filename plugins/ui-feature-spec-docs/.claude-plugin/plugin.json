@@ -1,0 +1,10 @@
+{
+  "name": "ui-feature-spec-docs",
+  "version": "1.0.0",
+  "description": "프론트엔드 소스에서 화면별 기능 명세 도출.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}

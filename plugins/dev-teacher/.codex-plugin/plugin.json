@@ -1,0 +1,23 @@
+{
+  "name": "dev-teacher",
+  "version": "1.0.0",
+  "description": "개발 개념 튜터링 (수동 호출 전용).",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "dev-teacher",
+    "shortDescription": "개발 개념 튜터링 (수동 호출 전용).",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

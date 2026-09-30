@@ -1,0 +1,10 @@
+{
+  "name": "docs-writing",
+  "version": "1.0.0",
+  "description": "공유용 Markdown 문서 작성·다듬기.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}

@@ -1,0 +1,23 @@
+{
+  "name": "html-tools",
+  "version": "1.0.0",
+  "description": "자기완결형 HTML 치트시트, DB 스키마 뷰어, 문서 생성.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "html-tools",
+    "shortDescription": "자기완결형 HTML 치트시트, DB 스키마 뷰어, 문서 생성.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

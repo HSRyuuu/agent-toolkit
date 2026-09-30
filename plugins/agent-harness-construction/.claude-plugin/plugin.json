@@ -1,0 +1,10 @@
+{
+  "name": "agent-harness-construction",
+  "version": "1.0.0",
+  "description": "AI 에이전트 하네스, 툴 계약, 서브에이전트 위임 설계·리뷰.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}

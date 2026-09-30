@@ -1,0 +1,10 @@
+{
+  "name": "handoff",
+  "version": "1.0.0",
+  "description": "현재 대화를 다른 에이전트용 인수인계 문서로 압축한다.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}

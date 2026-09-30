@@ -1,0 +1,23 @@
+{
+  "name": "fastapi-guide",
+  "version": "1.0.0",
+  "description": "FastAPI 코드 작성·리뷰 가이드.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "fastapi-guide",
+    "shortDescription": "FastAPI 코드 작성·리뷰 가이드.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

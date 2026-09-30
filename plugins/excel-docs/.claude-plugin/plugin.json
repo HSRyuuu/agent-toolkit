@@ -1,0 +1,10 @@
+{
+  "name": "excel-docs",
+  "version": "1.0.0",
+  "description": "양식 기반 xlsx 갱신과 UI 테스트 문서 xlsx 생성.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}

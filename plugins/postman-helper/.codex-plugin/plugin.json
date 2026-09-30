@@ -1,0 +1,23 @@
+{
+  "name": "postman-helper",
+  "version": "1.0.0",
+  "description": "Postman 엔드포인트 검색과 실행.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "postman-helper",
+    "shortDescription": "Postman 엔드포인트 검색과 실행.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

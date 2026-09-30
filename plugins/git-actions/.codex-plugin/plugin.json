@@ -1,0 +1,23 @@
+{
+  "name": "git-actions",
+  "version": "1.0.0",
+  "description": "커밋, 푸시, PR/MR 등 git 작업.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "git-actions",
+    "shortDescription": "커밋, 푸시, PR/MR 등 git 작업.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

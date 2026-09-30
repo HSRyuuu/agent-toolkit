@@ -1,0 +1,23 @@
+{
+  "name": "dev-blog-writing-hsryuuu",
+  "version": "1.0.0",
+  "description": "개인 개발 블로그 글 작성.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "dev-blog-writing-hsryuuu",
+    "shortDescription": "개인 개발 블로그 글 작성.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

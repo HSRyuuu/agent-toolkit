@@ -1,0 +1,10 @@
+{
+  "name": "agent-introspection-debugging",
+  "version": "1.0.0",
+  "description": "멈추거나 루프 도는 에이전트 실행을 자가 진단한다.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}

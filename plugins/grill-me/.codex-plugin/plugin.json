@@ -1,0 +1,23 @@
+{
+  "name": "grill-me",
+  "version": "1.0.0",
+  "description": "계획·결정을 집요하게 캐묻는다.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "grill-me",
+    "shortDescription": "계획·결정을 집요하게 캐묻는다.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "help-agent-toolkit",
+  "version": "1.0.0",
+  "description": "설치된 스킬 목록 안내와 작업별 스킬 추천.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "help-agent-toolkit",
+    "shortDescription": "설치된 스킬 목록 안내와 작업별 스킬 추천.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

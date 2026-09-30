@@ -1,0 +1,10 @@
+{
+  "name": "local-plugin-manager",
+  "version": "1.0.0",
+  "description": "로컬 Claude Code/Codex 플러그인·마켓플레이스 관리.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}

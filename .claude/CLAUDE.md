@@ -1,44 +1,41 @@
 # agent-toolkit
 
-> 개인용 Claude Code plugin. AI 에이전트를 일상적으로 쓰는 데 필요한 자산(초반은 skills 중심, 향후 hooks·agents·commands도 가능)을 한 곳에 모은다.
+> 개인용 Claude Code / Codex plugin marketplace(`hsryuuu`). AI 에이전트를 일상적으로 쓰는 데 필요한 자산(초반은 skills 중심, 향후 hooks·agents·commands도 가능)을 한 곳에 모으고, 플러그인 단위로 골라 설치한다.
 
 ## 정체성
 
 - **개인 큐레이션 베이스** — 직접 만든 것, 외부 OSS에서 가져와 다듬은 것, 실험 중인 것까지 자유롭게 담는다.
-- **단일 plugin, 다중 자산** — Claude Code가 지원하는 자산 종류(`skills/`, `agents/`, `hooks/`, `commands/`)를 한 plugin 안에 섞어 담는다.
-- **공통 스킬 루트** — Claude Code와 Codex 모두 이 저장소의 `skills/`만 플러그인 스킬 루트로 읽는다.
-- **두 가지 설치 경로** — marketplace 이름은 `hsryuuu`. 개발 머신은 로컬 directory marketplace, 그 외 머신은 GitHub marketplace(`HSRyuuu/agent-toolkit`)로 설치한다. 한 머신에는 한 방식만 쓴다.
+- **스킬(묶음)당 plugin 하나** — 관련 스킬은 한 plugin에 묶어 함께 설치하고(`coding-convention`, `project-setup`, `html-tools`, `excel-docs`, `prompt-tools`), 나머지는 스킬 하나가 plugin 하나다. 버전도 plugin별로 독립이다.
+- **공통 plugin 트리** — Claude Code와 Codex 모두 이 저장소의 `plugins/<name>/`을 읽는다.
+- **두 가지 설치 경로** — marketplace 이름은 `hsryuuu`. 개발 머신은 로컬 directory marketplace, 그 외 머신은 GitHub marketplace(`HSRyuuu/agent-toolkit`)로 설치한다. 한 머신에는 한 방식만 쓴다. plugin은 `/plugin install <plugin>@hsryuuu`로 개별 설치한다.
 - **편한 게 우선** — 필요하면 추가하고, 안 맞으면 지운다. 단, 로더 구조는 단순하게 유지한다.
 
 ## 디렉토리 구조
 
 ```text
 agent-toolkit/
-├── .claude-plugin/
-│   ├── plugin.json         # Claude Code plugin 메타
-│   └── marketplace.json    # 로컬 marketplace 메타
+├── .claude-plugin/marketplace.json   # Claude Code marketplace
+├── .agents/plugins/marketplace.json  # Codex marketplace
 ├── .claude/skills/
 │   ├── verify-secrets/     # 이 저장소 전용 로컬 검증 스킬
 │   └── publish-workflow/   # 검증→커밋→푸시→배포 라우터
-├── .codex-plugin/
-│   └── plugin.json         # Codex plugin 메타
-├── .codex/skills/
-│   ├── verify-secrets/     # 이 저장소 전용 로컬 검증 스킬
-│   └── publish-workflow/   # 검증→커밋→푸시→배포 라우터
-├── .agents/plugins/
-│   └── marketplace.json    # Codex 로컬 marketplace 메타
-├── skills/                 # 단일 활성 plugin skill root
-│   └── <name>/SKILL.md
-├── templates/              # 스킬이 대상 프로젝트에 복사하거나 참고하는 템플릿
+├── .codex/skills/          # 위 두 스킬의 Codex 사본
+├── plugins/<plugin>/
+│   ├── .claude-plugin/plugin.json
+│   ├── .codex-plugin/plugin.json
+│   ├── skills/<skill>/SKILL.md
+│   └── templates/          # 그 plugin 스킬이 쓰는 템플릿 (project-setup만)
+├── scripts/bump-plugin.sh  # plugin 하나의 두 manifest 버전을 함께 올린다
+├── templates/rules/        # 외부 가이드라인 사본
 ├── docs/
-│   ├── catalog.md          # skills inventory에서 생성한 사람용 카탈로그
+│   ├── catalog.md          # plugin·skill 카탈로그
 │   └── how-to-install.md   # 설치·업데이트·배포·문제 해결
 └── .claude/CLAUDE.md       # 이 파일
 ```
 
 ## 스킬 관리 기준
 
-새 스킬을 추가할 때는 `skills/<name>/SKILL.md`에 둔다. 스킬이 워크플로우형인지, 스캐폴딩형인지, 디자인형인지는 문서와 frontmatter 설명으로 표현한다. 디렉토리는 플러그인 로딩 경계가 아니라 개별 스킬의 물리 위치다.
+새 스킬은 `plugins/<plugin>/skills/<name>/SKILL.md`에 둔다. 독립 스킬이면 plugin을 새로 만들고(두 manifest + 두 marketplace 항목, 시작 버전 `1.0.0`), 기존 묶음에 속하면 그 plugin 안에 넣는다. 스킬은 자기 plugin 폴더 안에서 자급자족해야 한다. 다른 plugin이나 저장소 루트 파일을 참조하지 않는다.
 
 `SKILL.md`가 없는 디렉토리는 공유 자산으로만 취급한다. 카탈로그와 inventory에는 넣지 않는다.
 
@@ -48,13 +45,13 @@ agent-toolkit/
 - Claude Code는 `.claude/skills/verify-secrets/`, Codex는 `.codex/skills/verify-secrets/`를 사용한다.
 - 이 스킬은 회사 식별자, secret, token, API key, private value, few-shot 예시의 민감값 유입을 막는 최종 게이트다.
 - `verify-secrets`가 하나라도 이슈를 보고하면 커밋하지 않는다. 수정하거나 사용자의 명시적 예외 승인을 받은 뒤 재검증한다.
-- 이 로컬 검증 스킬은 플러그인 배포용 `skills/`로 옮기지 않는다. 로컬 검증 스킬의 회사/secret 예시는 `skills/` 아래 어떤 파일에도 복사하지 않는다.
+- 이 로컬 검증 스킬은 플러그인 배포용 `plugins/`로 옮기지 않는다. 로컬 검증 스킬의 회사/secret 예시는 `plugins/` 아래 어떤 파일에도 복사하지 않는다.
 
 ## 배포
 
-검증부터 배포까지는 프로젝트 로컬 `publish-workflow` 스킬이 소유한다 — 문서 동기화 → verify-secrets → 커밋 → 두 manifest 버전 동시 범프 → `git push origin main` → 설치 플러그인 업데이트. 어느 단계든 실패하면 멈춘다.
+검증부터 배포까지는 프로젝트 로컬 `publish-workflow` 스킬이 소유한다 — 문서 동기화 → verify-secrets → 커밋 → 바뀐 plugin의 두 manifest 버전 동시 범프(`scripts/bump-plugin.sh`) → `git push origin main` → 설치 플러그인 업데이트. 어느 단계든 실패하면 멈춘다.
 
-두 호스트 모두 플러그인 `version`을 캐시 키로 쓰므로 범프 없는 push는 설치된 머신에서 아무 변화가 없다. 호스트 CLI 명령, 캐시 경로, 문제 해결은 `docs/how-to-install.md`에 있다.
+두 호스트 모두 plugin별 `version`을 캐시 키로 쓰므로 범프 없는 push는 설치된 머신에서 아무 변화가 없다. 호스트 CLI 명령, 캐시 경로, 문제 해결은 `docs/how-to-install.md`에 있다.
 
 필수 frontmatter:
 
@@ -72,11 +69,11 @@ description: 언제 이 스킬을 써야 하는지 검색 가능한 문장으로
 `~/.claude/settings.json` (개발 머신 기준):
 
 - `extraKnownMarketplaces.hsryuuu` (directory source → 이 디렉토리)
-- `enabledPlugins["agent-toolkit@hsryuuu"]: true`
+- `enabledPlugins["<plugin>@hsryuuu"]: true` — 쓰는 plugin마다 하나씩
 
-다른 머신은 `/plugin marketplace add HSRyuuu/agent-toolkit` + `/plugin install agent-toolkit@hsryuuu`로 설치한다 (README 참고).
+다른 머신은 `/plugin marketplace add HSRyuuu/agent-toolkit` + `/plugin install <plugin>@hsryuuu`로 설치한다 (README 참고).
 
-Claude Code의 plugin manifest와 Codex의 plugin manifest는 모두 `skills/`를 스킬 루트로 가리켜야 한다. GitHub 설치 사용자에게 변경을 전달하려면 두 plugin manifest의 `version`을 같은 값으로 올려야 한다 (버전이 캐시 키다). `marketplace.json`의 `plugins[]`에는 version을 두지 않는다.
+각 plugin의 Claude/Codex manifest는 같은 `version`을 가져야 한다 (버전이 캐시 키다). `marketplace.json`의 `plugins[]`에는 version을 두지 않는다.
 
 ## 문서 갱신
 
@@ -90,5 +87,5 @@ Claude Code의 plugin manifest와 Codex의 plugin manifest는 모두 `skills/`�
 카탈로그는 다음 inventory를 기준으로 생성한다.
 
 ```bash
-find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print | sort
+find plugins -mindepth 4 -maxdepth 4 -path '*/skills/*' -name SKILL.md -print | sort
 ```

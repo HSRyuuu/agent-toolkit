@@ -1,0 +1,23 @@
+{
+  "name": "project-setup",
+  "version": "1.0.0",
+  "description": "프로젝트에 에이전트 진입점, 문서, 컨텍스트 맵, 로컬 스킬, 자기개선 루프를 세팅한다.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "project-setup",
+    "shortDescription": "프로젝트에 에이전트 진입점, 문서, 컨텍스트 맵, 로컬 스킬, 자기개선 루프를 세팅한다.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

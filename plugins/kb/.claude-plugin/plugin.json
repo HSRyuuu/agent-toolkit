@@ -1,0 +1,10 @@
+{
+  "name": "kb",
+  "version": "1.0.0",
+  "description": "개인·업무 Markdown 지식베이스 저장·검색·점검.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}
