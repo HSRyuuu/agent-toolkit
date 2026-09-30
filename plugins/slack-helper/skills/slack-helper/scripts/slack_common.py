@@ -30,6 +30,7 @@ DEFAULT_USER_SCOPES = [
     "groups:read",
     "groups:history",
     "chat:write",
+    "reactions:write",
 ]
 DEFAULT_REDIRECT_URI = "http://localhost:8765/slack-helper/callback"
 SLACK_API_BASE = "https://slack.com/api"
@@ -540,8 +541,8 @@ def range_bounds(
     return oldest, latest
 
 
-def parse_permalink(url: str) -> tuple[str, str]:
-    """Slack permalink에서 (channel_id, ts)를 뽑는다. 답글 permalink면 thread_ts를 우선한다."""
+def parse_permalink(url: str, prefer_thread: bool = True) -> tuple[str, str]:
+    """Slack permalink에서 (channel_id, ts)를 뽑는다. 기본은 답글 permalink면 thread_ts를 우선한다."""
     value = url.strip().strip('"').strip("'")
     parsed = urllib.parse.urlparse(value)
     match = PERMALINK_RE.search(parsed.path)
@@ -554,7 +555,7 @@ def parse_permalink(url: str) -> tuple[str, str]:
     ts = f"{match.group(2)}.{match.group(3)}"
     params = urllib.parse.parse_qs(parsed.query)
     thread_ts = (params.get("thread_ts") or [""])[0].strip()
-    if thread_ts:
+    if thread_ts and prefer_thread:
         ts = thread_ts
     cid = (params.get("cid") or [""])[0].strip().upper()
     if cid and CHANNEL_ID_RE.match(cid):

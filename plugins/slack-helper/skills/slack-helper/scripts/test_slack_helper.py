@@ -1486,6 +1486,42 @@ def case_write_post_and_reply_payloads() -> bool:
     )
 
 
+def case_write_react_payload() -> bool:
+    write = load_module("slack_write")
+    calls: list[tuple[str, dict[str, object]]] = []
+    original = common.slack_method
+
+    def fake_slack_method(method, *, token=None, payload=None, http_method="POST", **kwargs):
+        calls.append((method, payload or {}))
+        return {"ok": True}
+
+    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
+        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
+        try:
+            common.write_json_secure(
+                Path(tmp) / "config.json",
+                {
+                    "default_workspace": "default",
+                    "workspaces": {"default": {"token": "t", "authed_user": {"access_token": "u"}}},
+                },
+            )
+            common.slack_method = fake_slack_method
+            write.slack_method = fake_slack_method
+            with redirect_stdout(io.StringIO()):
+                write.command_react(
+                    type("Args", (), {"workspace": None, "channel": None, "ts": None,
+                                      "permalink": "https://x.slack.com/archives/C1234567/p1717243200000100?thread_ts=1717243100.000050",
+                                      "emoji": ":thumbsup:"})()
+                )
+        finally:
+            common.slack_method = original
+            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+
+    # 답글 permalink여도 thread_ts가 아니라 메시지 자신의 ts에 단다.
+    expected = ("reactions.add", {"channel": "C1234567", "timestamp": "1717243200.000100", "name": "thumbsup"})
+    return check("slack_write react strips colons and targets the message ts", expected in calls, str(calls))
+
+
 def main() -> int:
     cases = [
         case_curl_config_quote_escapes_control_chars,
@@ -1531,6 +1567,7 @@ def main() -> int:
         case_search_jsonl_output,
         case_setup_doctor_reports_status,
         case_write_post_and_reply_payloads,
+        case_write_react_payload,
     ]
     results = [case() for case in cases]
     print(f"\n{sum(results)}/{len(results)} passed")

@@ -96,13 +96,14 @@ Slack 앱 화면의 왼쪽 메뉴에서 **OAuth & Permissions**를 누르게 한
      - `users:read` — 사용자 목록 읽기
      - `channels:read` — 공개 채널 목록 읽기
      - `channels:history` — 공개 채널 대화 읽기
-   - **사용자 토큰 범위(User Token Scopes)**의 `Add an OAuth Scope`에서 아래 6개를 하나씩 추가한다.
+   - **사용자 토큰 범위(User Token Scopes)**의 `Add an OAuth Scope`에서 아래 7개를 하나씩 추가한다.
      - `search:read` — 메시지 검색 (검색은 이 사용자 범위가 꼭 필요하다. 봇 범위만으로는 검색이 안 된다.)
      - `channels:read` — 공개 채널 목록 읽기
      - `channels:history` — 공개 채널 대화와 스레드 직접 읽기
      - `groups:read` — 사용자가 들어간 비공개 채널 목록 읽기
      - `groups:history` — 사용자가 들어간 비공개 채널 대화와 스레드 직접 읽기
      - `chat:write` — 본인 이름으로 메시지 보내기(채널 게시·스레드 답글)
+     - `reactions:write` — 본인 이름으로 메시지에 이모지 달기
 
 이 단계에서 아래 안내 문구와 **권한 표**(`## 권한과 할 수 있는 일` 섹션)를 반드시 함께 전달한다.
 
@@ -225,8 +226,9 @@ python3 "<SKILL_DIR>/scripts/slack_read.py" channels --limit 100
 | `groups:read` | 내 비공개 채널의 기본 정보 보기 | 내가 속한 비공개 채널 목록·이름 → ID |
 | `groups:history` | 내 비공개 채널의 메시지·콘텐츠 보기 | 비공개 채널 히스토리·스레드 읽기 |
 | `chat:write` | 나를 대신하여 메시지 보내기 | **채널에 메시지 게시, 스레드에 답글** |
+| `reactions:write` | 나를 대신하여 이모지 리액션 추가 | **메시지에 이모지 달기** |
 
-읽기(검색·조회)만 쓰면 `chat:write` 없이도 되고, 메시지를 보내려면 `chat:write`가 반드시 있어야 한다. 표에 없는 권한이 필요한 일(DM 읽기, 메시지 수정·삭제 등)은 이 스킬 범위 밖이다.
+읽기(검색·조회)만 쓰면 `chat:write` 없이도 되고, 메시지를 보내려면 `chat:write`, 이모지를 달려면 `reactions:write`가 반드시 있어야 한다. 표에 없는 권한이 필요한 일(DM 읽기, 메시지 수정·삭제 등)은 이 스킬 범위 밖이다.
 
 ## Avoid
 

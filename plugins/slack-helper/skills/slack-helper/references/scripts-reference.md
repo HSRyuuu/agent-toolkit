@@ -16,7 +16,7 @@ Use this file when a Slack request does not exactly match one of the workflow fi
 | `slack_setup.py` | OAuth, auth checks, identity setup | `setup-guide`, `init-oauth`, `oauth-start`, `oauth-finish`, `auth-test`, `team-info`, `read-sample`, `doctor`, `set-me`, `resolve-me` |
 | `slack_read.py` | direct reads with bot token | `users`, `channels`, `channel-history [--on YYYY-MM-DD 또는 --after/--before] [--tz ...]`, `thread [--permalink URL 또는 --channel/--ts]` |
 | `slack_search.py` | search with user token | `search <keywords> [--from ...] [--in ...] [--to-me] [--after ...] [--days ...] [--limit N] [--jsonl]` |
-| `slack_write.py` | 메시지 전송 (user token, 본인 이름) | `post --channel <id-or-name> --text "..."`, `reply (--channel/--ts 또는 --permalink URL) --text "..."` |
+| `slack_write.py` | 메시지 전송 (user token, 본인 이름) | `post --channel <id-or-name> --text "..."`, `reply (--channel/--ts 또는 --permalink URL) --text "..."`, `react (--channel/--ts 또는 --permalink URL) --emoji thumbsup` |
 | `slack_common.py` | shared implementation | import-only; do not call as CLI |
 
 `slack_read.py`의 `--channel`은 채널 ID(`C...`) 또는 공개 채널 이름을 받는다. 이름이면 `conversations.list`로 ID를 찾는다. MEMORY.md에 별칭이 기록되어 있으면 에이전트가 거기 적힌 ID를 그대로 넘기는 편이 빠르다.
@@ -90,9 +90,15 @@ python3 "<SKILL_DIR>/scripts/slack_write.py" reply --channel C0123456789 --ts 17
 
 전송 후 스크립트가 `channel`/`ts`와 메시지 링크를 출력한다. `chat:write` scope이 없으면 `user_token_for` 에러가 나니 `references/setup-guide.md`로 scope 추가와 OAuth 재승인을 안내한다.
 
+이모지 리액션 하나 추가 (`reactions:write` 필요, 보내기 전에 대상 메시지와 이모지를 확인받는다). `--permalink`는 답글 링크여도 그 메시지 자체에 단다:
+
+```bash
+python3 "<SKILL_DIR>/scripts/slack_write.py" react --permalink "https://acme.slack.com/archives/C0123456789/p1717243200000100" --emoji thumbsup
+```
+
 ## Limits
 
-- 이 스킬은 **읽기 + 전송**만 한다. 메시지 수정·삭제·리액션은 제공하지 않는다.
-- 기본 User Token Scopes는 `search:read`, `channels:read`, `channels:history`, `groups:read`, `groups:history`, `chat:write`다. 공개 채널과 사용자가 들어간 비공개 채널은 User token fallback으로 직접 읽을 수 있다.
+- 이 스킬은 **읽기 + 전송 + 이모지 추가**만 한다. 메시지 수정·삭제·리액션 제거는 제공하지 않는다.
+- 기본 User Token Scopes는 `search:read`, `channels:read`, `channels:history`, `groups:read`, `groups:history`, `chat:write`, `reactions:write`다. 공개 채널과 사용자가 들어간 비공개 채널은 User token fallback으로 직접 읽을 수 있다.
 - `slack_read.py channel-history` and `thread` try bot access first, then user access. If both direct reads fail, use `slack_search.py search` and rely on permalinks.
 - Do not store message bodies in `MEMORY.md`; channel notes stay one line.

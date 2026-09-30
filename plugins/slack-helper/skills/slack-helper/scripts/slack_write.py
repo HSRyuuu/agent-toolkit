@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Post Slack messages to a channel or into a thread (as the authenticated user)."""
+"""Post Slack messages or add emoji reactions (as the authenticated user)."""
 
 from __future__ import annotations
 
@@ -76,9 +76,31 @@ def command_reply(args: argparse.Namespace) -> int:
     return _report(token, response)
 
 
+def command_react(args: argparse.Namespace) -> int:
+    if args.permalink:
+        if args.channel or args.ts:
+            raise SlackHelperError("--permalink는 --channel/--ts와 함께 쓸 수 없습니다.")
+        args.channel, args.ts = parse_permalink(args.permalink, prefer_thread=False)
+    elif not args.channel or not args.ts:
+        raise SlackHelperError("--channel과 --ts를 함께 주거나, 메시지 링크를 --permalink로 넘겨 주세요.")
+    token = user_token_for(args)
+    channel_id = resolve_channel(args.channel, token, types=WRITE_CHANNEL_TYPES)
+    name = args.emoji.strip().strip(":")
+    response = slack_method(
+        "reactions.add",
+        token=token,
+        payload={"channel": channel_id, "timestamp": args.ts, "name": name},
+    )
+    if response.get("ok") is not True:
+        error = response.get("_slack_error") or response.get("error") or response
+        raise SlackHelperError(f"reactions.add failed: {error}")
+    print(f"이모지 추가 완료: :{name}: channel={channel_id} ts={args.ts}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Slack 쓰기 명령(post/reply)",
+        description="Slack 쓰기 명령(post/reply/react)",
         add_help=False,
     )
     parser.add_argument("-h", "--help", action="help", help="도움말 출력")
@@ -99,6 +121,14 @@ def build_parser() -> argparse.ArgumentParser:
     reply.add_argument("--permalink", help="스레드 원 메시지 링크. --channel/--ts 대신 사용")
     reply.add_argument("--text", required=True, help="보낼 답글 본문")
     reply.set_defaults(func=command_reply, channel=None, ts=None)
+
+    react = subparsers.add_parser("react", help="메시지에 이모지 리액션 하나 추가")
+    add_workspace_arg(react)
+    react.add_argument("--channel", help="채널 ID 또는 채널 이름")
+    react.add_argument("--ts", help="대상 메시지의 ts")
+    react.add_argument("--permalink", help="대상 메시지 링크. --channel/--ts 대신 사용")
+    react.add_argument("--emoji", required=True, help="이모지 이름 (예: thumbsup 또는 :thumbsup:)")
+    react.set_defaults(func=command_react, channel=None, ts=None)
 
     return parser
 
