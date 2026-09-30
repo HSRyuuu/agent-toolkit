@@ -40,7 +40,7 @@ agent-toolkit/
 | Update Claude plugin surface | `plugins/<plugin>/.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` | Keep `version` equal to the Codex manifest. |
 | Update Codex plugin surface | `plugins/<plugin>/.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` | Keep `version` equal to the Claude manifest. |
 | Update local pre-commit verification | `.claude/skills/verify-secrets/`, `.codex/skills/verify-secrets/` | Keep this outside `plugins/`; it is not part of the plugin catalog. |
-| Publish the repo end to end | `.claude/skills/publish-workflow/`, `.codex/skills/publish-workflow/` | Owns the release loop. Kept outside `plugins/`, like `verify-secrets`. |
+| Publish the repo end to end | `.claude/skills/publish-agent-toolkit/`, `.codex/skills/publish-agent-toolkit/` | Owns the release loop. Kept outside `plugins/`, like `verify-secrets`. |
 | Document install/update/publish commands | `docs/how-to-install.md` | Single home for host CLI commands, cache-key rules, and troubleshooting. `README.md` links here. |
 | Refresh catalog/docs | `README.md`, `docs/catalog.md`, `AGENTS.md`, `.claude/CLAUDE.md` | Use `update-project-docs` after adding/moving/removing skills. |
 | Edit project setup templates | `plugins/project-setup/templates/` | These are placeholder skeletons, not facts about this repo. |
@@ -72,7 +72,7 @@ agent-toolkit/
 - Keep category labels as metadata. Do not create loader topology by category.
 - **Mandatory before commit:** run the project-local `verify-secrets` skill from `.claude/skills/verify-secrets/` or `.codex/skills/verify-secrets/` before any commit, push, PR, or release. If it reports a hit, stop and resolve it or ask the user for an explicit exemption before continuing.
 - The local `verify-secrets` skill is intentionally outside the plugin skill root. Do not move it into `plugins/`, do not add it to `docs/catalog.md`, and do not copy its company/secret examples into any file under `plugins/`.
-- **Publishing:** the local `publish-workflow` skill owns the release loop — verify-secrets, commit, version bump of each changed plugin (both manifests, `scripts/bump-plugin.sh`), `git push origin main`, then plugin updates. Stop the loop on any failing step. Like `verify-secrets`, it stays outside `plugins/` and out of `docs/catalog.md`. Host CLI commands and cache-key rules live in `docs/how-to-install.md`.
+- **Publishing:** the local `publish-agent-toolkit` skill owns the release loop — verify-secrets, commit, version bump of each changed plugin (both manifests, `scripts/bump-plugin.sh`), `git push origin main`, then plugin updates. Stop the loop on any failing step. Like `verify-secrets`, it stays outside `plugins/` and out of `docs/catalog.md`. Host CLI commands and cache-key rules live in `docs/how-to-install.md`.
 - Both hosts key their plugin cache on `version` (per plugin), so pushing without a bump changes nothing on installed machines. The bump is the release.
 
 ## ANTI-PATTERNS

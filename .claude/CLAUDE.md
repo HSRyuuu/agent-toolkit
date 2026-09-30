@@ -18,7 +18,7 @@ agent-toolkit/
 ├── .agents/plugins/marketplace.json  # Codex marketplace
 ├── .claude/skills/
 │   ├── verify-secrets/     # 이 저장소 전용 로컬 검증 스킬
-│   └── publish-workflow/   # 검증→커밋→푸시→배포 라우터
+│   └── publish-agent-toolkit/   # 검증→커밋→푸시→배포 라우터
 ├── .codex/skills/          # 위 두 스킬의 Codex 사본
 ├── plugins/<plugin>/
 │   ├── .claude-plugin/plugin.json
@@ -49,7 +49,7 @@ agent-toolkit/
 
 ## 배포
 
-검증부터 배포까지는 프로젝트 로컬 `publish-workflow` 스킬이 소유한다 — 문서 동기화 → verify-secrets → 커밋 → 바뀐 plugin의 두 manifest 버전 동시 범프(`scripts/bump-plugin.sh`) → `git push origin main` → 설치 플러그인 업데이트. 어느 단계든 실패하면 멈춘다.
+검증부터 배포까지는 프로젝트 로컬 `publish-agent-toolkit` 스킬이 소유한다 — 문서 동기화 → verify-secrets → 커밋 → 바뀐 plugin의 두 manifest 버전 동시 범프(`scripts/bump-plugin.sh`) → `git push origin main` → 설치 플러그인 업데이트. 어느 단계든 실패하면 멈춘다.
 
 두 호스트 모두 plugin별 `version`을 캐시 키로 쓰므로 범프 없는 push는 설치된 머신에서 아무 변화가 없다. 호스트 CLI 명령, 캐시 경로, 문제 해결은 `docs/how-to-install.md`에 있다.
 

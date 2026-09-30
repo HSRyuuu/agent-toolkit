@@ -100,7 +100,7 @@ codex plugin list
 ## 배포
 
 이 저장소의 변경을 다른 머신까지 전달하는 절차는 프로젝트 로컬
-`publish-workflow` 스킬이 소유한다. 순서는 verify-secrets → 커밋 → 바뀐 플러그인 버전 범프 →
+`publish-agent-toolkit` 스킬이 소유한다. 순서는 verify-secrets → 커밋 → 바뀐 플러그인 버전 범프 →
 `git push origin main` → 위 업데이트 명령.
 
 다른 머신은 이 루프에서 닿지 않는다. 각 머신에서 업데이트 명령을 직접 실행해야

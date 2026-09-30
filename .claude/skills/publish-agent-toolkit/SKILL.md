@@ -1,6 +1,6 @@
 ---
-name: publish-workflow
-description: Use only when the user explicitly asks to publish or release this repository — "/publish-workflow", "배포해줘", "커밋하고 푸시하고 배포해줘", "publish", "릴리스해줘". Runs verify-secrets, commit, version bump, push, and the plugin update commands in one order. Do NOT infer it from a plain "commit" or "push" request.
+name: publish-agent-toolkit
+description: Use only when the user explicitly asks to publish or release this repository — "/publish-agent-toolkit", "배포해줘", "커밋하고 푸시하고 배포해줘", "publish", "릴리스해줘". Runs verify-secrets, commit, version bump, push, and the plugin update commands in one order. Do NOT infer it from a plain "commit" or "push" request.
 ---
 
 # Publish Workflow
@@ -33,8 +33,8 @@ git status --short
 
 ## 2. verify-secrets
 
-프로젝트 로컬 `verify-secrets` 스킬을 실행한다 (Codex는
-`.codex/skills/verify-secrets/`). 이슈를 하나라도 보고하면 커밋하지 않는다.
+프로젝트 로컬 `verify-secrets` 스킬을 실행한다 (Claude Code는
+`.claude/skills/verify-secrets/`). 이슈를 하나라도 보고하면 커밋하지 않는다.
 수정하거나 사용자의 명시적 예외 승인을 받은 뒤 재검증한다.
 
 ## 3. 커밋
