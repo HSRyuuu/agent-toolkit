@@ -17,23 +17,61 @@ description: >
 ## 워크플로우 개요
 
 1. 템플릿 파일 `~/.daily-work-log/daily-work-log-template.md`가 있는지 확인한다.
-2. 대상 날짜를 결정한다. 기본값은 시스템 로컬 타임존 기준 오늘이며, 사용자가 "어제"나 특정 날짜를 말하면 그 날짜를 사용한다.
+1. 템플릿 파일 `~/.daily-work-log/daily-work-log-template.md`가 있는지 확인한다.
+2. 대상 날짜를 결정한다. 기본값은 시스템 로컬 타임존 기준 오늘이며, 사용자가 "어제"나 특정 날짜, 기간을 말하면 그 날짜들을 사용한다.
 3. `~/.daily-work-log/config.json`을 읽어 `references/custom-setting.md` 기준으로 사용자 설정을 적용하고, 로그 루트를 확정한다. 로그 루트는 아래 "출력 위치" 규칙으로 정해지지 않을 때만 이 시점에 묻는다.
-4. Codex/Claude 세션에서 1차 후보 JSON을 수집한다.
-5. `numbered-candidates.json`을 만들어 번호와 그룹을 확정한다.
-6. 표시 후보 전체(`displayed_candidates`의 1번부터 마지막 번호까지)를 기본 포함으로 `second-pass-digest.json`을 만든다.
-7. `final-info.json` skeleton을 만든다.
-8. LLM이 digest와 필요한 최소 근거를 확인해 skeleton의 빈 슬롯과 `impact`를 보강한다.
-9. 로그 루트 아래 `YYYY/MM/YYYY-MM-DD.md`로 최종 Markdown을 저장한다.
-10. 아래 "완료 보고" 형식으로 기록 목록과 `impact-items` 현황을 보여주고, 뺄 항목이 있는지 묻는다.
-11. 사용자가 빼거나 바꾸라고 하면 저장한 Markdown과 `final-info.json`을 함께 고친다.
+4. 대상 날짜마다 서브에이전트를 하나씩 띄워 아래 "날짜별 작성 절차"를 맡긴다. 상세는 "날짜별 서브에이전트" 절을 따른다.
+5. 서브에이전트 결과를 모아 아래 "완료 보고" 형식으로 기록 목록과 `impact-items` 현황을 보여주고, 뺄 항목이 있는지 묻는다.
+6. 사용자가 빼거나 바꾸라고 하면 저장한 Markdown과 `final-info.json`을 고친다.
 
-3번 이후 9번까지는 사용자에게 묻지 않고 끝까지 진행한다. 판단이 애매한 항목도 일단 기록에 넣고, 완료 보고에서 사용자가 빼게 한다.
+1~3번은 메인 에이전트가 처리한다. 사용자에게 물어야 하는 것은 모두 이 단계에서 끝낸다. 4번부터 완료 보고 전까지는 사용자에게 묻지 않는다. 판단이 애매한 항목도 일단 기록에 넣고, 완료 보고에서 사용자가 빼게 한다.
+
+### 날짜별 작성 절차
+
+한 날짜에 대해 아래를 순서대로 수행한다.
+
+1. Codex/Claude 세션에서 1차 후보 JSON을 수집한다.
+2. `numbered-candidates.json`을 만들어 번호와 그룹을 확정한다.
+3. 표시 후보 전체(`displayed_candidates`의 1번부터 마지막 번호까지)를 기본 포함으로 `second-pass-digest.json`을 만든다.
+4. `final-info.json` skeleton을 만든다.
+5. LLM이 digest와 필요한 최소 근거를 확인해 skeleton의 빈 슬롯과 `impact`를 보강한다.
+6. 로그 루트 아래 `YYYY/MM/YYYY-MM-DD.md`로 최종 Markdown을 저장한다.
+
+## 날짜별 서브에이전트
+
+날짜별 작성 절차는 세션 후보와 digest JSON이 날짜당 수백 KB라서 메인 컨텍스트에서 돌리지 않는다. 날짜가 하나여도 서브에이전트에 맡긴다.
+
+- Claude Code에서는 Agent 도구로 날짜마다 서브에이전트를 하나씩 띄우고, `model`은 `sonnet`으로 지정한다. 날짜가 여럿이면 한 메시지에서 모두 띄워 병렬로 돌린다.
+- 서브에이전트를 띄울 수 없는 환경(Codex 등)에서는 메인 에이전트가 날짜별 작성 절차를 날짜 순서대로 직접 수행한다.
+- 날짜마다 중간 산출물 디렉터리가 따로라서 병렬 실행끼리 충돌하지 않는다.
+
+서브에이전트 프롬프트에는 아래를 모두 넣는다. 서브에이전트는 이 대화를 보지 못한다.
+
+- 이 스킬의 base directory와 `SKILL.md` 경로. "날짜별 작성 절차", "필수 Frontmatter", "최종 Markdown 구조", "참조 표기 규칙", "Impact 섹션 (opt-in)", "작성 언어", "안전 규칙" 절과 `references/collect-first-pass-candidates.md`, `references/collect-second-pass-details.md`를 읽고 따르라는 지시
+- 대상 날짜, 확정된 로그 루트, 템플릿 경로
+- `config.json`에서 읽은 스크립트 옵션 값(`top-limit`, `other-limit`, `include-supporting`)
+- 지켜야 할 것: 사용자에게 묻지 않는다. `config.json`과 템플릿 파일을 쓰지 않는다. 그 날짜의 중간 산출물 디렉터리와 최종 Markdown 한 파일만 쓴다.
+- 아래 반환 형식
+
+서브에이전트 반환 형식:
+
+```text
+date: YYYY-MM-DD
+saved: <최종 Markdown 절대 경로 | none>
+items:
+- <번호> | <top|other> | <구분> | <제목> | <한 줄 요약>
+impact:
+- <name>: <근거 건수>
+notes: <근거가 약한 항목, 실패한 단계 등. 없으면 none>
+```
+
+그 날짜에 표시 후보가 하나도 없으면 Markdown을 만들지 않고 `saved: none`과 `items:` 빈 목록을 돌려준다. 메인 에이전트는 이 반환값만으로 완료 보고를 만들고, 중간 산출물 JSON을 다시 읽지 않는다.
 
 ## 대상 날짜 규칙
 
 - 사용자가 날짜를 말하지 않으면 시스템 로컬 타임존 기준 오늘을 대상 날짜로 삼는다.
 - "어제", "지난 금요일", `2026-07-02`처럼 날짜를 지정하면 그 날짜를 대상 날짜로 삼는다.
+- "지난주", "10월 1일~3일"처럼 기간을 말하면 그 기간의 각 날짜를 대상 날짜로 삼는다.
 - 세션 타임스탬프는 로컬 타임존으로 변환한 뒤 대상 날짜와 비교한다. Codex 세션은 UTC 저장 디렉터리 경계를 고려해 대상 날짜의 전날, 당일, 다음날 디렉터리를 함께 검사한다.
 
 ## 스크립트 실행 기준
@@ -77,11 +115,12 @@ Codex/Claude 세션에서 업무 기록 후보를 찾을 때는 원시 JSONL을 
 
 ## 완료 보고
 
-최종 Markdown을 저장한 뒤 한 번만 보고하고, 이 보고에서 뺄 항목과 `impact-items` 변경을 함께 묻는다. 보고는 사람이 훑어 읽는 짧은 보고서다.
+모든 날짜의 서브에이전트가 끝난 뒤 한 번만 보고하고, 이 보고에서 뺄 항목과 `impact-items` 변경을 함께 묻는다. 보고는 사람이 훑어 읽는 짧은 보고서다.
 
 형식 규칙:
 
 - 첫 줄은 무엇을 어디에 몇 건 기록했는지 말하는 한 문장이다. 별도 요약 블록을 두지 않는다.
+- 날짜가 여럿이면 `기록한 작업` 아래에 날짜마다 저장 경로 한 줄과 표를 하나씩 둔다. 번호는 날짜마다 따로이므로, 사용자는 "10-01 3번"처럼 날짜와 번호로 뺄 항목을 말한다. `Impact` 표의 결과 열은 "10-01 2건, 10-02 없음"처럼 날짜별로 쓴다. 기록이 없는 날짜는 한 줄로 알린다.
 - 소제목은 `기록한 작업`, `Impact`, `설정` 세 개만 쓰고, 각 소제목의 첫 문장이 그 섹션의 결론이 되게 한다.
 - 기록 목록은 표로 쓴다. 번호는 `numbered-candidates.json`의 번호를 그대로 쓴다. 셀은 짧은 명사구로 끝내고, 단서는 표 밖 한 줄로 뺀다.
 - 본문은 `~한다` 단정 서술체로 쓰고, 마지막 질문 한 줄만 존댓말로 쓴다.
@@ -131,7 +170,8 @@ Impact 항목, 본문 템플릿, 후보 수·검색 결과 수 같은 한도를 
 - 뺄 번호를 받으면 최종 Markdown에서 그 항목의 `## 한눈에 보기` 표 행, `###` 항목, 자유 형식 상세, `## Impact`의 관련 근거를 지우고, `tags`와 `summary`를 남은 항목 기준으로 다시 맞춘다. `final-info.json`의 `selected_candidates`와 `selected_items`에서도 같은 항목을 지운다.
 - `impact-items` 추가 요청에는 `name`과 `description`이 모두 필요하다. `description`이 없으면 "이 항목은 어떤 근거를 찾으면 되나요?"처럼 짧게 되물어 채운다.
 - 수정 요청은 언급된 필드(`name` 또는 `description`)만 바꾸고, 삭제는 `name`으로 지정한다. `config.json`의 다른 필드는 유지한다.
-- `impact-items`가 바뀌면 `config.json`을 갱신한 뒤, `second-pass-digest.json`(필요하면 원본 세션 work unit)을 다시 확인해 `final-info.json`의 `impact`와 최종 Markdown의 `## Impact`를 새 목록 기준으로 다시 채운다.
+- 뺄 항목 반영은 메인 에이전트가 저장된 Markdown과 `final-info.json`을 직접 고친다.
+- `impact-items`가 바뀌면 메인 에이전트가 `config.json`을 갱신한 뒤, 날짜마다 `sonnet` 서브에이전트를 띄워 `second-pass-digest.json`(필요하면 원본 세션 work unit)을 다시 확인하고 `final-info.json`의 `impact`와 최종 Markdown의 `## Impact`만 새 목록 기준으로 다시 채우게 한다. 서브에이전트를 띄울 수 없으면 메인 에이전트가 직접 한다.
 - 고친 뒤에는 바뀐 내용만 한두 줄로 알린다. 전체 보고를 반복하지 않는다.
 - "없음", "그대로"처럼 변경이 없으면 추가 질문 없이 마친다.
 

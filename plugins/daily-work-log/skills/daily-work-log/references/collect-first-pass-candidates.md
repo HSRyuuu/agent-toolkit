@@ -199,7 +199,7 @@ python3 <skill-base-dir>/scripts/build_numbered_candidates.py --date YYYY-MM-DD
 ~/.daily-work-log/YYYY/YYYY-MM-DD/numbered-candidates.json
 ```
 
-이 파일의 `displayed_candidates`가 기록 대상 목록의 source of truth다. 완료 보고의 번호, 제목, `list_section`은 이 파일에서 가져온다. 사용자가 완료 보고를 보고 "4,5"처럼 뺄 번호를 말하면 반드시 같은 `numbered-candidates.json`의 번호로 해석한다.
+이 파일의 `displayed_candidates`가 기록 대상 목록의 source of truth다. 완료 보고의 번호, 제목, `list_section`은 이 파일에서 가져온다. 사용자가 완료 보고를 보고 "4,5"(날짜가 여럿이면 "10-01 4번")처럼 뺄 번호를 말하면 반드시 같은 `numbered-candidates.json`의 번호로 해석한다.
 
 `numbered-candidates.json`은 상위 후보와 기타 후보 모두에 연속 번호를 부여한다. 따라서 기타 후보도 별도 `extra_items`나 `selected-candidates.json` 없이, 최종 `final-info.json`의 `selected_candidates` 배열에 같은 방식으로 기록할 수 있다.
 
