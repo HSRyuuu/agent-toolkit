@@ -183,7 +183,7 @@ Codex, Claude output 파일은 모두 같은 top-level 구조를 사용한다.
 
 1차 수집 결과는 중간에 사용자에게 보여주지 않는다. 기록 목록은 최종 Markdown을 저장한 뒤 SKILL.md의 "완료 보고"에서 한 번만 보여준다.
 
-`numbered-candidates.json`이 표시 후보를 고른다. 상위 후보 다음에 상위 후보에 들지 못했지만 쓸 만한 기타 후보를 최대 3개까지 두고, 둘을 합친 전체에 하나의 연속 번호를 붙인다. 기타 후보에는 상위 후보와 중복된 항목을 넣지 않는다. `<turn_aborted>`만 남은 후보, `local-command-*` 로그인/훅 확인 노이즈, `Continue from where you left off` 같은 단독 재개 신호는 기본적으로 숨긴다.
+`numbered-candidates.json`이 표시 후보를 고른다. 상위 후보 다음에 상위 후보에 들지 못했지만 쓸 만한 기타 후보를 기본 5개까지 두고(상위 후보는 기본 15개), 둘을 합친 전체에 하나의 연속 번호를 붙인다. 기타 후보에는 상위 후보와 중복된 항목을 넣지 않는다. `<turn_aborted>`만 남은 후보, `local-command-*` 로그인/훅 확인 노이즈, `Continue from where you left off` 같은 단독 재개 신호는 기본적으로 숨긴다. 하네스가 사용자 메시지 자리에 넣는 블록(`<system-reminder>`, `<local-command-caveat>`, `<recommended_plugins>`, `<task-notification>`, `<fork-source>`, `[Image: ...]`)과 포크·Orca 워커 지시문은 수집 단계의 `clean_user_text`가 사용자 요청에서 지운다.
 
 ## 번호 후보 JSON 생성
 

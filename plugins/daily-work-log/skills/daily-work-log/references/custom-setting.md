@@ -8,7 +8,7 @@
 |---|---|---|
 | `impact-items` | 문서 맨 위 `## Impact`에 모을 라벨과 각 라벨이 찾을 근거 | `[{"name": "TODO", "description": "완결되지 않은 것으로 보이는 것"}]` |
 | 본문 템플릿 | `~/.daily-work-log/daily-work-log-template.md`. `###` 항목의 부가 슬롯과 자유 형식 영역을 바꿀 수 있다 | `- 관련 링크` 슬롯 삭제 |
-| 수집·검색 한도 | 상위 후보 수, 기타 후보 수, subagent/sidechain 세션 포함 여부, 검색 결과 수 | `"top-limit": 10`, `"other-limit": 3`, `"include-supporting": false`, `"search-limit": 20` |
+| 수집·검색 한도 | 상위 후보 수, 기타 후보 수, subagent/sidechain 세션 포함 여부, 검색 결과 수 | `"top-limit": 15`, `"other-limit": 5`, `"include-supporting": false`, `"search-limit": 20` |
 | `log_root` | 최종 Markdown을 저장하는 로그 루트 | `"/Users/me/work-log"` |
 
 표시 후보는 모두 기록에 들어가므로, `top-limit`과 `other-limit`을 더한 값이 하루 기록 건수의 상한이다.
@@ -24,8 +24,8 @@
     {"name": "Jira Ticket", "description": "Jira 이슈 키(예: PROJ-1234)가 언급된 것"},
     {"name": "PR/MR 기록", "description": "생성/머지/리뷰한 PR 또는 MR"}
   ],
-  "top-limit": 10,
-  "other-limit": 3,
+  "top-limit": 15,
+  "other-limit": 5,
   "include-supporting": false,
   "search-limit": 20
 }

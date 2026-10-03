@@ -42,8 +42,22 @@ COMMAND_RE = re.compile(
     re.I,
 )
 COMMIT_RE = re.compile(r"\b[0-9a-f]{7,40}\b")
-SYSTEM_REMINDER_OPEN = "<system-reminder>"
-SYSTEM_REMINDER_CLOSE = "</system-reminder>"
+# 사용자 메시지 자리에 하네스가 끼워 넣는 블록. 사용자 요청이 아니므로 통째로 지운다.
+INJECTED_BLOCK_TAGS = (
+    "system-reminder",
+    "local-command-caveat",
+    "local-command-stdout",
+    "local-command-stderr",
+    "recommended_plugins",
+    "task-notification",
+    "fork-source",
+)
+IMAGE_PLACEHOLDER_RE = re.compile(r"\[Image(?: #\d+)?:[^\]]*\]")
+# 하네스·오케스트레이터가 보낸 메시지. 사용자 요청이 아니므로 버린다.
+HARNESS_MESSAGE_RE = re.compile(
+    r"^(?:<pasted_content[^>]*>\s*)?(?:The fork runs as its own separate session|This session began as a fork|You are working inside Orca)",
+    re.I,
+)
 
 
 def load_jsonl(path: Path, limit: int | None = None) -> list[dict[str, Any]]:
@@ -75,13 +89,16 @@ def compact(text: str, limit: int = 240) -> str:
 
 
 def strip_injected_blocks(text: str) -> str:
-    while SYSTEM_REMINDER_OPEN in text:
-        start = text.find(SYSTEM_REMINDER_OPEN)
-        end = text.find(SYSTEM_REMINDER_CLOSE, start + len(SYSTEM_REMINDER_OPEN))
-        if end == -1:
-            return text[:start]
-        text = text[:start] + text[end + len(SYSTEM_REMINDER_CLOSE) :]
-    return text
+    for tag in INJECTED_BLOCK_TAGS:
+        open_tag, close_tag = f"<{tag}>", f"</{tag}>"
+        while open_tag in text:
+            start = text.find(open_tag)
+            end = text.find(close_tag, start + len(open_tag))
+            if end == -1:
+                text = text[:start]
+                break
+            text = text[:start] + text[end + len(close_tag) :]
+    return IMAGE_PLACEHOLDER_RE.sub("", text)
 
 
 def to_local_date(value: Any, tz: tzinfo | None = None) -> date | None:
@@ -103,6 +120,8 @@ def clean_user_text(text: str, limit: int = 260) -> str:
     text = strip_injected_blocks(text)
     text = re.sub(r"^\[[^\]]+\]\([^)]*SKILL\.md\)\s*", "", text.strip())
     leading = text.lstrip()
+    if HARNESS_MESSAGE_RE.match(leading):
+        return ""
     if leading.startswith(
         (
             "# AGENTS.md instructions",

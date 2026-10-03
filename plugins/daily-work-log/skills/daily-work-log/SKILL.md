@@ -51,7 +51,20 @@ description: >
 - 대상 날짜, 확정된 로그 루트, 템플릿 경로
 - `config.json`에서 읽은 스크립트 옵션 값(`top-limit`, `other-limit`, `include-supporting`)
 - 지켜야 할 것: 사용자에게 묻지 않는다. `config.json`과 템플릿 파일을 쓰지 않는다. 그 날짜의 중간 산출물 디렉터리와 최종 Markdown 한 파일만 쓴다.
+- 아래 필수 체크리스트를 그대로 옮긴 것
 - 아래 반환 형식
+
+필수 체크리스트 (서브에이전트 프롬프트에 그대로 넣는다):
+
+1. 템플릿 파일을 먼저 읽고, 최종 Markdown을 그 구조로 쓴다.
+2. 표시 후보 전체(`--selection 1-N`)로 digest를 만든다. 항목을 임의로 빼거나 합치지 않는다.
+3. `final-info.json`의 `selected_items`를 보강한다. `impact-items`가 있으면 `impact.findings`도 채운다. skeleton 상태로 두지 않는다.
+4. 최종 Markdown의 frontmatter 4개 필드를 채운다. `summary`와 `tags`를 비워 두지 않는다.
+5. `impact-items`가 있고 근거가 있으면 `## Impact` 섹션을 쓴다.
+6. `## 한눈에 보기` 표에 모든 항목을 넣는다.
+7. 모든 항목마다 `###` 섹션을 쓴다. 각 섹션에는 `요약:`과 `- 구분:`을 두고, 근거에 repo·파일·링크가 있으면 참조 슬롯(`코드 경로`, `관련 파일`, `관련 링크`)을 채운다.
+8. 항목별 상세(맥락, 진행 과정, 판단 근거, 남은 일)를 자유 형식 영역에 쓰고, `<!-- 이 아래는 자유 형식 -->` 주석 라인은 지운다.
+9. 항목이 많아도 위 단계를 줄이거나 생략하지 않는다.
 
 서브에이전트 반환 형식:
 
@@ -62,8 +75,16 @@ items:
 - <번호> | <top|other> | <구분> | <제목> | <한 줄 요약>
 impact:
 - <name>: <근거 건수>
-notes: <근거가 약한 항목, 실패한 단계 등. 없으면 none>
+checks:
+- template: <done | skipped>
+- final_info_impact: <done | n/a | skipped>
+- item_sections: <### 항목 수>/<items 수>
+- reference_slots: <참조 슬롯이 있는 항목 수>/<items 수>
+- free_form_detail: <done | skipped>
+notes: <근거가 약한 항목, 실패한 단계, 참조 슬롯이 없는 항목과 그 이유. 없으면 none>
 ```
+
+메인 에이전트는 `checks`를 확인한다. `skipped`가 있거나 `item_sections`의 두 수가 다르면, 그 날짜의 서브에이전트를 한 번 다시 띄운다. 이때 빠진 항목을 프롬프트에 적고, 이미 저장된 Markdown과 `final-info.json`을 보완하게 한다. 다시 돌려도 빠지면 완료 보고에 그 날짜와 빠진 항목을 한 줄로 알린다. `reference_slots`가 작은 것은 근거에 repo·파일이 없을 수 있으므로 다시 돌리는 조건이 아니다.
 
 그 날짜에 표시 후보가 하나도 없으면 Markdown을 만들지 않고 `saved: none`과 `items:` 빈 목록을 돌려준다. 메인 에이전트는 이 반환값만으로 완료 보고를 만들고, 중간 산출물 JSON을 다시 읽지 않는다.
 
@@ -164,7 +185,7 @@ Codex/Claude 세션에서 업무 기록 후보를 찾을 때는 원시 JSONL을 
 |---|---|---|
 | Impact 항목 | 기록 맨 위 `## Impact`에 매번 모아 볼 내용 | Jira 티켓, PR/MR, TODO |
 | 본문 템플릿 | 작업 항목의 참조 슬롯과 자유 형식 영역 구성 | `관련 링크` 슬롯 빼기 |
-| 후보 수 | 하루에 기록할 최대 작업 수 | 상위 10 + 기타 3 |
+| 후보 수 | 하루에 기록할 최대 작업 수 | 상위 15 + 기타 5 |
 | 보조 세션 포함 | subagent·sidechain 세션도 후보로 볼지 | 포함 안 함 |
 | 검색 결과 수 | 검색 모드에서 보여줄 최대 건수 | 20건 |
 | 로그 저장 위치 | 최종 Markdown을 저장할 폴더 | `~/work-log` |

@@ -36,6 +36,17 @@ class CleanUserTextTests(unittest.TestCase):
         )
         self.assertEqual(clean_user_text("실제 요청\n<environment_context>noise</environment_context>"), "실제 요청")
 
+    def test_harness_blocks_are_removed(self) -> None:
+        for tag in ("local-command-caveat", "recommended_plugins", "task-notification", "fork-source"):
+            self.assertEqual(clean_user_text(f"<{tag}>harness</{tag}>"), "", tag)
+        self.assertEqual(clean_user_text("<task-notification>done</task-notification> 실제 요청"), "실제 요청")
+        self.assertEqual(clean_user_text("[Image: source: /tmp/a.png] 이거 고쳐줘"), "이거 고쳐줘")
+
+    def test_harness_messages_are_dropped(self) -> None:
+        self.assertEqual(clean_user_text("The fork runs as its own separate session — nothing it does arrives"), "")
+        self.assertEqual(clean_user_text('<pasted_content id="1"> You are working inside Orca, a multi-agent IDE.'), "")
+        self.assertEqual(clean_user_text('<pasted_content id="2"> TEC-922 작업 지시'), '<pasted_content id="2"> TEC-922 작업 지시')
+
 
 if __name__ == "__main__":
     unittest.main()
