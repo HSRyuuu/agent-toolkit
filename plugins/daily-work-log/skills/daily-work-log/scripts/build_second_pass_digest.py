@@ -66,7 +66,6 @@ def candidate_paths(target_date: str, state_root: Path, source_files: list[Any])
     return [
         default_output_path("codex", target_date, state_root),
         default_output_path("claude", target_date, state_root),
-        default_output_path("kb", target_date, state_root),
     ]
 
 
@@ -167,9 +166,8 @@ def compact_group(group: dict[str, Any]) -> dict[str, Any]:
         "title": group.get("title"),
         "list_section": group.get("list_section"),
         "topic_key": group.get("topic_key"),
-        "selection_note": "사용자가 오늘 일지에 포함하도록 선택함",
+        "selection_note": "표시 후보 전체를 기본 포함함",
         "candidate_refs": group.get("candidate_refs") or [],
-        "kb_paths": group.get("kb_paths") or [],
         "source_projects": group.get("source_projects") or [],
         "confidence": group.get("confidence"),
     }
@@ -189,7 +187,6 @@ def build_digest(target_date: str, state_root: Path, numbered_path: Path, select
     for group in groups:
         work_units: list[dict[str, Any]] = []
         session_files: list[str] = []
-        kb_documents: list[str] = []
         project_files: list[str] = []
         source_projects: list[str] = []
         commands: list[str] = []
@@ -221,7 +218,6 @@ def build_digest(target_date: str, state_root: Path, numbered_path: Path, select
                 add_unique(tests, compacted["test_evidence"], limit=20)
                 add_unique(git_evidence, compacted["git_evidence"], limit=20)
 
-        add_unique(kb_documents, group.get("kb_paths") or [], limit=30)
         selected_details.append(
             {
                 "group_id": str(group.get("number")),
@@ -231,7 +227,6 @@ def build_digest(target_date: str, state_root: Path, numbered_path: Path, select
                 "work_units": work_units,
                 "evidence_paths": {
                     "session_files": session_files,
-                    "kb_documents": kb_documents,
                     "project_files": project_files,
                     "notes": [],
                 },

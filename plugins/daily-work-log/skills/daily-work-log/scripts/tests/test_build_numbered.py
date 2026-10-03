@@ -38,7 +38,7 @@ def session_candidate(session_id: str, *units: dict) -> dict:
 
 
 class BuildNumberedCandidatesTests(unittest.TestCase):
-    def test_collect_groups_uses_session_and_kb_document_groups(self) -> None:
+    def test_collect_groups_uses_session_groups(self) -> None:
         first_pass = [
             {
                 "source": "codex",
@@ -48,29 +48,14 @@ class BuildNumberedCandidatesTests(unittest.TestCase):
                 ],
                 "supporting": [],
             },
-            {
-                "source": "kb",
-                "candidates": [
-                    {
-                        "source": "kb",
-                        "session_id": None,
-                        "file": "/kb/notes/today.md",
-                        "title_hint": "오늘 업무 메모",
-                        "importance_score": 55,
-                        "confidence": "medium",
-                        "work_units": [work_unit("kb1", "KB 메모")],
-                    }
-                ],
-                "supporting": [],
-            },
         ]
 
         groups = collect_groups(first_pass, include_supporting=False)
-        self.assertEqual(len(groups), 3)
-        self.assertEqual({group["topic_key"] for group in groups}, {"codex:session-a", "codex:session-b", "kb:오늘 업무 메모"})
+        self.assertEqual(len(groups), 2)
+        self.assertEqual({group["topic_key"] for group in groups}, {"codex:session-a", "codex:session-b"})
         for number, group in enumerate(groups, start=1):
             group["number"] = number
-        self.assertEqual([group["number"] for group in groups], [1, 2, 3])
+        self.assertEqual([group["number"] for group in groups], [1, 2])
 
     def test_source_has_no_hardcoded_topic_rules(self) -> None:
         # 회사/업무 식별자 부재는 verify-secrets 스킬과 스윕 grep이 담당한다.

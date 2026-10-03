@@ -1,8 +1,8 @@
 # 2차 상세 탐색 방법
 
-2차 상세 탐색의 목적은 사용자가 고른 1차 후보만 다시 확인해서 최종 업무 기록에 쓸 수 있는 안전한 정보 JSON을 만드는 것이다.
+2차 상세 탐색의 목적은 표시 후보 전체를 다시 확인해서 최종 업무 기록에 쓸 수 있는 안전한 정보 JSON을 만드는 것이다.
 
-1차 후보의 `first_pass_summary`와 `work_units[].outcome`은 스크립트 기반 추정이다. 최종 Markdown에 바로 쓰지 말고, 선택된 후보의 세션 digest, KB 문서, 관련 파일 경로를 확인해 사실과 추정을 분리한다.
+1차 후보의 `first_pass_summary`와 `work_units[].outcome`은 스크립트 기반 추정이다. 최종 Markdown에 바로 쓰지 말고, 선택된 후보의 세션 digest와 관련 파일 경로를 확인해 사실과 추정을 분리한다.
 
 ## 저장 위치
 
@@ -14,24 +14,19 @@
     └── YYYY-MM-DD/
         ├── codex-candidates.json
         ├── claude-candidates.json
-        ├── kb-candidates.json
         ├── numbered-candidates.json
         ├── second-pass-digest.json
         └── final-info.json
 ```
 
-`final-info.json`은 최종 Markdown 초안 작성의 직접 입력이다. 사용자가 고른 후보 목록은 별도 파일로 만들지 않고 `final-info.json`의 최상위 `selected_candidates` 배열에 함께 기록한다. 1차 응답의 상위 후보와 기타 후보는 모두 번호를 가지므로, 기타 후보를 선택한 경우에도 같은 배열에 기록한다.
-
-## Impact 항목 확인
-
-`build_second_pass_digest.py`를 실행하기 전에, 사용자에게 현재 등록된 `impact-items`를 안내하고 추가/수정/삭제 여부를 매번 확인한다. 변경 요청이 있으면 `config.json`을 먼저 갱신한 뒤 다음 단계로 진행한다. 안내 문구, 확인 시점을 여기에 두는 이유는 SKILL.md의 "Impact 항목 확인" 절을 따른다.
+`final-info.json`은 최종 Markdown 초안 작성의 직접 입력이다. 기록에 포함한 후보 목록은 별도 파일로 만들지 않고 `final-info.json`의 최상위 `selected_candidates` 배열에 함께 기록한다. 상위 후보와 기타 후보는 모두 번호를 가지므로 같은 배열에 기록한다.
 
 ## 스크립트 기반 2차 흐름
 
-사용자 선택 이후에는 먼저 선택 번호를 저장된 `numbered-candidates.json`에 대해 해석한다.
+사용자에게 묻지 않고 `numbered-candidates.json`의 표시 후보 전체를 포함한다. `N`은 `displayed_candidates`의 마지막 번호다.
 
 ```bash
-python3 <skill-base-dir>/scripts/build_second_pass_digest.py --date YYYY-MM-DD --selection 4,5,6
+python3 <skill-base-dir>/scripts/build_second_pass_digest.py --date YYYY-MM-DD --selection 1-N
 ```
 
 기본 출력:
@@ -40,7 +35,7 @@ python3 <skill-base-dir>/scripts/build_second_pass_digest.py --date YYYY-MM-DD -
 ~/.daily-work-log/YYYY/YYYY-MM-DD/second-pass-digest.json
 ```
 
-`second-pass-digest.json`은 선택된 후보가 가리키는 work unit, 세션 파일, KB 문서, 관련 파일 경로, 명령/test/git 근거만 압축한다. 이 파일은 LLM이 원시 JSONL 전체를 다시 읽지 않게 하기 위한 중간 자료다.
+`second-pass-digest.json`은 선택된 후보가 가리키는 work unit, 세션 파일, 관련 파일 경로, 명령/test/git 근거만 압축한다. 이 파일은 LLM이 원시 JSONL 전체를 다시 읽지 않게 하기 위한 중간 자료다.
 
 그 다음 final-info skeleton을 만든다.
 
@@ -58,7 +53,7 @@ python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
 
 ## 선택 후보 기록
 
-사용자가 "4,5,6"처럼 후보를 고르면, 선택 내용을 후보 묶음 단위로 `final-info.json` 안에 기록한다.
+포함한 후보를 후보 묶음 단위로 `final-info.json` 안에 기록한다.
 
 ```json
 {
@@ -67,7 +62,7 @@ python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
       "group_id": "4",
       "title": "API 응답 정책 정리",
       "list_section": "top",
-      "selection_note": "사용자가 오늘 일지에 포함하도록 선택함",
+      "selection_note": "표시 후보 전체를 기본 포함함",
       "candidate_refs": [
         {
           "source": "codex",
@@ -75,14 +70,13 @@ python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
           "file": "/absolute/path/session.jsonl",
           "work_unit_ids": ["codex:...:1"]
         }
-      ],
-      "kb_paths": ["dev/concepts/api-response-policy.md"]
+      ]
     }
   ]
 }
 ```
 
-후보 번호는 사용자에게 보여준 목록의 번호다. 번호만 저장하지 말고 제목, 세션 파일, `work_unit_ids`, 관련 KB 경로를 함께 남긴다. `list_section`은 `top` 또는 `other`를 사용한다. 이 배열은 "왜 이 항목들을 2차 상세 탐색했는가"를 설명하는 선택 이력이다.
+후보 번호는 `numbered-candidates.json`의 번호이며, 완료 보고에서 그대로 보여준다. 번호만 저장하지 말고 제목, 세션 파일, `work_unit_ids`를 함께 남긴다. `list_section`은 `top` 또는 `other`를 사용한다. 이 배열은 "왜 이 항목들을 2차 상세 탐색했는가"를 설명하는 포함 이력이다.
 
 ## 상세 탐색 입력
 
@@ -93,7 +87,6 @@ python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
 - 선택 후보가 가리키는 Codex/Claude 세션 파일
 - 선택 후보의 `work_unit_ids`
 - 1차 후보에 나온 `mentioned_paths`, `changed_paths`
-- 선택 후보와 직접 연결된 KB 문서
 - 사용자가 명시한 회의 메모, 계획서, 트러블슈팅 문서
 
 선택되지 않은 후보는 최종 문서에 쓰지 않는다. 단, 선택 후보의 이해에 필요한 supporting evidence로만 짧게 참조할 수 있다.
@@ -125,8 +118,7 @@ python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
   "source_files": {
     "first_pass": [
       "~/.daily-work-log/2026/2026-07-02/codex-candidates.json",
-      "~/.daily-work-log/2026/2026-07-02/claude-candidates.json",
-      "~/.daily-work-log/2026/2026-07-02/kb-candidates.json"
+      "~/.daily-work-log/2026/2026-07-02/claude-candidates.json"
     ]
   },
   "impact": {
@@ -146,7 +138,7 @@ python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
       "group_id": "4",
       "title": "API 응답 정책 정리",
       "list_section": "top",
-      "selection_note": "사용자가 오늘 일지에 포함하도록 선택함",
+      "selection_note": "표시 후보 전체를 기본 포함함",
       "candidate_refs": [
         {
           "source": "codex",
@@ -154,8 +146,7 @@ python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
           "file": "/absolute/path/session.jsonl",
           "work_unit_ids": ["codex:...:1"]
         }
-      ],
-      "kb_paths": ["dev/concepts/spring-cloud-config-server.md"]
+      ]
     }
   ],
   "selected_items": [
@@ -188,7 +179,6 @@ python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
       },
       "evidence_paths": {
         "session_files": [],
-        "kb_documents": [],
         "project_files": [],
         "notes": []
       },
@@ -219,7 +209,6 @@ Markdown 초안 작성 중에는 `<!-- 이 아래는 자유 형식 -->` 주석 �
 
 권장 근거:
 
-- KB 문서 경로
 - 사용자가 직접 작성한 계획/회의/트러블슈팅 문서 경로 (로컬 전용이면 full path)
 - 확인한 코드 파일 (repo 이름 + 파일명)
 - 커밋 hash 또는 테스트 명령은 필요한 경우 짧게
@@ -243,18 +232,11 @@ Markdown 초안 작성 중에는 `<!-- 이 아래는 자유 형식 -->` 주석 �
 - `learning`: 재사용 가능한 개념 이해 또는 학습
 - `follow-up`: 후속 작업 중심 항목
 
-## 사용자 확인
+## 저장과 완료 보고
 
-2차 상세 탐색 후에는 최종 Markdown을 바로 저장하지 말고, `final-info.json` 요약을 보여준 뒤 확인한다.
+2차 상세 탐색 후에는 사용자에게 묻지 않고 템플릿을 적용해 최종 Markdown을 작성하고, 로그 루트 아래 `YYYY/MM/YYYY-MM-DD.md`에 저장한다. 사실과 추정을 분리하고, 회사명·시스템명·내부 경로는 SKILL.md의 "참조 표기 규칙"과 "안전 규칙" 기준으로 남긴다.
 
-확인할 것:
-
-- 선택 항목이 사용자의 의도와 맞는지
-- 확정 사실과 추정이 분리됐는지
-- 회사명, 시스템명, 내부 경로를 어느 정도까지 남길지
-- 각 항목을 자세히 쓸지, 한 줄로 쓸지
-
-사용자가 승인하면 템플릿을 적용해 최종 Markdown 초안을 작성한다. 최종 저장 경로는 사용자가 지정한 로그 루트 아래 `YYYY/MM/YYYY-MM-DD.md`다.
+저장한 뒤에는 SKILL.md의 "완료 보고" 형식으로 기록 목록과 `impact-items` 현황을 보여주고, 뺄 항목이 있는지 묻는다.
 
 최종 Markdown의 frontmatter 상세 규칙은 SKILL.md의 "필수 Frontmatter"를 따른다. 이 단계에서 작성하는 일일 업무 기록의 `type`은 항상 `daily-work-log`로 둔다.
 

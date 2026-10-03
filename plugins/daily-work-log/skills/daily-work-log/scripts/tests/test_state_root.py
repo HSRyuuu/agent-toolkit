@@ -96,37 +96,6 @@ class StateRootTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assert_json_file(state_root / "2026" / TARGET_DATE / "claude-candidates.json", "claude")
 
-    def test_kb_collector_writes_to_state_root_and_converts_log_timestamp(self) -> None:
-        with TemporaryDirectory() as tmp:
-            base = Path(tmp)
-            kb = base / "kb"
-            kb.mkdir()
-            state_root = base / "state"
-            write_jsonl(
-                kb / "log.jsonl",
-                [
-                    {
-                        "timestamp": "2026-07-01T16:00:00Z",
-                        "summary": "KB에 오늘 업무 메모를 정리함",
-                        "paths": ["notes/today.md"],
-                    }
-                ],
-            )
-
-            result = run_script(
-                "collect_kb_first_pass_candidates.py",
-                "--date",
-                TARGET_DATE,
-                "--kb-root",
-                str(kb),
-                "--state-root",
-                str(state_root),
-                "--emit-empty",
-            )
-            self.assertEqual(result.returncode, 0, result.stderr)
-            data = self.assert_json_file(state_root / "2026" / TARGET_DATE / "kb-candidates.json", "kb")
-            self.assertEqual(len(data["candidates"]), 1)
-
 
 if __name__ == "__main__":
     unittest.main()

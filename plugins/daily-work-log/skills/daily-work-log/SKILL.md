@@ -2,7 +2,7 @@
 name: daily-work-log
 description: >
   Use when the user wants to create a personal daily work log from Codex/Claude
-  sessions or KB notes, set up a work-log template, or search saved work logs by
+  sessions, set up a work-log template, or search saved work logs by
   date, tag, or keyword. Triggers: "daily work log", "오늘 한 일 정리",
   "어제 한 일 정리", "퇴근 전 회고", "지난주에 뭐 했지", "work log 찾아줘".
 ---
@@ -11,30 +11,30 @@ description: >
 
 이 스킬은 두 가지 모드를 제공한다.
 
-- **작성 모드**: 세션 로그/KB를 마이닝해 그날의 업무 기록 Markdown을 만든다. 아래 "워크플로우 개요"를 따른다.
+- **작성 모드**: 세션 로그를 마이닝해 그날의 업무 기록 Markdown을 만든다. 아래 "워크플로우 개요"를 따른다.
 - **검색 모드**: 이미 저장된 업무 기록을 날짜·태그·키워드로 찾는다. "지난주에 뭐 했지", "그 작업 언제 했더라", "kafka 관련 기록 찾아줘"처럼 과거 기록을 묻는 요청이면 작성 워크플로우로 들어가지 말고 아래 "저장된 로그 검색" 섹션을 따른다.
 
 ## 워크플로우 개요
 
 1. 템플릿 파일 `~/.daily-work-log/daily-work-log-template.md`가 있는지 확인한다.
 2. 대상 날짜를 결정한다. 기본값은 시스템 로컬 타임존 기준 오늘이며, 사용자가 "어제"나 특정 날짜를 말하면 그 날짜를 사용한다.
-3. Codex/Claude 세션과 선택적 KB 기록에서 1차 후보 JSON을 수집한다.
-4. `numbered-candidates.json`을 만들어 사용자에게 보여줄 번호와 그룹을 확정한다.
-5. 사용자가 포함할 후보 번호를 선택한다.
-6. 2차 상세 탐색을 시작하기 전에 현재 등록된 `impact-items`를 안내하고 추가/수정/삭제 여부를 확인한다. 변경 요청이 있으면 `config.json`을 먼저 갱신한다. 상세 규칙은 아래 "Impact 항목 확인" 절을 따른다.
-7. 선택 후보만 기준으로 `second-pass-digest.json`을 만든다.
-8. `final-info.json` skeleton을 만든다.
-9. LLM이 digest와 필요한 최소 근거를 확인해 skeleton의 빈 슬롯을 보강한다.
-10. 사용자에게 최종 요약과 저장 위치를 확인한다.
-11. 승인된 로그 루트 아래 `YYYY/MM/YYYY-MM-DD.md`로 최종 Markdown을 저장한다.
+3. `~/.daily-work-log/config.json`을 읽어 `references/custom-setting.md` 기준으로 사용자 설정을 적용하고, 로그 루트를 확정한다. 로그 루트는 아래 "출력 위치" 규칙으로 정해지지 않을 때만 이 시점에 묻는다.
+4. Codex/Claude 세션에서 1차 후보 JSON을 수집한다.
+5. `numbered-candidates.json`을 만들어 번호와 그룹을 확정한다.
+6. 표시 후보 전체(`displayed_candidates`의 1번부터 마지막 번호까지)를 기본 포함으로 `second-pass-digest.json`을 만든다.
+7. `final-info.json` skeleton을 만든다.
+8. LLM이 digest와 필요한 최소 근거를 확인해 skeleton의 빈 슬롯과 `impact`를 보강한다.
+9. 로그 루트 아래 `YYYY/MM/YYYY-MM-DD.md`로 최종 Markdown을 저장한다.
+10. 아래 "완료 보고" 형식으로 기록 목록과 `impact-items` 현황을 보여주고, 뺄 항목이 있는지 묻는다.
+11. 사용자가 빼거나 바꾸라고 하면 저장한 Markdown과 `final-info.json`을 함께 고친다.
 
-작성 모드를 시작하며 이 흐름을 사용자에게 안내할 때, `impact-items` 기능을 한 문장으로 함께 소개한다: 관심 키워드를 등록해두면 Jira Ticket, PR/MR 기록, 최종 결정 사항처럼 자주 확인하고 싶은 항목을 최종 Markdown 맨 위 `## Impact` 섹션에 자동으로 정리해 준다는 점만 짧게 언급한다. 실제 등록 현황 확인과 추가/수정/삭제는 6번(후보 선택 직후)에서 다시 안내하므로, 이 시점에는 상세히 캐묻지 않는다.
+3번 이후 9번까지는 사용자에게 묻지 않고 끝까지 진행한다. 판단이 애매한 항목도 일단 기록에 넣고, 완료 보고에서 사용자가 빼게 한다.
 
 ## 대상 날짜 규칙
 
 - 사용자가 날짜를 말하지 않으면 시스템 로컬 타임존 기준 오늘을 대상 날짜로 삼는다.
 - "어제", "지난 금요일", `2026-07-02`처럼 날짜를 지정하면 그 날짜를 대상 날짜로 삼는다.
-- 세션·KB log 타임스탬프는 로컬 타임존으로 변환한 뒤 대상 날짜와 비교한다. Codex 세션은 UTC 저장 디렉터리 경계를 고려해 대상 날짜의 전날, 당일, 다음날 디렉터리를 함께 검사한다.
+- 세션 타임스탬프는 로컬 타임존으로 변환한 뒤 대상 날짜와 비교한다. Codex 세션은 UTC 저장 디렉터리 경계를 고려해 대상 날짜의 전날, 당일, 다음날 디렉터리를 함께 검사한다.
 
 ## 스크립트 실행 기준
 
@@ -54,15 +54,13 @@ description: >
 
 Codex/Claude 세션에서 업무 기록 후보를 찾을 때는 원시 JSONL을 LLM이 직접 읽지 않는다. 먼저 `references/collect-first-pass-candidates.md`를 읽고, Codex와 Claude 전용 수집 스크립트로 `work_units`가 포함된 압축 후보 카드 JSON을 만든다.
 
-KB가 설정되어 있으면 같은 1차 수집 단계에서 KB 후보도 선택적으로 수집한다. KB root가 설정되어 있지 않거나, KB를 찾을 수 없거나, 해당 날짜 후보가 없으면 사용자에게 언급하지 않고 생략한다.
-
 기본 저장 위치:
 
 ```text
 ~/.daily-work-log/YYYY/YYYY-MM-DD/
 ```
 
-이 날짜 디렉터리 아래에 해당 날짜의 1차 후보, 사용자 선택, 2차 상세 탐색, 최종 정보 JSON 같은 중간 산출물을 모두 모은다. 파일명으로 단계와 역할을 구분한다.
+이 날짜 디렉터리 아래에 해당 날짜의 1차 후보, 번호 후보, 2차 상세 탐색, 최종 정보 JSON 같은 중간 산출물을 모두 모은다. 파일명으로 단계와 역할을 구분한다.
 
 예:
 
@@ -70,45 +68,85 @@ KB가 설정되어 있으면 같은 1차 수집 단계에서 KB 후보도 선택
 ~/.daily-work-log/YYYY/YYYY-MM-DD/
 ├── codex-candidates.json
 ├── claude-candidates.json
-├── kb-candidates.json
 ├── numbered-candidates.json
 ├── second-pass-digest.json
 └── final-info.json
 ```
 
-1차 후보를 사용자에게 보여주기 전에는 반드시 `scripts/build_numbered_candidates.py`로 `numbered-candidates.json`을 만든다. 사용자에게 보여주는 번호는 이 파일의 `displayed_candidates[].number`를 그대로 사용한다. 이후 사용자가 "4,5,6"처럼 선택하면, 대화 중 임의로 다시 번호를 매기지 말고 저장된 `numbered-candidates.json`을 기준으로 해석한다.
+2차 상세 탐색 전에는 반드시 `scripts/build_numbered_candidates.py`로 `numbered-candidates.json`을 만든다. 완료 보고에서 보여주는 번호는 이 파일의 `displayed_candidates[].number`를 그대로 사용한다. 이후 사용자가 "4,5"처럼 뺄 번호를 말하면, 대화 중 임의로 다시 번호를 매기지 말고 저장된 `numbered-candidates.json`을 기준으로 해석한다.
 
-## Impact 항목 확인
+## 완료 보고
 
-사용자가 1차 후보 중 포함할 항목을 선택하면, 2차 상세 탐색(`build_second_pass_digest.py` 실행)을 시작하기 전에 매번 아래 안내를 한다. `impact-items`가 이미 설정돼 있어도 생략하지 않는다.
+최종 Markdown을 저장한 뒤 한 번만 보고하고, 이 보고에서 뺄 항목과 `impact-items` 변경을 함께 묻는다. 보고는 사람이 훑어 읽는 짧은 보고서다.
 
-```text
-중요한 내용 키워드를 지정하면, 해당하는 항목이 있을 때 항상 추출할 수 있습니다.
-현재 등록된 항목:
-- 개발 완료: 개발 완료로 보이는 것
-- TODO: 완결되지 않은것으로 보이는 것
-지금 항목을 추가/수정/삭제 할 수 있습니다.
+형식 규칙:
+
+- 첫 줄은 무엇을 어디에 몇 건 기록했는지 말하는 한 문장이다. 별도 요약 블록을 두지 않는다.
+- 소제목은 `기록한 작업`, `Impact`, `설정` 세 개만 쓰고, 각 소제목의 첫 문장이 그 섹션의 결론이 되게 한다.
+- 기록 목록은 표로 쓴다. 번호는 `numbered-candidates.json`의 번호를 그대로 쓴다. 셀은 짧은 명사구로 끝내고, 단서는 표 밖 한 줄로 뺀다.
+- 본문은 `~한다` 단정 서술체로 쓰고, 마지막 질문 한 줄만 존댓말로 쓴다.
+- 볼드, 이모지 머리표, 구분선으로 꾸미지 않는다. 중요한 것은 앞에 둬서 드러낸다.
+- 기타 후보(`list_section: other`)처럼 근거가 약한 항목이 있으면 표 아래 한 문장으로 번호를 짚는다. 없으면 쓰지 않는다.
+
+예시:
+
+```markdown
+2026-07-02 업무 기록을 `~/work-log/2026/07/2026-07-02.md`에 7건 저장했다.
+
+### 기록한 작업
+
+| # | 구분 | 제목 | 요약 |
+|---|---|---|---|
+| 1 | 개발 | user-module 레이어 정리 | 도메인 구조와 레이어 책임 문서화 |
+| 2 | 트러블슈팅 | event-worker 재처리 점검 | Kafka 연동 실패 원인 확인 |
+| … | … | … | … |
+| 7 | 조사 | batch-job 실행 조건 확인 | 실행 조건만 확인, 결론 없음 |
+
+6, 7번은 근거가 약한 기타 후보다.
+
+### Impact
+
+등록된 항목 2개 중 1개에서 근거를 찾아 문서 맨 위 `## Impact`에 넣었다.
+
+| 항목 | 찾는 기준 | 결과 |
+|---|---|---|
+| 개발 완료 | 개발 완료로 보이는 것 | 2건 |
+| TODO | 완결되지 않은 것으로 보이는 것 | 없음 |
+
+키워드를 등록하면 Jira 티켓, PR/MR, 최종 결정처럼 매번 보고 싶은 내용을 문서 맨 위에 모아 준다. 항목은 지금 추가·수정·삭제할 수 있다.
+
+### 설정
+
+Impact 항목, 본문 템플릿, 후보 수·검색 결과 수 같은 한도를 바꿀 수 있다. 설정 파일은 `~/.daily-work-log/config.json`이고, 대화로 요청해도 된다.
+
+뺄 번호나 바꿀 Impact 항목이 있으면 알려주세요. 없으면 이대로 마칩니다.
 ```
 
-- 현재 등록된 항목은 `~/.daily-work-log/config.json`의 `impact-items` 배열을 `- {name}: {description}` 형태로 한 줄씩 보여준다. 값이 없거나 빈 배열이면 "현재 등록된 항목: 없음"으로 안내한다.
-- 사용자가 항목을 추가하려고 하면 `name`(라벨)과 `description`(어떤 근거를 찾아야 하는지)을 모두 확인한다. 사용자가 `description`을 안 주면 "이 항목은 어떤 근거를 찾으면 되나요?"처럼 짧게 되물어 채운다.
-- 사용자가 항목을 수정하려고 하면 언급된 필드(`name` 또는 `description`)만 바꾸고 나머지는 유지한다. 삭제는 `name`으로 지정한다.
-- 변경 요청이 있으면 2차 상세 탐색을 시작하기 전에 `config.json`의 `impact-items` 배열을 먼저 갱신한다(다른 필드는 유지). 갱신 후에는 바뀐 목록을 한 줄로 다시 확인해 준다.
-- 사용자가 변경 없이 넘어가면(예: "없음", "그대로", 바로 다음 단계 진행 요청) 추가 질문 없이 2차 상세 탐색을 시작한다.
-- 이 확인을 2차 탐색 시작 **전**에 두는 이유: `impact-items`는 2차 상세 탐색에서 LLM이 선택 후보 원문을 읽을 때 함께 찾아야 하는 항목이다. 탐색이 끝난 뒤에 항목을 추가하면 이미 압축된 `second-pass-digest.json`에는 새 항목의 근거가 반영돼 있지 않아, 원본 세션을 다시 읽어야 하는 비효율이 생긴다. 그래서 1차 후보 선택 직후·`second-pass-digest.json` 생성 전에 확정한다.
+`impact-items`가 없거나 빈 배열이면 `Impact` 섹션은 "등록된 항목이 없다." 한 문장과 기능 소개 한 문장만 쓴다.
+
+`설정` 섹션은 매번 위 예시처럼 두 문장으로만 쓴다. 바꿀 수 있는 값의 전체 목록과 예시는 `references/custom-setting.md`에 있다. 사용자가 설정 변경을 요청하면 그 문서의 "설정을 바꾸는 방법"을 따른다.
+
+사용자 답변 처리:
+
+- 뺄 번호를 받으면 최종 Markdown에서 그 항목의 `## 한눈에 보기` 표 행, `###` 항목, 자유 형식 상세, `## Impact`의 관련 근거를 지우고, `tags`와 `summary`를 남은 항목 기준으로 다시 맞춘다. `final-info.json`의 `selected_candidates`와 `selected_items`에서도 같은 항목을 지운다.
+- `impact-items` 추가 요청에는 `name`과 `description`이 모두 필요하다. `description`이 없으면 "이 항목은 어떤 근거를 찾으면 되나요?"처럼 짧게 되물어 채운다.
+- 수정 요청은 언급된 필드(`name` 또는 `description`)만 바꾸고, 삭제는 `name`으로 지정한다. `config.json`의 다른 필드는 유지한다.
+- `impact-items`가 바뀌면 `config.json`을 갱신한 뒤, `second-pass-digest.json`(필요하면 원본 세션 work unit)을 다시 확인해 `final-info.json`의 `impact`와 최종 Markdown의 `## Impact`를 새 목록 기준으로 다시 채운다.
+- 고친 뒤에는 바뀐 내용만 한두 줄로 알린다. 전체 보고를 반복하지 않는다.
+- "없음", "그대로"처럼 변경이 없으면 추가 질문 없이 마친다.
 
 ## 2차 상세 탐색
 
-사용자가 1차 후보에서 포함할 항목을 고르면, 선택된 후보만 기준으로 다시 상세 탐색한다. 이때 원시 JSONL이나 KB 원문을 최종 Markdown에 직접 복사하지 않고, `references/collect-second-pass-details.md` 기준으로 최종 정보 JSON을 만든다.
+1차 후보 중 표시 후보 전체를 기준으로 다시 상세 탐색한다. 이때 원시 JSONL을 최종 Markdown에 직접 복사하지 않고, `references/collect-second-pass-details.md` 기준으로 최종 정보 JSON을 만든다.
 
-선택 이후 기본 흐름:
+기본 흐름 (`N`은 `displayed_candidates`의 마지막 번호):
 
 ```bash
-python3 <skill-base-dir>/scripts/build_second_pass_digest.py --date YYYY-MM-DD --selection 4,5,6
+python3 <skill-base-dir>/scripts/build_second_pass_digest.py --date YYYY-MM-DD --selection 1-N
 python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
 ```
 
-`second-pass-digest.json`은 선택 번호가 가리키는 work unit, session file, KB 문서, 관련 경로만 압축한 중간 자료다. `final-info.json`은 이 skeleton을 LLM이 검토하고 보강해서 완성한다. 스크립트 출력은 확정 문장이 아니라 토큰 절약용 구조화 근거이며, 최종 작성 전에는 LLM이 사실/추정/민감정보를 다시 확인한다.
+`second-pass-digest.json`은 선택 번호가 가리키는 work unit, session file, 관련 경로만 압축한 중간 자료다. `final-info.json`은 이 skeleton을 LLM이 검토하고 보강해서 완성한다. 스크립트 출력은 확정 문장이 아니라 토큰 절약용 구조화 근거이며, 최종 작성 전에는 LLM이 사실/추정/민감정보를 다시 확인한다.
 
 최종 정보 JSON은 기본적으로 아래 경로에 둔다.
 
@@ -116,9 +154,9 @@ python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
 ~/.daily-work-log/YYYY/YYYY-MM-DD/final-info.json
 ```
 
-최종 Markdown에 들어갈 근거는 긴 원문 발췌보다 파일 경로 모음을 우선한다. 경로는 세션 파일, KB 문서, 사용자가 만든 계획/메모 문서, 확인한 코드 경로처럼 나중에 다시 찾아볼 수 있는 참조로 남긴다.
+최종 Markdown에 들어갈 근거는 긴 원문 발췌보다 파일 경로 모음을 우선한다. 경로는 세션 파일, 사용자가 만든 계획/메모 문서, 확인한 코드 경로처럼 나중에 다시 찾아볼 수 있는 참조로 남긴다.
 
-사용자가 고른 후보 목록은 별도 파일로 만들지 않고, `final-info.json`의 최상위 `selected_candidates` 배열에 함께 기록한다.
+기록에 포함한 후보 목록은 별도 파일로 만들지 않고, `final-info.json`의 최상위 `selected_candidates` 배열에 함께 기록한다.
 
 ## 필수 Frontmatter
 
@@ -209,7 +247,7 @@ Claude/Codex 세션 파일(`~/.claude/projects/...`, `~/.codex/sessions/...`)은
 ]
 ```
 
-- opt-in이다. `impact-items`가 없거나 빈 배열이면 `## Impact`를 만들지 않고 기존 동작과 완전히 동일하게 작성한다. `log_root`처럼 값이 없다고 매번 물어보지 않는다. 사용자가 먼저 언급하거나 설정을 요청할 때만 config에 저장한다.
+- opt-in이다. `impact-items`가 없거나 빈 배열이면 `## Impact`를 만들지 않고 기존 동작과 완전히 동일하게 작성한다. `log_root`와 달리 값이 없다고 물어보지 않는다. 사용자가 먼저 언급하거나 설정을 요청할 때만 config에 저장한다.
 - `impact-items`에 값이 하나라도 있으면 `## Impact`를 제목 바로 아래·`## 한눈에 보기`보다 위에 넣는다. 이 위치와 존재 여부는 사용자의 템플릿 파일 내용과 무관하게 항상 이 규칙을 따른다.
 - 섹션 안 라벨과 순서는 `impact-items` 배열의 `name`과 순서를 그대로 사용한다. 각 라벨은 `- **{name}**` 형태로 굵게 표시한다. 최종 Markdown에는 `description`을 그대로 노출하지 않는다 — `description`은 2차 탐색에서 LLM이 근거를 판단하는 기준으로만 쓴다.
 - 그날 어떤 선택 항목에서도 근거를 찾지 못한 라벨은 생략한다. 빈 그룹을 만들지 않는다. 모든 라벨이 비면 `## Impact` 섹션 자체를 생략한다.
@@ -247,26 +285,13 @@ Claude/Codex 세션 파일(`~/.claude/projects/...`, `~/.codex/sessions/...`)은
 
 - 사용자가 이번 대화에서 로그 루트를 명시하면 그 경로를 사용하고 `~/.daily-work-log/config.json`의 `log_root`에 저장한다.
 - 사용자가 경로를 명시하지 않았고 `~/.daily-work-log/config.json`에 `log_root`가 있으면 그 값을 재사용한다. 이때 재사용한 경로를 한 줄로 알린다.
-- 사용자가 경로를 명시하지 않았고 config도 없으면 최종 Markdown을 쓰기 전에 로그 루트를 질문하고, 확정된 뒤 `config.json`에 저장한다.
+- 사용자가 경로를 명시하지 않았고 config도 없으면 1차 수집을 시작하기 전에 로그 루트를 질문하고, 확정된 뒤 `config.json`에 저장한다. 수집 이후에는 끝까지 묻지 않고 진행해야 하므로 이 질문을 저장 직전까지 미루지 않는다.
 - 사용자가 `/Users/.../work-log 여기로 해줘`, `/Users/.../work-log에 저장해줘`처럼 특정 저장 폴더를 지정하면 그 폴더를 로그 루트로 본다. 예: `/Users/hsryuuu/dev/personal/work-log/2026/07/2026-07-02.md`
 - 사용자가 `/Users/.../personal 이 아래에 만들어줘`처럼 상위 폴더만 주고 그 아래에 만들라고 하면 `<지정 폴더>/daily-work-log`를 로그 루트로 만든다. 예: `/Users/hsryuuu/dev/personal/daily-work-log/2026/07/2026-07-02.md`
-- 사용자의 표현만으로 "지정 경로 자체가 로그 루트인지"와 "`daily-work-log/`를 새로 만들 상위 폴더인지"가 모호하면 최종 Markdown을 쓰기 전에 반드시 한 문장으로 확인 질문을 한다.
+- 사용자의 표현만으로 "지정 경로 자체가 로그 루트인지"와 "`daily-work-log/`를 새로 만들 상위 폴더인지"가 모호하면 1차 수집을 시작하기 전에 반드시 한 문장으로 확인 질문을 한다.
 - 사용자가 명시한 저장 폴더 뒤에 `daily-work-log/`를 임의로 한 번 더 붙이지 않는다.
 
-config 파일 스키마:
-
-```json
-{
-  "log_root": "/absolute/path",
-  "impact-items": [
-    {"name": "Jira Ticket", "description": "Jira 이슈 키(예: PROJ-1234)가 언급된 것"},
-    {"name": "PR/MR 기록", "description": "생성/머지/리뷰한 PR 또는 MR"},
-    {"name": "최종 개발 결정 사항", "description": "여러 대안 중 하나로 확정한 기술/설계 결정"}
-  ]
-}
-```
-
-`impact-items`는 opt-in이다. 없어도 정상 동작하며, `## Impact` 섹션 관련 상세 규칙은 위 "Impact 섹션 (opt-in)" 절을 따른다.
+`config.json`에 둘 수 있는 키(`log_root`, `impact-items`, 수집·검색 한도)와 예시는 `references/custom-setting.md`에 있다. 모든 키는 선택이며, `impact-items`의 `## Impact` 섹션 규칙은 위 "Impact 섹션 (opt-in)" 절을 따른다.
 
 도구 설정, low-level JSON, cache, template 파일은 `~/.daily-work-log/` 아래에 둔다. 최종 Markdown 로그만 위 규칙에 따라 사용자가 지정한 로그 루트 아래에 둔다.
 
@@ -289,7 +314,7 @@ python3 <skill-base-dir>/scripts/search_work_logs.py --date 2026-07-01 --json
 
 - 로그 루트는 `--log-root`를 지정하지 않으면 `~/.daily-work-log/config.json`의 `log_root`를 사용한다. config에도 없으면 스크립트가 에러를 내므로, 사용자에게 로그 루트를 물어본 뒤 `--log-root`로 전달한다.
 - `--tag`와 `--query`는 반복 지정할 수 있고 AND로 결합된다. `--query`는 `summary`, `tags`, 본문을 함께 검색하며, 매칭된 본문 라인을 최대 3개까지 스니펫으로 보여준다.
-- 결과는 날짜 내림차순이며 기본 20건으로 제한된다(`--limit 0`이면 전체).
+- 결과는 날짜 내림차순이며 기본 20건으로 제한된다(`--limit 0`이면 전체). `config.json`에 `search-limit`이 있으면 그 값을 `--limit`으로 넘긴다.
 - 사용자가 말한 키워드로 결과가 없으면 동의어·영문/한글 표기 변형으로 1~2회 재시도한 뒤, 그래도 없으면 "기록 없음"을 그대로 말한다.
 - 스크립트 결과에서 유력한 파일만 골라 Read로 열어 답한다. 검색 중에는 어떤 로그 파일도 수정하지 않는다.
 - 답변에는 근거가 된 로그 파일 경로를 함께 남긴다.

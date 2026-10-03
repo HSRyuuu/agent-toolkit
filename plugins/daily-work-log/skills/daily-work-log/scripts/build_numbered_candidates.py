@@ -32,14 +32,10 @@ def candidate_paths(target_date: str, state_root: Path) -> list[Path]:
     return [
         default_output_path("codex", target_date, state_root),
         default_output_path("claude", target_date, state_root),
-        default_output_path("kb", target_date, state_root),
     ]
 
 
 def topic_for(candidate: dict[str, Any], unit: dict[str, Any]) -> tuple[str, str]:
-    if candidate.get("source") == "kb":
-        title = candidate.get("title_hint") or unit.get("title") or Path(str(candidate.get("file") or "")).stem or "KB 후보"
-        return f"kb:{title}", str(title)
     session_id = candidate.get("session_id") or candidate.get("file") or "unknown"
     title = candidate.get("title_hint") or unit.get("title") or project_name(candidate.get("cwd"))
     return f"{candidate.get('source')}:{session_id}", str(title)
@@ -81,7 +77,6 @@ def collect_groups(first_pass: list[dict[str, Any]], include_supporting: bool) -
                             "title": title,
                             "source_projects": [],
                             "candidate_refs": [],
-                            "kb_paths": [],
                             "work_unit_summaries": [],
                             "evidence_hints": [],
                             "importance_score": 0,
@@ -105,8 +100,6 @@ def collect_groups(first_pass: list[dict[str, Any]], include_supporting: bool) -
                     }
                     add_unique(group["candidate_refs"], [ref])
                     paths = unit.get("mentioned_paths") or []
-                    if source == "kb":
-                        add_unique(group["kb_paths"], paths, limit=12)
                     add_unique(group["evidence_hints"], paths, limit=20)
                     group["work_unit_summaries"].append(
                         {

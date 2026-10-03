@@ -127,7 +127,6 @@ def build_item(detail: dict[str, Any], selected_candidate: dict[str, Any]) -> di
         },
         "evidence_paths": {
             "session_files": evidence.get("session_files") or [],
-            "kb_documents": evidence.get("kb_documents") or [],
             "project_files": project_files,
             "notes": evidence.get("notes") or [],
         },
@@ -199,7 +198,7 @@ def build_final_info(
         },
         "write_guidance": [
             "구체적인 코드나 원시 로그 대신, 사용자가 기억을 되살릴 수 있는 업무 식별 정보와 높은 수준의 요약을 쓴다.",
-            "관련 repo, 모듈, 기술 스택, KB/세션/문서 경로는 남긴다.",
+            "관련 repo, 모듈, 기술 스택, 세션/문서 경로는 남긴다.",
             "최종 tags는 문서를 다 쓴 뒤 검색 키워드 관점으로 채운다.",
         ],
     }
