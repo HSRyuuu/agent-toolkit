@@ -196,6 +196,7 @@ def candidate_from_file(path: Path, target_date: date | None = None, tz: tzinfo 
                         result_snippets=results,
                         tool_names=unit_tools,
                         signal_text=unit_signal,
+                        started_at=current_unit.get("first_timestamp"),
                     )
                 )
         current_unit = None

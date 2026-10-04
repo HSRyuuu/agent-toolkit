@@ -147,6 +147,7 @@ def compact_unit(unit: dict[str, Any], candidate: dict[str, Any], source: str | 
         "cwd": candidate.get("cwd"),
         "project": project_name(candidate.get("cwd")),
         "work_unit_id": unit.get("work_unit_id"),
+        "started_at": unit.get("started_at"),
         "title": compact(str(unit.get("title") or ""), 140),
         "user_request": compact(str(unit.get("user_request") or ""), 500),
         "outcome": compact(str(unit.get("outcome") or ""), 700),

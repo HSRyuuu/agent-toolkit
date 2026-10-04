@@ -309,6 +309,7 @@ def build_work_unit(
     result_snippets: list[str],
     tool_names: list[str],
     signal_text: str,
+    started_at: Any = None,
 ) -> dict[str, Any]:
     unique_tools = sorted(set(tool_names))
     flags = signal_flags(unique_tools, signal_text)
@@ -322,6 +323,7 @@ def build_work_unit(
 
     return {
         "work_unit_id": f"{source}:{session_id}:{index}",
+        "started_at": started_at,
         "title": work_unit_title(cwd, user_request),
         "user_request": user_request,
         "outcome": work_unit_outcome(result_snippets, flags),
