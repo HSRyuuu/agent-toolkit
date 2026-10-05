@@ -194,9 +194,14 @@ def build_digest(target_date: str, state_root: Path, numbered_path: Path, select
         tests: list[str] = []
         git_evidence: list[str] = []
 
+        seen_unit_ids: set[str] = set()
         for ref in group.get("candidate_refs") or []:
             work_unit_ids = ref.get("work_unit_ids") or []
             for work_unit_id in work_unit_ids:
+                # 포크 세션은 원래 세션 기록을 복사해 같은 work_unit_id가 다시 나온다.
+                if work_unit_id in seen_unit_ids:
+                    continue
+                seen_unit_ids.add(work_unit_id)
                 lookup = {
                     "source": ref.get("source"),
                     "session_id": ref.get("session_id"),
@@ -219,6 +224,8 @@ def build_digest(target_date: str, state_root: Path, numbered_path: Path, select
                 add_unique(tests, compacted["test_evidence"], limit=20)
                 add_unique(git_evidence, compacted["git_evidence"], limit=20)
 
+        # 같은 대상의 마지막 상태를 목록 끝에서 읽을 수 있게 시간순으로 둔다. 시각이 없으면 뒤로 보낸다.
+        work_units.sort(key=lambda unit: (unit.get("started_at") is None, unit.get("started_at") or ""))
         selected_details.append(
             {
                 "group_id": str(group.get("number")),
