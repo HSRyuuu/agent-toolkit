@@ -27,14 +27,18 @@ description: >
 
 ### 날짜별 작성 절차
 
-한 날짜에 대해 아래를 순서대로 수행한다.
+한 날짜에 대해 아래 스크립트를 순서대로 실행하고, "날짜별 서브에이전트" 절의 필수 체크리스트대로 `final-info.json`을 보강한 뒤 최종 Markdown을 써서 로그 루트 아래 `YYYY/MM/YYYY-MM-DD.md`에 저장한다. 반환 형식의 `checks`가 모두 맞으면 끝이다. `N`은 `numbered-candidates.json`의 `displayed_candidates` 마지막 번호다.
 
-1. Codex/Claude 세션에서 1차 후보 JSON을 수집한다.
-2. `numbered-candidates.json`을 만들어 번호와 그룹을 확정한다.
-3. 표시 후보 전체(`displayed_candidates`의 1번부터 마지막 번호까지)를 기본 포함으로 `second-pass-digest.json`을 만든다.
-4. `final-info.json` skeleton을 만든다.
-5. LLM이 digest와 필요한 최소 근거를 확인해 skeleton의 빈 슬롯과 `impact`를 보강한다.
-6. 로그 루트 아래 `YYYY/MM/YYYY-MM-DD.md`로 최종 Markdown을 저장한다.
+```bash
+python3 <skill-base-dir>/scripts/collect_codex_first_pass_candidates.py --date YYYY-MM-DD
+python3 <skill-base-dir>/scripts/collect_claude_first_pass_candidates.py --date YYYY-MM-DD
+python3 <skill-base-dir>/scripts/build_numbered_candidates.py --date YYYY-MM-DD
+python3 <skill-base-dir>/scripts/build_second_pass_digest.py --date YYYY-MM-DD --selection 1-N
+python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
+python3 <skill-base-dir>/scripts/print_digest_group.py --date YYYY-MM-DD [--group <group_id>]
+```
+
+각 스크립트가 하는 일과 옵션은 `references/collect-first-pass-candidates.md`, `references/collect-second-pass-details.md`에 있다.
 
 ## 날짜별 서브에이전트
 
@@ -57,7 +61,7 @@ description: >
 
 1. 템플릿 파일을 먼저 읽고, 최종 Markdown을 그 구조로 쓴다.
 2. 표시 후보 전체(`--selection 1-N`)로 digest를 만든다. 후보를 임의로 빼지 않는다.
-3. digest는 크므로 Read로 앞부분만 보고 판단하지 않는다. `python3 <skill-base-dir>/scripts/print_digest_group.py --date YYYY-MM-DD`로 묶음 목록을 보고, `--group <group_id>`로 묶음마다 work unit 전체를 시간순으로 출력해 마지막 work unit까지 읽는다.
+3. digest는 크므로 Read로 앞부분만 보고 판단하지 않는다. `python3 <skill-base-dir>/scripts/print_digest_group.py --date YYYY-MM-DD`로 묶음 목록을 보고, `--group <group_id>`로 묶음마다 work unit 전체를 시간순으로 출력해 마지막 work unit까지 읽는다. 출력을 파일로 남길 때는 그 날짜의 중간 산출물 디렉터리 안에만 둔다. 다른 날짜의 서브에이전트가 병렬로 돌기 때문이다.
 4. `final-info.json`의 `selected_items`를 보강한다. `impact-items`가 있으면 `impact.findings`도 채운다. skeleton 상태로 두지 않는다. `final-info.json`은 후보 단위 그대로 둔다.
 5. 최종 Markdown에서는 같은 주제의 후보를 한 항목으로 합친다. 같은 Jira 티켓의 작업, 같은 repo에서 이어진 작업, 포크 세션과 원래 세션, 추가 지시 세션과 원래 작업이 여기에 해당한다. 주제가 다르면 합치지 않는다. 한 후보는 한 항목에만 넣는다. 합친 항목은 원래 후보 번호를 모두 반환 형식에 적는다.
 6. 같은 대상에 대한 기록이 여러 번 나오면 시간순으로 마지막 work unit을 기준으로 쓴다. 순서는 digest의 `work_units[].started_at`으로 판단한다. 커밋·머지·배포 같은 진행 상태뿐 아니라 결정, 결론, 수치, 남은 일도 같다. 앞의 결과가 뒤에서 바뀌었으면 뒤의 것을 따르고, 앞의 것은 진행 과정으로만 남긴다.
@@ -141,15 +145,12 @@ Codex/Claude 세션에서 업무 기록 후보를 찾을 때는 원시 JSONL을 
 
 모든 날짜의 서브에이전트가 끝난 뒤 한 번만 보고하고, 이 보고에서 뺄 항목과 `impact-items` 변경을 함께 묻는다. 보고는 사람이 훑어 읽는 짧은 보고서다.
 
-형식 규칙:
+형식은 아래 예시를 따른다. 예시만으로 드러나지 않는 규칙:
 
-- 첫 줄은 무엇을 어디에 몇 건 기록했는지 말하는 한 문장이다. 별도 요약 블록을 두지 않는다.
-- 기록 목록은 날짜마다 `### ✅ YYYY-MM-DD 기록한 작업 내용` 소제목을 하나씩 두고, 그 아래 저장 경로 한 줄과 표를 둔다. 날짜가 여럿이면 번호는 날짜마다 따로이므로, 사용자는 "10-01 3번"처럼 날짜와 번호로 뺄 항목을 말한다. `Impact` 표의 결과 열은 "10-01 2건, 10-02 없음"처럼 날짜별로 쓴다. 기록이 없는 날짜는 한 줄로 알린다.
-- 소제목은 날짜별 `### ✅ YYYY-MM-DD 기록한 작업 내용`, `### 🎯 Impact`, `### ⚙️ 설정`만 쓴다. 소제목 앞 이모지는 이 세 가지로 고정하고, 각 소제목의 첫 문장이 그 섹션의 결론이 되게 한다.
-- 기록 목록은 표로 쓴다. `#` 열에는 `numbered-candidates.json`의 후보 번호를 그대로 쓰고, 합친 항목은 `3, 11, 12`처럼 모두 쓴다. 셀은 짧은 명사구로 끝내고, 단서는 표 밖 한 줄로 뺀다.
-- 본문은 `~한다` 단정 서술체로 쓰고, 마지막 질문 한 줄만 존댓말로 쓴다.
-- 소제목 이모지 외에는 볼드, 이모지, 구분선으로 꾸미지 않는다. 중요한 것은 앞에 둬서 드러낸다.
-- 기타 후보(`list_section: other`)처럼 근거가 약한 항목이 있으면 표 아래 한 문장으로 번호를 짚는다. 없으면 쓰지 않는다.
+- 날짜가 여럿이면 날짜마다 `### ✅ YYYY-MM-DD 기록한 작업 내용` 소제목과 표를 하나씩 둔다. 번호는 날짜마다 따로이므로 사용자는 "10-01 3번"처럼 말한다. `Impact` 표의 결과 열은 "10-01 2건, 10-02 없음"처럼 날짜별로 쓰고, 기록이 없는 날짜는 한 줄로 알린다.
+- `#` 열에는 `numbered-candidates.json`의 후보 번호를 그대로 쓰고, 합친 항목은 `3, 11, 12`처럼 모두 쓴다.
+- 소제목 이모지(✅, 🎯, ⚙️) 외에는 볼드, 이모지, 구분선으로 꾸미지 않는다.
+- 기타 후보(`list_section: other`)처럼 근거가 약한 항목이 있으면 표 아래 한 문장으로 번호를 짚는다.
 
 예시:
 
@@ -213,26 +214,9 @@ Codex/Claude 세션에서 업무 기록 후보를 찾을 때는 원시 JSONL을 
 
 ## 2차 상세 탐색
 
-1차 후보 중 표시 후보 전체를 기준으로 다시 상세 탐색한다. 이때 원시 JSONL을 최종 Markdown에 직접 복사하지 않고, `references/collect-second-pass-details.md` 기준으로 최종 정보 JSON을 만든다.
+`second-pass-digest.json`은 표시 후보가 가리키는 work unit, 세션 파일, 관련 경로만 압축한 중간 자료다. `final-info.json`은 이 skeleton을 LLM이 검토하고 보강해서 완성한다. 스크립트 출력은 확정 문장이 아니라 구조화 근거이므로, 최종 작성 전에 사실·추정·민감정보를 다시 확인한다.
 
-기본 흐름 (`N`은 `displayed_candidates`의 마지막 번호):
-
-```bash
-python3 <skill-base-dir>/scripts/build_second_pass_digest.py --date YYYY-MM-DD --selection 1-N
-python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
-```
-
-`second-pass-digest.json`은 선택 번호가 가리키는 work unit, session file, 관련 경로만 압축한 중간 자료다. `final-info.json`은 이 skeleton을 LLM이 검토하고 보강해서 완성한다. 스크립트 출력은 확정 문장이 아니라 토큰 절약용 구조화 근거이며, 최종 작성 전에는 LLM이 사실/추정/민감정보를 다시 확인한다.
-
-최종 정보 JSON은 기본적으로 아래 경로에 둔다.
-
-```text
-~/.daily-work-log/YYYY/YYYY-MM-DD/final-info.json
-```
-
-최종 Markdown에 들어갈 근거는 긴 원문 발췌보다 파일 경로 모음을 우선한다. 경로는 세션 파일, 사용자가 만든 계획/메모 문서, 확인한 코드 경로처럼 나중에 다시 찾아볼 수 있는 참조로 남긴다.
-
-기록에 포함한 후보 목록은 별도 파일로 만들지 않고, `final-info.json`의 최상위 `selected_candidates` 배열에 함께 기록한다.
+최종 Markdown에 들어갈 근거는 긴 원문 발췌보다 다시 찾아볼 수 있는 참조(사용자가 만든 계획·메모 문서, 확인한 코드 경로)를 우선한다. 기록에 포함한 후보 목록은 `final-info.json`의 최상위 `selected_candidates` 배열에 함께 기록한다.
 
 ## 필수 Frontmatter
 
@@ -328,7 +312,7 @@ Claude/Codex 세션 파일(`~/.claude/projects/...`, `~/.codex/sessions/...`)은
 - 섹션 안 라벨과 순서는 `impact-items` 배열의 `name`과 순서를 그대로 사용한다. 각 라벨은 `- **{name}**` 형태로 굵게 표시한다. 최종 Markdown에는 `description`을 그대로 노출하지 않는다 — `description`은 2차 탐색에서 LLM이 근거를 판단하는 기준으로만 쓴다.
 - 그날 어떤 선택 항목에서도 근거를 찾지 못한 라벨은 생략한다. 빈 그룹을 만들지 않는다. 모든 라벨이 비면 `## Impact` 섹션 자체를 생략한다.
 - 근거가 repo에 종속된 항목(예: PR/MR 기록, git branch)은 repo별로 묶어서 표기한다. 표기 방식은 위 "참조 표기 규칙"을 그대로 따른다(repo 이름은 short-form, 로컬 전용 파일만 full path).
-- 추출은 1차/2차 수집 스크립트에 새 정규식 신호를 추가하지 않는다. 2차 상세 탐색에서 LLM이 선택 후보의 원문을 읽으며 각 `impact-items` 항목의 `description`을 기준으로 해당 근거가 있는지 함께 확인해서 채운다. 근거가 없으면 지어내지 않고 빈 채로 둔다.
+- 2차 상세 탐색에서 LLM이 선택 후보의 원문을 읽으며 각 `impact-items` 항목의 `description`을 기준으로 해당 근거가 있는지 함께 확인해서 채운다. 근거가 없으면 지어내지 않고 빈 채로 둔다.
 - 인증정보, 고객 식별자, 회사 소스코드 원문을 그대로 옮기지 않는 안전 규칙은 `## Impact`에도 동일하게 적용된다.
 
 예시:
@@ -359,13 +343,9 @@ Claude/Codex 세션 파일(`~/.claude/projects/...`, `~/.codex/sessions/...`)은
 
 경로 해석 규칙:
 
-- 사용자가 이번 대화에서 로그 루트를 명시하면 그 경로를 사용하고 `~/.daily-work-log/config.json`의 `log_root`에 저장한다.
-- 사용자가 경로를 명시하지 않았고 `~/.daily-work-log/config.json`에 `log_root`가 있으면 그 값을 재사용한다. 이때 재사용한 경로를 한 줄로 알린다.
-- 사용자가 경로를 명시하지 않았고 config도 없으면 1차 수집을 시작하기 전에 로그 루트를 질문하고, 확정된 뒤 `config.json`에 저장한다. 수집 이후에는 끝까지 묻지 않고 진행해야 하므로 이 질문을 저장 직전까지 미루지 않는다.
-- 사용자가 `/Users/.../work-log 여기로 해줘`, `/Users/.../work-log에 저장해줘`처럼 특정 저장 폴더를 지정하면 그 폴더를 로그 루트로 본다. 예: `/Users/hsryuuu/dev/personal/work-log/2026/07/2026-07-02.md`
-- 사용자가 `/Users/.../personal 이 아래에 만들어줘`처럼 상위 폴더만 주고 그 아래에 만들라고 하면 `<지정 폴더>/daily-work-log`를 로그 루트로 만든다. 예: `/Users/hsryuuu/dev/personal/daily-work-log/2026/07/2026-07-02.md`
-- 사용자의 표현만으로 "지정 경로 자체가 로그 루트인지"와 "`daily-work-log/`를 새로 만들 상위 폴더인지"가 모호하면 1차 수집을 시작하기 전에 반드시 한 문장으로 확인 질문을 한다.
-- 사용자가 명시한 저장 폴더 뒤에 `daily-work-log/`를 임의로 한 번 더 붙이지 않는다.
+- 사용자가 이번 대화에서 경로를 말하면 그 폴더를 로그 루트로 쓰고 `config.json`의 `log_root`에 저장한다. 예: `/Users/me/work-log 여기로 해줘` → `/Users/me/work-log/2026/07/2026-07-02.md`. "이 아래에 만들어줘"처럼 상위 폴더만 주면 `<그 폴더>/daily-work-log`를 로그 루트로 쓴다. 둘 중 어느 뜻인지 모호하면 1차 수집 전에 한 문장으로 묻는다. 지정한 폴더 뒤에 `daily-work-log/`를 임의로 덧붙이지 않는다.
+- 경로를 말하지 않았으면 `config.json`의 `log_root`를 재사용하고, 재사용한 경로를 한 줄로 알린다.
+- 둘 다 없으면 1차 수집 전에 로그 루트를 묻고 `config.json`에 저장한다. 수집 이후에는 끝까지 묻지 않으므로 이 질문을 저장 직전까지 미루지 않는다.
 
 `config.json`에 둘 수 있는 키(`log_root`, `impact-items`, 수집·검색 한도)와 예시는 `references/custom-setting.md`에 있다. 모든 키는 선택이며, `impact-items`의 `## Impact` 섹션 규칙은 위 "Impact 섹션 (opt-in)" 절을 따른다.
 
@@ -400,4 +380,4 @@ python3 <skill-base-dir>/scripts/search_work_logs.py --date 2026-07-01 --json
 - 인증 정보, 원본 private log, 고객 식별자, 회사 소스코드를 업무 기록에 그대로 복사하지 않는다.
 - 근거 자료는 사용자의 업무 기록 언어로 요약한다.
 - 현재 workspace 밖에 파일을 생성하거나 덮어쓸 때는 먼저 사용자 승인을 받는다.
-- 예외: 이 스킬의 중간 산출물, cache, template, `config.json`은 `~/.daily-work-log/` 아래 쓰기가 사전 승인된 것으로 본다. 최종 Markdown 로그는 위 출력 위치 규칙에 따라 로그 루트가 확정된 뒤에만 쓴다.
+- 예외: 이 스킬의 중간 산출물, cache, template, `config.json`은 `~/.daily-work-log/` 아래 쓰기가 사전 승인된 것으로 본다. 확정된 로그 루트 아래 최종 Markdown 쓰기도 사전 승인된 것으로 본다. 로그 루트를 확정하는 것이 그 승인이므로, 서브에이전트는 저장 전에 다시 묻지 않는다.

@@ -6,18 +6,7 @@
 
 ## 저장 위치
 
-2차 산출물은 1차 후보와 같은 날짜 디렉터리에 저장한다.
-
-```text
-~/.daily-work-log/
-└── YYYY/
-    └── YYYY-MM-DD/
-        ├── codex-candidates.json
-        ├── claude-candidates.json
-        ├── numbered-candidates.json
-        ├── second-pass-digest.json
-        └── final-info.json
-```
+2차 산출물은 1차 후보와 같은 날짜 디렉터리에 저장한다(SKILL.md "1차 후보 수집").
 
 `final-info.json`은 최종 Markdown 초안 작성의 직접 입력이다. 기록에 포함한 후보 목록은 별도 파일로 만들지 않고 `final-info.json`의 최상위 `selected_candidates` 배열에 함께 기록한다. 상위 후보와 기타 후보는 모두 번호를 가지므로 같은 배열에 기록한다.
 
@@ -84,7 +73,7 @@ python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
 
 - 저장된 `numbered-candidates.json`
 - 선택 번호로 만든 `second-pass-digest.json`
-- 선택 후보가 가리키는 Codex/Claude 세션 파일
+- 선택 후보가 가리키는 Codex/Claude 세션 파일. digest로 판단할 수 없을 때만 연다.
 - 선택 후보의 `work_unit_ids`
 - 1차 후보에 나온 `mentioned_paths`, `changed_paths`
 - 사용자가 명시한 회의 메모, 계획서, 트러블슈팅 문서
@@ -197,15 +186,7 @@ python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
 
 최종 Markdown에는 긴 원문 발췌보다 참조 모음을 우선 남긴다.
 
-`impact.impact_items`가 존재하고 `impact.findings`에 하나 이상 값이 있으면, frontmatter와 `# YYYY-MM-DD 업무 기록` 제목 다음·`## 한눈에 보기`보다 위에 `## Impact`를 먼저 둔다. 근거가 없는 라벨은 생략하고, 모든 라벨이 비면 `## Impact` 자체를 생략한다. repo에 종속된 근거(PR/MR 기록, branch 등)는 repo별로 묶어서 표기한다. 상세 규칙과 예시는 `SKILL.md`의 "Impact 섹션 (opt-in)"을 따른다.
-
-`## Impact` 다음(또는 `impact`가 없으면 제목 바로 다음)에 `## 한눈에 보기`를 둔다. `## 한눈에 보기`에는 선택된 작업 목록을 `| 구분 | 제목 | 요약 |` 표로 요약한다. 별도의 `## 작업 요약` 섹션은 만들지 않고, 표 바로 아래에 각 선택 항목을 `### 항목 제목`으로 작성한다.
-
-각 `###` 항목은 요약이 중심이다. `###` 제목 바로 아래에 `요약:`을 필수로 두고, 그 아래에 `- 구분:`과 참조 목록(`코드 경로`, `관련 파일`, `관련 링크`)을 필요한 것만 둔다. 맥락, 진행/확인, 판단/배운 점, 결론, 남은 일 같은 상세 소제목은 `###` 항목 안에 고정 슬롯으로 넣지 않는다. 참조 목록은 2-depth list까지 허용하고, 그 외 본문은 불필요하게 깊은 중첩 목록을 만들지 않는다.
-
-Markdown 초안 작성 중에는 `<!-- 이 아래는 자유 형식 -->` 주석 마커를 사용해 요약 영역과 자유 형식 상세 영역을 구분할 수 있다. 마커 위쪽 `###` 항목들은 최대한 요약으로 유지하고, 각 항목의 상세 내용(맥락, 진행 과정, 판단 근거, 배운 점, 남은 일 등)은 에이전트가 이 마커 아래에 자유 형식으로 작성한다. 사용자가 남기고 싶은 메모, 추가 회고, 임시 생각도 이 아래에 둔다. 단, 최종 Markdown 저장본에서는 `<!-- 이 아래는 자유 형식 -->` 주석 라인을 제거하고, 그 아래에 작성한 상세 내용만 일반 본문으로 남긴다.
-
-참조 표기 상세 규칙은 SKILL.md의 "참조 표기 규칙"을 따른다. 이 문서에서는 최종 Markdown에 남길 수 있는 근거의 종류만 요약한다.
+본문 구조(`## Impact` 위치, `## 한눈에 보기`, `###` 항목, 자유 형식 마커)는 SKILL.md "최종 Markdown 구조"와 "Impact 섹션 (opt-in)"을, 참조 표기는 "참조 표기 규칙"을 따른다. 이 문서에서는 최종 Markdown에 남길 수 있는 근거의 종류만 요약한다.
 
 권장 근거:
 
@@ -215,7 +196,7 @@ Markdown 초안 작성 중에는 `<!-- 이 아래는 자유 형식 -->` 주석 �
 
 피해야 할 근거:
 
-- Claude/Codex 세션 파일 경로 (`~/.claude/projects/...`, `~/.codex/sessions/...`) — 캐시성 파일이라 언제든 삭제될 수 있으므로 최종 Markdown에는 넣지 않는다. `final-info.json` 같은 중간 산출물까지만 유지한다.
+- Claude/Codex 세션 파일 경로 (SKILL.md "참조 표기 규칙")
 - git repo 관리 파일의 full path — repo 이름 + 파일명으로 충분하다.
 - 원시 JSONL 본문 복사
 - 회사 소스코드 긴 인용
