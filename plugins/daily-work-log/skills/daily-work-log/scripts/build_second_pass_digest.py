@@ -194,14 +194,10 @@ def build_digest(target_date: str, state_root: Path, numbered_path: Path, select
         tests: list[str] = []
         git_evidence: list[str] = []
 
-        seen_unit_ids: set[str] = set()
+        seen_units: set[tuple[Any, Any, Any]] = set()
         for ref in group.get("candidate_refs") or []:
             work_unit_ids = ref.get("work_unit_ids") or []
             for work_unit_id in work_unit_ids:
-                # 포크 세션은 원래 세션 기록을 복사해 같은 work_unit_id가 다시 나온다.
-                if work_unit_id in seen_unit_ids:
-                    continue
-                seen_unit_ids.add(work_unit_id)
                 lookup = {
                     "source": ref.get("source"),
                     "session_id": ref.get("session_id"),
@@ -214,6 +210,11 @@ def build_digest(target_date: str, state_root: Path, numbered_path: Path, select
                     continue
                 candidate = item["candidate"]
                 unit = item["work_unit"]
+                # 포크 세션은 원래 세션 기록을 그대로 복사한다. work_unit_id는 이어 쓴 세션끼리도 겹치므로 내용으로 거른다.
+                content_key = (unit.get("started_at"), unit.get("user_request"), unit.get("outcome"))
+                if content_key in seen_units:
+                    continue
+                seen_units.add(content_key)
                 compacted = compact_unit(unit, candidate, item.get("source"), str(item.get("section") or ""))
                 work_units.append(compacted)
                 add_unique(session_files, [candidate.get("file")], limit=12)
