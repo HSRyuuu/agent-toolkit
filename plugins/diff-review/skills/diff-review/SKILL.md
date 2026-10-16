@@ -1,6 +1,6 @@
 ---
 name: diff-review
-description: 현재 브랜치의 변경사항을 사람이 리뷰하기 쉬운 단일 HTML로 만든다. 파일별 요약, 위험도(High/Mid/Low), 변경 메서드 수 정렬, 영향받는 진입점(HTTP API·메시지 리스너·스케줄러), 추가/삭제 파일, side-by-side diff를 한 페이지에 보여준다. Java 프로젝트 전용. Triggers - "diff 리뷰 html", "리뷰용 html 만들어줘", "변경사항 리뷰 페이지", "코드리뷰 보기 좋게", "/diff-review".
+description: 현재 브랜치의 변경사항을 사람이 리뷰하기 쉬운 단일 HTML로 만든다. 파일별 요약, 위험도(High/Mid/Low, 테스트는 TEST 그룹으로 맨 아래), 변경 메서드 수 정렬, 영향받는 진입점(HTTP API·메시지 리스너·스케줄러), 추가/삭제 파일, side-by-side diff를 한 페이지에 보여준다. Java 프로젝트 전용. Triggers - "diff 리뷰 html", "리뷰용 html 만들어줘", "변경사항 리뷰 페이지", "코드리뷰 보기 좋게", "/diff-review".
 ---
 
 # diff-review
@@ -29,7 +29,7 @@ python3 <skill>/scripts/collect.py [--repo .] [--base <ref>]
 {"src/main/java/.../FooService.java": {"s": "무엇이 왜 바뀌었는지 한 문장", "r": "H", "why": "기본값과 다를 때만 근거 한 줄"}}
 ```
 
-- `r`은 기본값과 다르게 판단할 때만 넣는다. 트랜잭션 경계 변경, 쿼리 조건 변경, 외부 연동 변경, 데이터 삭제 경로는 H 쪽으로 올리고, 이름 변경이나 로그만 바뀐 경우는 L 쪽으로 내린다.
+- `r`은 기본값과 다르게 판단할 때만 넣는다. 트랜잭션 경계 변경, 쿼리 조건 변경, 외부 연동 변경, 데이터 삭제 경로는 H 쪽으로 올리고, 이름 변경이나 로그만 바뀐 경우는 L 쪽으로 내린다. `src/test` 아래 파일은 `r`과 무관하게 렌더러가 TEST 그룹(맨 아래)으로 보낸다.
 
 ## 3. 생성
 

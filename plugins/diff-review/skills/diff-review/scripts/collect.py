@@ -294,6 +294,12 @@ def analyze_patch(patch):
             "old_lines": old_lines, "new_lines": new_lines, "binary": binary}
 
 
+def first_changed_line(methods, key, lines):
+    """key 메서드 범위 안에서 가장 앞선 변경 줄 번호(없으면 None)."""
+    m = next((m for m in methods if (m["cls"], m["key"]) == key), None)
+    return min((l for l in lines if m and m["start"] <= l <= m["end"]), default=None)
+
+
 def changed_methods(methods, lines):
     hit, outside = {}, 0
     for ln in lines:
@@ -483,6 +489,8 @@ def main():
                 src_m = next(m for m in (new_m if change != "D" else old_m) if (m["cls"], m["key"]) == k)
                 f["methods"].append({"sig": f"{k[0]}#{k[1]}", "change": change,
                                      "lines": hit_new.get(k, 0) + hit_old.get(k, 0), "line": src_m["start"],
+                                     "new_at": first_changed_line(new_m, k, p["new_lines"]),
+                                     "old_at": first_changed_line(old_m, k, p["old_lines"]),
                                      "endpoint": (src_m["endpoint"] or {}).get("label")})
             if index and f["kind"] == "main":
                 ids = {m["sig"] for m in f["methods"] if m["change"] != "D"}

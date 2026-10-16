@@ -10,6 +10,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "..", "templates", "review.html")
 
 
+def is_test(path):
+    return path.startswith("src/test/") or "/src/test/" in path
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("out", help="collect.py 가 출력한 OUT 폴더")
@@ -23,9 +27,11 @@ def main():
         s = summary.get(f["path"], {})
         f["summary"] = s.get("s", "")
         f["why"] = s.get("why", "")
-        f["risk"] = s.get("r") or f["risk_base"]
+        # src/test 아래 파일은 위험도 대신 항상 TEST("T") 그룹으로 보낸다
+        f["risk"] = "T" if is_test(f["path"]) else s.get("r") or f["risk_base"]
         f["diff"] = open(os.path.join(a.out, f["patch"]), errors="replace").read()
-    meta["files"].sort(key=lambda f: (-len(f["methods"]), -(f["add"] + f["del"])))
+    order = {"H": 0, "M": 1, "L": 2, "T": 3}
+    meta["files"].sort(key=lambda f: (order.get(f["risk"], 2), -len(f["methods"]), -(f["add"] + f["del"])))
 
     data = json.dumps(meta, ensure_ascii=False).replace("</", "<\\/")
     html = open(TEMPLATE).read().replace("/*__DATA__*/null", data)
