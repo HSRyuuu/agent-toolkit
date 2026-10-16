@@ -7,11 +7,11 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/diff2html@3.4.48/bundles/css/diff2html.min.css">
 <script src="https://cdn.jsdelivr.net/npm/diff2html@3.4.48/bundles/js/diff2html-ui.min.js"></script>
 <style>
-:root { --bg:#f5f5f7; --card:#fff; --fg:#1d1d1f; --mute:#6b6b72; --line:#e3e3e8; --hover:#f0f0f4; --chg:#fff4d6;
-  --H:#d93025; --M:#e8a400; --L:#1e8e3e; --T:#5b6b85; --A:#1e8e3e; --D:#d93025; --R:#6b5bd6; --Mo:#1a73e8; }
+:root { --bg:#f5f5f7; --card:#fff; --fg:#1d1d1f; --mute:#6b6b72; --line:#e3e3e8; --hover:#f0f0f4; --chg:#fff7e0; --chgbd:#f1dfa8;
+  --H:#d93025; --M:#e8a400; --L:#1e8e3e; --T:#5b6b85; --DOC:#0f8a8a; --A:#1e8e3e; --D:#d93025; --R:#6b5bd6; --Mo:#1a73e8; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg:#141416; --card:#1d1d20; --fg:#e8e8ea; --mute:#9a9aa3; --line:#2e2e33; --hover:#26262b; --chg:#3a3216; } }
-:root[data-theme="dark"] { --bg:#141416; --card:#1d1d20; --fg:#e8e8ea; --mute:#9a9aa3; --line:#2e2e33; --hover:#26262b; --chg:#3a3216; }
+  --bg:#141416; --card:#1d1d20; --fg:#e8e8ea; --mute:#9a9aa3; --line:#2e2e33; --hover:#26262b; --chg:#332d17; --chgbd:#5e5026; } }
+:root[data-theme="dark"] { --bg:#141416; --card:#1d1d20; --fg:#e8e8ea; --mute:#9a9aa3; --line:#2e2e33; --hover:#26262b; --chg:#332d17; --chgbd:#5e5026; }
 * { box-sizing: border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 -apple-system, "Segoe UI", sans-serif; }
 main { padding:16px clamp(12px, 2vw, 32px) 64px; }   /* 화면 폭을 그대로 쓴다 */
@@ -22,26 +22,30 @@ h2 { font-size:16px; margin:28px 0 10px; }
 
 /* 위험도 · 상태 뱃지 */
 .badge { display:inline-block; min-width:56px; text-align:center; border-radius:4px; padding:1px 8px; color:#fff; font-weight:700; font-size:12px; flex:none; }
-.r-H{background:var(--H)} .r-M{background:var(--M)} .r-L{background:var(--L)} .r-T{background:var(--T)}
+.r-H{background:var(--H)} .r-M{background:var(--M)} .r-L{background:var(--L)} .r-T{background:var(--T)} .r-DOC{background:var(--DOC)}
 .s-A{color:var(--A)} .s-D{color:var(--D)} .s-R{color:var(--R)} .s-M{color:var(--Mo)}
 
 /* 진입점: 호출 트리 */
 .eps { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 560px), 1fr)); gap:12px; }
 .ep { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px 14px; }
-.ep-h { display:flex; flex-wrap:wrap; gap:8px; align-items:baseline; }
-.ep-h b { font-size:14px; }
+.ep-h { display:flex; flex-wrap:wrap; gap:4px 10px; align-items:baseline; padding-bottom:8px; border-bottom:1px solid var(--line); }
+.ep-h b { font-size:15px; }
+.ep-h .src { margin-left:auto; }
 .kind { font-size:11px; font-weight:700; border:1px solid var(--line); border-radius:4px; padding:0 6px; color:var(--mute); }
 .tree, .tree ul { list-style:none; margin:0; padding:0; }
-.tree { margin-top:8px; }
-.tree ul { margin-left:10px; border-left:1px solid var(--line); }
-.tree li { position:relative; padding:1px 0 1px 16px; }
-.tree ul > li::before { content:""; position:absolute; left:0; top:13px; width:12px; border-top:1px solid var(--line); }
-.tree > li { padding-left:0; }
-.n { display:inline-block; font-family:ui-monospace, Menlo, monospace; font-size:12px; padding:1px 6px; border-radius:4px; word-break:break-all; }
-.n .p { font-size:11px; }
-.n.chg { background:var(--chg); cursor:pointer; box-shadow:inset 3px 0 0 var(--M); }
-.n.chg:hover { outline:1px solid var(--M); }
-.n em { font-style:normal; font-size:11px; font-weight:700; color:var(--M); margin-left:8px; }
+.tree { margin-top:6px; }
+.tree ul { margin-left:12px; padding-left:14px; border-left:1px solid var(--line); }
+.tree li { padding:1px 0; }
+.n { display:flex; gap:10px; align-items:baseline; padding:3px 10px; border-radius:6px; font-size:13px; border:1px solid transparent; }
+.n .ly { font-size:10px; font-weight:700; color:var(--mute); border:1px solid var(--line); border-radius:4px; padding:0 5px; margin-right:8px; text-transform:uppercase; letter-spacing:.02em; font-family:-apple-system, "Segoe UI", sans-serif; }
+.n .nm { font-family:ui-monospace, Menlo, monospace; font-size:12px; color:var(--mute); word-break:break-all; }
+.n .nm b { font-weight:600; }
+.n .nm .p { font-size:11px; }
+.n .chtag { flex:none; margin-left:auto; font-size:11px; font-weight:700; white-space:nowrap; padding:0 9px; border-radius:999px; background:color-mix(in srgb, currentColor 14%, transparent); }
+.n.chg { background:var(--chg); border-color:var(--chgbd); cursor:pointer; }
+.n.chg:hover { border-color:var(--M); }
+.n.chg .nm { color:var(--fg); }
+.n.chg .nm b { font-weight:700; }
 
 /* 파일 추가·삭제·이름 변경 */
 .ops { display:flex; flex-wrap:wrap; gap:8px 32px; }
@@ -64,11 +68,18 @@ ul.flat { margin:2px 0 0; padding-left:18px; }
 .head:hover { background:var(--hover); border-radius:8px; }
 .head .chev { color:var(--mute); transition:transform .15s; flex:none; }
 .card.open .chev { transform:rotate(90deg); }
-.head .path { font-family:ui-monospace, Menlo, monospace; font-size:13px; word-break:break-all; flex:1 1 320px; }
-.head .path .dir { color:var(--mute); } .head .path b { font-size:14px; }
+.head .pathbox { flex:1 1 320px; min-width:0; }
+.head .fstat { flex:none; min-width:52px; text-align:center; font-size:12px; padding:1px 10px; border-radius:999px; background:color-mix(in srgb, currentColor 14%, transparent); }
+.head code.path { font-size:13px; padding:2px 8px; }
+.head code.path .dir { color:var(--mute); } .head code.path b { font-size:14px; }
 .body { padding:0 14px 12px 14px; }
-.sum { font-size:15px; margin:0 0 8px; }
-.why { font-size:12px; margin:-4px 0 8px; }
+.sum { list-style:none; margin:0 0 10px; padding:0; }
+.sum li { position:relative; padding-left:18px; margin:4px 0; font-size:15px; line-height:1.6; }
+.sum li::before { content:""; position:absolute; left:4px; top:.78em; width:5px; height:5px; border-radius:50%; background:var(--mute); }
+.sum li.fb { color:var(--mute); } .sum li.fb::before { display:none; }
+code { font-family:ui-monospace, Menlo, monospace; background:var(--hover); border:1px solid var(--line); border-radius:4px; padding:0 5px; font-size:.9em; word-break:break-all; }
+.why { font-size:12px; margin:0 0 8px; }
+.why b { font-weight:600; }
 .sub { font-size:12px; font-weight:600; color:var(--mute); margin:10px 0 4px; }
 .methods { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 460px), 1fr)); gap:1px 28px; }
 .mrow { display:flex; gap:8px; align-items:baseline; padding:2px 6px; border-radius:4px; }
@@ -85,6 +96,7 @@ ul.flat { margin:2px 0 0; padding-left:18px; }
 .eptags { margin-top:8px; font-size:12px; }
 .diff { margin-top:10px; }
 .diff .d2h-file-header { display:none; }
+.diff ins, .diff del { background:transparent !important; }   /* 줄 안 단어 단위 진한 강조는 끈다 (줄 전체 초록/빨강은 유지) */
 .diff .d2h-file-wrapper { margin-bottom:0; }
 </style>
 </head>
@@ -93,12 +105,12 @@ ul.flat { margin:2px 0 0; padding-left:18px; }
   <h1 id="title"></h1>
   <div id="sub" class="mute"></div>
 
-  <h2>영향받는 진입점 <span class="hint">호출 관계를 이름·타입으로 추정한 결과라 누락되거나 과하게 잡힐 수 있음 · 노란 표시는 이번에 바뀐 메서드(클릭하면 해당 파일로 이동)</span></h2>
+  <h2>영향받는 진입점 <span class="hint">위에서 아래로 호출 · 노란 줄이 이번에 바뀐 메서드(클릭하면 해당 파일로 이동) · 이름·타입 기반 추정이라 누락·과다 가능</span></h2>
   <div id="eps" class="eps"></div>
 
   <div id="opsWrap"><h2>파일 추가 · 삭제 · 이름 변경</h2><div id="fileops" class="ops"></div></div>
 
-  <h2>파일별 변경 <span class="hint">위험도 그룹 안에서 변경 메서드 수 내림차순 · 테스트(src/test)는 맨 아래</span></h2>
+  <h2>파일별 변경 <span class="hint">위험도 그룹 안에서 변경 메서드 수 내림차순 · .md는 DOCS, 테스트(src/test)는 맨 아래</span></h2>
   <div class="bar" id="filters"></div>
   <div id="files"></div>
 </main>
@@ -109,25 +121,34 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;
 let done = {}; try { done = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (e) {} };
 
-const GROUPS = ["H", "M", "L", "T"];
-const RISK = { H: "High", M: "Mid", L: "Low", T: "TEST" };
+const GROUPS = ["H", "M", "L", "DOC", "T"];
+const RISK = { H: "High", M: "Mid", L: "Low", DOC: "DOCS", T: "TEST" };
+const METHOD_TAG = { A: "추가", M: "수정", D: "삭제" };
 const STATUS = { A: "추가", M: "수정", D: "삭제", R: "이름 변경" };
 const state = { risk: new Set(GROUPS), hideDone: false, layout: "side-by-side", open: new Set() };
 const cnt = r => DATA.files.filter(f => f.risk === r).length;
 const cardOf = new Map();
+const inline = t => esc(t).replace(/`([^`]+)`/g, "<code>$1</code>");   // 백틱 → 한 줄 코드
+const bullets = v => (Array.isArray(v) ? v : String(v || "").split("\n")).map(x => String(x).replace(/^\s*[-•]\s*/, "").trim()).filter(Boolean);
 
 document.getElementById("title").textContent = `${DATA.repo} · ${DATA.branch}`;
 document.getElementById("sub").textContent =
   `base ${DATA.base_ref}@${DATA.base} · 파일 ${DATA.files.length}개 (${GROUPS.map(r => `${RISK[r]} ${cnt(r)}`).join(" / ")}) · 진입점 ${DATA.endpoints.length}개`;
 
 /* ---------- 진입점: 겹치는 호출 경로를 하나의 트리로 합친다 ---------- */
-const sigFile = {};
-for (const f of DATA.files) for (const m of f.methods) sigFile[m.sig] = f.path;
+const sigFile = {}, sigMethod = {};
+for (const f of DATA.files) for (const m of f.methods) { sigFile[m.sig] = f.path; sigMethod[m.sig] = m; }
+
+const LAYERS = [[/Controller$/, "Controller"], [/(Consumer|Listener)$/, "Listener"], [/(Scheduler|Job)$/, "Job"],
+  [/Service(Impl)?$/, "Service"], [/(Repository|Dao|Mapper)$/, "Repository"], [/(Entity|Vo|VO|Dto|DTO|Request|Response)$/, "Model"]];
+const layerOf = cls => (LAYERS.find(([re]) => re.test(cls.split(".")[0])) || [, ""])[1];
 
 function node(sig, kids, changed) {
   const [cls, rest] = sig.split("#"), i = rest.indexOf("(");
-  const hit = changed.has(sig);
-  return `<li><span class="n${hit ? " chg" : ""}" ${hit ? `data-sig="${esc(sig)}"` : ""} title="${esc(sig)}"><span class="mute">${esc(cls)}#</span><b>${esc(rest.slice(0, i))}</b><span class="mute p">${esc(rest.slice(i))}</span>${hit ? "<em>변경</em>" : ""}</span>` +
+  const m = changed.has(sig) && sigMethod[sig];
+  const tag = m ? `<span class="chtag s-${m.change}">${METHOD_TAG[m.change]} · ${m.lines}줄</span>` : "";
+  return `<li><div class="n${changed.has(sig) ? " chg" : ""}" ${changed.has(sig) ? `data-sig="${esc(sig)}"` : ""} title="${esc(sig)}">
+      <span class="nm">${layerOf(cls) ? `<span class="ly">${layerOf(cls)}</span>` : ""}${esc(cls)}#<b>${esc(rest.slice(0, i))}</b>${m ? `<span class="p">${esc(rest.slice(i))}</span>` : ""}</span>${tag}</div>` +
     (kids.size ? `<ul>${[...kids].map(([s, k]) => node(s, k, changed)).join("")}</ul>` : "") + `</li>`;
 }
 function epCard(e) {
@@ -135,7 +156,8 @@ function epCard(e) {
   for (const v of e.via) { let cur = trie; for (const s of v.path) { if (!cur.has(s)) cur.set(s, new Map()); cur = cur.get(s); } }
   if (!trie.size) trie.set(e.handler, new Map());
   return `<div class="ep"><div class="ep-h"><span class="kind">${esc(e.kind)}</span><b class="mono">${esc(e.label)}</b>
-    <span class="mute mono" title="${esc(e.file)}">${esc(e.file.split("/").pop())}:${e.line}</span></div>
+    <span class="mute">변경 메서드 ${changed.size}개 도달</span>
+    <span class="mute mono src" title="${esc(e.file)}">${esc(e.file.split("/").pop())}:${e.line}</span></div>
     <ul class="tree">${[...trie].map(([s, k]) => node(s, k, changed)).join("")}</ul></div>`;
 }
 const epsEl = document.getElementById("eps");
@@ -169,7 +191,6 @@ function filters() {
 }
 
 /* ---------- 파일 카드 ---------- */
-const METHOD_TAG = { A: "추가", M: "수정", D: "삭제" };
 function methodRow(m, test) {
   let n = m.sig.split("#")[1];
   if (test) n = n.replace(/^[^(]*/, s => s.replace(/_/g, " ")).replace(/\(\)$/, "");   // 테스트명은 밑줄 대신 공백으로 읽기 좋게
@@ -229,14 +250,14 @@ function card(f) {
       <input type="checkbox" title="리뷰 완료" ${done[f.path] ? "checked" : ""}>
       <span class="chev">▸</span>
       <span class="badge r-${f.risk}">${RISK[f.risk]}</span>
-      <b class="s-${f.status}">${STATUS[f.status] || f.status}</b>
-      <span class="path" title="${esc(f.path)}">${f.old_path ? esc(f.old_path) + " → " : ""}<span class="dir">${esc(f.path.slice(0, i + 1))}</span><b>${esc(f.path.slice(i + 1))}</b></span>
+      <span class="pathbox" title="${esc(f.path)}">${f.old_path ? `<code class="path">${esc(f.old_path)}</code> → ` : ""}<code class="path"><span class="dir">${esc(f.path.slice(0, i + 1))}</span><b>${esc(f.path.slice(i + 1))}</b></code></span>
       <span class="mono"><span class="s-A">+${f.add}</span> <span class="s-D">-${f.del}</span></span>
       <span class="mute">메서드 ${f.methods.length}${f.class_level_lines ? ` · 메서드 밖 ${f.class_level_lines}줄` : ""}</span>
+      <b class="fstat s-${f.status}">${STATUS[f.status] || f.status}</b>
     </div>
     <div class="body">
-      <div class="sum">${esc(f.summary || fallback)}</div>
-      ${f.why ? `<div class="why mute">위험도 근거: ${esc(f.why)}</div>` : ""}
+      <ul class="sum">${bullets(f.summary).map(b => `<li>${inline(b)}</li>`).join("") || `<li class="fb">${esc(fallback)}</li>`}</ul>
+      ${f.why ? `<div class="why mute"><b>위험도 근거</b> · ${inline(f.why)}</div>` : ""}
       ${f.methods.length ? `<div class="sub">변경 메서드 ${f.methods.length}</div><div class="methods">${f.methods.map(m => methodRow(m, test)).join("")}</div>` : ""}
       ${f.endpoints.length ? `<div class="eptags">영향 진입점: <span class="mono">${f.endpoints.map(esc).join(", ")}</span></div>` : ""}
       <div class="diff" hidden></div>

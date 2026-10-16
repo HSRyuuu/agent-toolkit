@@ -27,10 +27,10 @@ def main():
         s = summary.get(f["path"], {})
         f["summary"] = s.get("s", "")
         f["why"] = s.get("why", "")
-        # src/test 아래 파일은 위험도 대신 항상 TEST("T") 그룹으로 보낸다
-        f["risk"] = "T" if is_test(f["path"]) else s.get("r") or f["risk_base"]
+        # src/test 아래는 TEST("T"), 그 외 .md 는 DOCS("DOC") 그룹으로 위험도와 무관하게 보낸다
+        f["risk"] = "T" if is_test(f["path"]) else "DOC" if f["path"].lower().endswith(".md") else s.get("r") or f["risk_base"]
         f["diff"] = open(os.path.join(a.out, f["patch"]), errors="replace").read()
-    order = {"H": 0, "M": 1, "L": 2, "T": 3}
+    order = {"H": 0, "M": 1, "L": 2, "DOC": 3, "T": 4}
     meta["files"].sort(key=lambda f: (order.get(f["risk"], 2), -len(f["methods"]), -(f["add"] + f["del"])))
 
     data = json.dumps(meta, ensure_ascii=False).replace("</", "<\\/")
