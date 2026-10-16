@@ -1,0 +1,10 @@
+{
+  "name": "diff-review",
+  "version": "1.0.0",
+  "description": "브랜치 변경사항을 요약·위험도·영향 진입점과 함께 리뷰용 HTML로 만든다.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+  "repository": "https://github.com/HSRyuuu/agent-toolkit"
+}
