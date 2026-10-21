@@ -390,7 +390,7 @@ $("foot").innerHTML = (DATA.foot || []).map(s => `<b>${esc(s.title)}</b><ul>${(s
   btn.addEventListener("click", async () => {
     const text = box.textContent;
     const ok = legacy(text) || await viaApi(text);
-    ok ? flash("done", "복사됨") : flash("fail", "복사 실패 — 직접 드래그하세요");
+    ok ? flash("done", "복사됨") : flash("fail", "복사 실패 · 직접 드래그해 복사");
   });
 })();
 </script>

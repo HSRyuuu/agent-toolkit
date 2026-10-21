@@ -128,7 +128,7 @@
 <section class="agent" aria-labelledby="agent-h">
   <div class="agent-head">
     <h2 id="agent-h">에이전트용 텍스트</h2>
-    <span class="agent-sub">위 지도를 글로 옮긴 평문입니다. 드래그해서 복사하거나 오른쪽 버튼으로 전체를 복사해 에이전트에게 붙여넣으세요.</span>
+    <span class="agent-sub">위 지도를 글로 옮긴 평문이다. 드래그해서 복사하거나 오른쪽 버튼으로 전체를 복사해 에이전트에게 붙여넣는다.</span>
     <button type="button" id="copy">전체 복사</button>
   </div>
 <pre id="agenttext" tabindex="0"><!--AGENT_TEXT--></pre>
@@ -148,7 +148,7 @@ const h = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "
 /* ===== 머리말 ===== */
 document.title = META.title || "Architecture";
 document.getElementById("title").textContent = META.title || "Architecture";
-document.getElementById("hint").textContent = META.hint || "박스에 마우스를 올리면 상세 팝업이 나옵니다. 클릭하면 고정되고, Esc 로 닫습니다.";
+document.getElementById("hint").textContent = META.hint || "박스에 마우스를 올리면 상세 팝업이 나온다. 클릭하면 고정되고, Esc 로 닫는다.";
 document.getElementById("ver").textContent = META.ver ? "ver. " + META.ver : "";
 
 /* ===== 레이아웃: col/row 로 좌표 계산 (x/y/w/h 를 직접 주면 그 값을 우선) ===== */
@@ -293,7 +293,7 @@ function groupTip(g) {
     if (r.c !== 1) cur.c = r.c; agg.set(r.s, cur);
   }));
   const list = [...agg.values()].map(r => ({ ...r, op: [..."RWUD"].filter(o => r.op.includes(o)).join("") }));
-  return `<h3>${h(g.title)}</h3><div class="sub">${h(g.sub || "")}</div><p class="desc">이 박스 안 항목들이 닿는 저장소의 합집합입니다.</p>` + dbSections(list);
+  return `<h3>${h(g.title)}</h3><div class="sub">${h(g.sub || "")}</div><p class="desc">이 박스 안 항목들이 닿는 저장소의 합집합이다.</p>` + dbSections(list);
 }
 function place(ev) {
   const pad = 14, r = tip.getBoundingClientRect(); let x = ev.clientX + 18, y = ev.clientY + 14;
@@ -301,7 +301,7 @@ function place(ev) {
   if (x < pad) x = pad; if (y + r.height > innerHeight - pad) y = innerHeight - r.height - pad; if (y < pad) y = pad;
   tip.style.left = x + "px"; tip.style.top = y + "px";
 }
-const HINT = `<div class="hint">내용이 더 있습니다. 박스를 클릭하면 팝업이 고정되어 스크롤할 수 있습니다 (Esc 로 닫기)</div>`;
+const HINT = `<div class="hint">내용이 더 있다. 박스를 클릭하면 팝업이 고정되어 스크롤할 수 있다 (Esc 로 닫기)</div>`;
 function fill(html) { tipbody.innerHTML = html + HINT; tip.style.display = "block"; tip.classList.toggle("long", tip.scrollHeight > tip.clientHeight + 4); }
 function showTip(html, ev) { if (pinned) return; fill(html); place(ev); }
 function moveTip(ev) { if (!pinned) place(ev); }
@@ -342,7 +342,7 @@ document.getElementById("foot").innerHTML = (DATA.foot || []).map(sec =>
   btn.addEventListener("click", async () => {
     const text = box.textContent;
     const ok = legacy(text) || await viaApi(text);   // 동기 복사를 먼저(사용자 클릭 안에서 가장 안정적), 실패하면 API
-    ok ? flash("done", "복사됨") : flash("fail", "복사 실패 — 직접 드래그하세요");
+    ok ? flash("done", "복사됨") : flash("fail", "복사 실패 · 직접 드래그해 복사");
   });
 })();
 </script>
