@@ -702,11 +702,16 @@ def adf_to_text(node: Any, depth: int = 0) -> str:
     inner = adf_to_text(content, depth + 1) if content is not None else ""
     if node_type in ("paragraph", "heading", "blockquote", "codeBlock", "rule"):
         return inner + "\n"
+    if node_type == "taskItem":
+        # A taskItem holds inline nodes directly, so it ends its own line.
+        attrs = node.get("attrs")
+        done = isinstance(attrs, dict) and attrs.get("state") == "DONE"
+        return ("- [x] " if done else "- [ ] ") + inner.rstrip("\n") + "\n"
     if node_type == "listItem":
         return "- " + inner
     if node_type == "tableRow":
         return "| " + inner + "\n"
-    if node_type in ("bulletList", "orderedList", "table"):
+    if node_type in ("bulletList", "orderedList", "taskList", "table"):
         return inner
     if node_type == "tableCell" or node_type == "tableHeader":
         return inner.rstrip("\n") + " | "

@@ -1081,6 +1081,29 @@ def case_jira_edit_allowed_for_assignee_delete_is_not() -> bool:
     )
 
 
+def case_adf_to_text_task_list_state() -> bool:
+    """taskItem 은 줄을 스스로 끝내고 체크 상태를 [x]/[ ] 로 보여준다."""
+    doc = {
+        "type": "doc",
+        "content": [
+            {"type": "paragraph", "content": [{"type": "text", "text": "[체크]"}]},
+            {
+                "type": "taskList",
+                "content": [
+                    {"type": "taskItem", "attrs": {"state": "DONE"}, "content": [{"type": "text", "text": "앱"}]},
+                    {"type": "taskItem", "attrs": {"state": "TODO"}, "content": [{"type": "text", "text": "웹"}]},
+                ],
+            },
+        ],
+    }
+    text = common.adf_summary(doc)
+    return check(
+        "adf_summary renders taskItem state on its own line",
+        text == "[체크]\n- [x] 앱\n- [ ] 웹",
+        repr(text),
+    )
+
+
 def case_migrate_keychain_writes_profile() -> bool:
     """Keychain 값으로 프로필을 만들고, 항목이 없으면 저장하지 않는다."""
     real_secret = setup.keychain_secret
@@ -1327,6 +1350,7 @@ def main() -> int:
         case_owner_guard_fails_closed,
         case_owner_guard_allows_assignee_when_permitted,
         case_jira_edit_allowed_for_assignee_delete_is_not,
+        case_adf_to_text_task_list_state,
         case_migrate_keychain_writes_profile,
         case_delete_requires_yes,
         case_edit_requires_a_field,
