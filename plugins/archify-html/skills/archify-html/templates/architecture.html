@@ -42,8 +42,14 @@
   .legend svg { width: 34px; height: 10px; overflow: visible; }
   .op { display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 4px; font: 700 11px/17px ui-monospace, Menlo, monospace; color: #fff; text-align: center; }
   .op.R { background: var(--r); } .op.W { background: var(--w); } .op.U { background: var(--u); } .op.D { background: var(--d); }
-  .wrap { overflow: auto; padding: 0 12px 24px; }
-  svg#map { display: block; margin: 0 auto; width: 100%; height: auto; }
+  .wrap { overflow: auto; padding: 0 max(16px, env(safe-area-inset-left, 0px)) 24px; }
+  /* 폭은 JS 가 viewBox 폭 x 배율(px)로 지정한다. 화면 폭(100%)에 고정하면 브라우저 줌·핀치가 지도 크기에 반영되지 않는다. */
+  svg#map { display: block; margin: 0 auto; width: 100%; max-width: none; height: auto; }
+  .zoombar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; padding: 0 20px 8px; color: var(--muted); font-size: 12px; }
+  .zoombar button { font: inherit; font-weight: 600; min-width: 34px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+  .zoombar button:hover { border-color: var(--edge); }
+  .zoombar button:focus-visible { outline: 2px solid var(--edge); outline-offset: 2px; }
+  .zoombar output { min-width: 48px; text-align: center; font: 600 12px/1 ui-monospace, Menlo, monospace; color: var(--ink); }
   .grp rect.box { fill: var(--grp); stroke: var(--line); stroke-width: 1; }
   .grp.focus rect.box { fill: var(--focus); }
   .grp.ext rect.box { fill: var(--ext); }
@@ -108,6 +114,14 @@
 <div class="ver" id="ver"></div>
 <header><h1 id="title"></h1><p id="hint"></p></header>
 <div class="legend" id="legend"></div>
+<div class="zoombar" role="group" aria-label="지도 확대 축소">
+  <span>지도 크기</span>
+  <button type="button" id="zout" aria-label="축소" title="축소">−</button>
+  <output id="zval" aria-live="polite">100%</output>
+  <button type="button" id="zin" aria-label="확대" title="확대">+</button>
+  <button type="button" id="zreset" title="원래 크기(100%)">100%</button>
+  <button type="button" id="zfit" title="화면 폭에 맞춤">맞춤</button>
+</div>
 <div class="wrap"><svg id="map" role="img"></svg></div>
 <div id="tip" role="dialog"><button class="x" aria-label="닫기">×</button><div id="tipbody"></div></div>
 <div class="foot" id="foot"></div>
@@ -154,7 +168,23 @@ DATA.groups.forEach(g => {
 const minY = Math.min(...DATA.groups.map(g => g.y)), maxY = Math.max(...DATA.groups.map(g => g.y + g.h));
 const W = Math.max(...DATA.groups.map(g => g.x + g.w)) + MX, VH = maxY - minY + 60;
 svg.setAttribute("viewBox", `0 ${minY - 30} ${W} ${VH}`);
-svg.style.minWidth = Math.round(W * 0.78) + "px";
+// 지도는 viewBox 폭(W)을 CSS px 로 그대로 쓴다. 브라우저 줌과 핀치가 크기에 반영되고, 넘치면 .wrap 안에서 가로 스크롤된다.
+// 보조 컨트롤은 같은 폭에 배율을 곱한다. '맞춤'은 화면 폭 100% 이다.
+const ZMIN = 0.4, ZMAX = 3;
+let zoom = 1, zfit = false;
+const zval = document.getElementById("zval");
+const zapply = () => {
+  svg.style.width = zfit ? "100%" : Math.round(W * zoom) + "px";
+  zval.textContent = zfit ? "맞춤" : Math.round(zoom * 100) + "%";
+};
+// 맞춤 상태에서 +/− 를 누르면 지금 보이는 배율에서 시작한다
+const zcurrent = () => zfit ? svg.getBoundingClientRect().width / W : zoom;
+const zstep = (f) => { zoom = Math.min(ZMAX, Math.max(ZMIN, +(zcurrent() * f).toFixed(3))); zfit = false; zapply(); };
+document.getElementById("zin").addEventListener("click", () => zstep(1.2));
+document.getElementById("zout").addEventListener("click", () => zstep(1 / 1.2));
+document.getElementById("zreset").addEventListener("click", () => { zoom = 1; zfit = false; zapply(); });
+document.getElementById("zfit").addEventListener("click", () => { zfit = true; zapply(); });
+zapply();
 
 const nodeById = {};
 DATA.groups.forEach(g => g.nodes.forEach(n => { n.group = g; nodeById[n.id] = n; }));

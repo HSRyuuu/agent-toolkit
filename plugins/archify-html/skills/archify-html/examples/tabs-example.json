@@ -1,0 +1,8 @@
+{
+  "kind": "tabs",
+  "meta": { "title": "주문·리워드 문서 (예제)" },
+  "tabs": [
+    { "id": "flow", "label": "주문 흐름 지도", "file": "order-flow.json" },
+    { "id": "model", "label": "리워드 데이터 모델", "file": "data-model-example.json" }
+  ]
+}

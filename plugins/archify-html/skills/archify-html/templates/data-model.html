@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data model</title>
+<style>
+  /* 레이아웃: 위에서 아래로 "스키마 → 처리 흐름 → 화면 노출". 테이블은 tone(a~d) 색으로 모든 섹션에서 같게 구분한다. */
+  :root {
+    --bg: #f4f6f9; --surface: #ffffff; --ink: #18202f; --muted: #5a6579; --line: #dce1ea;
+    --a: #0a7770; --a-bg: #d5f0ed;
+    --b: #4549c9; --b-bg: #e3e4fa;
+    --c: #9a5a00; --c-bg: #fdeccd;
+    --d: #9b3d8c; --d-bg: #f6e0f2;
+    --ins: #17803f; --ins-bg: #dcf4e5; --upd: #a86100; --upd-bg: #fff0cf; --neg: #c2372f; --neg-bg: #fde2df;
+    --warn-bg: #fff1d1; --warn-ink: #6f4300;
+    --font-body: system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e141f; --surface: #161e2c; --ink: #e7ecf6; --muted: #98a4ba; --line: #2a3650;
+      --a: #52cdc3; --a-bg: #0f3532; --b: #9ea3ff; --b-bg: #25285c; --c: #f2b657; --c-bg: #3b2a0e; --d: #e59ad8; --d-bg: #3f1f3a;
+      --ins: #55d58a; --ins-bg: #143823; --upd: #f0b44d; --upd-bg: #3d2c0d; --neg: #ff8b83; --neg-bg: #4a2220;
+      --warn-bg: #3b2d10; --warn-ink: #ffd88a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e141f; --surface: #161e2c; --ink: #e7ecf6; --muted: #98a4ba; --line: #2a3650;
+    --a: #52cdc3; --a-bg: #0f3532; --b: #9ea3ff; --b-bg: #25285c; --c: #f2b657; --c-bg: #3b2a0e; --d: #e59ad8; --d-bg: #3f1f3a;
+    --ins: #55d58a; --ins-bg: #143823; --upd: #f0b44d; --upd-bg: #3d2c0d; --neg: #ff8b83; --neg-bg: #4a2220;
+    --warn-bg: #3b2d10; --warn-ink: #ffd88a;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 var(--font-body);
+    padding: 32px max(16px, env(safe-area-inset-left, 0px)) 72px; }
+  .wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 44px; }
+  h1, h2, h3 { margin: 0; text-wrap: balance; line-height: 1.3; }
+  h1 { font-size: clamp(26px, 4.6vw, 36px); font-weight: 700; }
+  h2 { font-size: clamp(20px, 3.2vw, 24px); font-weight: 700; }
+  h3 { font-size: 15px; font-weight: 700; }
+  p { margin: 0; }
+  code, .mono { font-family: var(--font-mono); font-size: .92em; }
+  section { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .ver { font: 600 12px/1.2 var(--font-mono); color: var(--muted); }
+  .lead { color: var(--muted); max-width: 46em; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; min-width: 0; }
+  .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .badge { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .badge.a { background: var(--a-bg); color: var(--a); } .badge.b { background: var(--b-bg); color: var(--b); }
+  .badge.c { background: var(--c-bg); color: var(--c); } .badge.d { background: var(--d-bg); color: var(--d); }
+  .badge.real { background: var(--ins-bg); color: var(--ins); } .badge.ex { background: var(--upd-bg); color: var(--upd); } .badge.new { background: var(--neg-bg); color: var(--neg); }
+
+  .three { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+  .three .card { display: flex; flex-direction: column; gap: 8px; border-top-width: 4px; }
+  .three .card.a { border-top-color: var(--a); } .three .card.b { border-top-color: var(--b); }
+  .three .card.c { border-top-color: var(--c); } .three .card.d { border-top-color: var(--d); }
+  .three .where { font: 12.5px var(--font-mono); color: var(--muted); }
+  .formula { background: var(--surface); border: 1px dashed var(--line); border-radius: 10px; padding: 14px 18px; font: 13.5px var(--font-mono); overflow-x: auto; white-space: nowrap; }
+  .muted { color: var(--muted); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 8px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+  thead th { border-top: 0; background: var(--bg); color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; }
+  td.k { font: 500 12.5px var(--font-mono); white-space: nowrap; }
+  td.t { font: 12px var(--font-mono); color: var(--muted); white-space: nowrap; }
+  td.n { text-align: right; font: 12.5px var(--font-mono); font-variant-numeric: tabular-nums; }
+  .dict { min-width: 560px; table-layout: fixed; }
+  .dict td.k, .dict td.t { overflow-wrap: anywhere; white-space: normal; }
+  .dict-head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .dict-head .mono { color: var(--muted); }
+  tr.key { background: color-mix(in srgb, var(--upd-bg) 55%, transparent); }
+
+  /* 관계도: 폭은 JS 가 viewBox 폭 x 배율(px)로 지정한다. 화면 폭(100%)에 고정하면 브라우저 줌이 반영되지 않는다. */
+  .er { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: auto; padding: 8px; }
+  svg#er { display: block; margin: 0 auto; max-width: none; height: auto; }
+  .zoombar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; color: var(--muted); font-size: 12px; }
+  .zoombar button { font: inherit; font-weight: 600; min-width: 34px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+  .zoombar output { min-width: 48px; text-align: center; font: 600 12px/1 var(--font-mono); color: var(--ink); }
+  svg#er text { fill: var(--ink); font: 12px var(--font-body); }
+  svg#er .tn { font-weight: 700; font-size: 13px; }
+  svg#er .ty { fill: var(--muted); font: 11px var(--font-mono); }
+  svg#er .rl { font-size: 11.5px; fill: var(--muted); }
+  svg#er .card { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+  svg#er path.rel { fill: none; stroke: var(--muted); stroke-width: 1.6; }
+  svg#er .halo { stroke: var(--surface); stroke-width: 5; paint-order: stroke; }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tabs button, .toggle button { font: inherit; font-weight: 500; padding: 7px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+  .tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; align-self: flex-start; flex-wrap: wrap; }
+  .toggle button { border: 0; border-radius: 0; }
+  .toggle button[aria-pressed="true"] { background: var(--b); color: var(--bg); }
+  button:focus-visible { outline: 3px solid var(--b); outline-offset: 2px; }
+  .flow { display: flex; flex-direction: column; gap: 14px; }
+  .flow-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+  .ledger { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .ledger .cap { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-weight: 700; }
+  .ledger .cap .mono { color: var(--muted); font-weight: 400; }
+  tr.ins td { background: var(--ins-bg); } tr.upd td { background: var(--upd-bg); }
+  .chg { font-weight: 700; color: var(--upd); white-space: nowrap; }
+  .chip { display: inline-block; font: 500 11px var(--font-mono); padding: 0 7px; border-radius: 4px; vertical-align: 1px; }
+  tr.ins .chip { background: var(--ins); color: var(--bg); } tr.upd .chip { background: var(--upd); color: var(--bg); } tr.same .chip { background: var(--muted); color: var(--bg); }
+  .empty { padding: 14px; color: var(--muted); }
+  ul.notes, ul.rules { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+  ul.rules { font-size: 14px; }
+  .view td.neg { color: var(--neg); } .view .sub { color: var(--muted); font-size: 12px; }
+  .warn { background: var(--warn-bg); color: var(--warn-ink); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+  .basis, .foot { color: var(--muted); font-size: 13px; }
+  .foot b { color: var(--ink); } .foot ul { margin: 4px 0 8px; padding-left: 18px; }
+
+  .agent-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 8px; }
+  .agent h2 { font-size: 14px; }
+  .agent-sub { color: var(--muted); font-size: 12px; flex: 1 1 280px; }
+  #copy { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 5px 14px; font: 600 12px var(--font-body); cursor: pointer; }
+  #copy.done { color: var(--ins); border-color: var(--ins); } #copy.fail { color: var(--neg); border-color: var(--neg); }
+  #agenttext { margin: 0; padding: 12px 14px; max-height: 62vh; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    font: 12px/1.6 var(--font-mono); white-space: pre-wrap; word-break: break-word; user-select: text; -webkit-user-select: text; cursor: text; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:12px">
+    <span class="eyebrow" id="eyebrow"></span>
+    <h1 id="title"></h1>
+    <p class="lead" id="lead"></p>
+    <span class="ver" id="ver"></span>
+  </header>
+
+  <section id="sec-schema" aria-labelledby="h-schema" hidden>
+    <h2 id="h-schema"></h2>
+    <div class="three" id="cards"></div>
+    <div class="formula" id="formula" role="note" hidden></div>
+    <p class="muted" id="ovnote" hidden></p>
+    <div id="erwrap" hidden>
+      <div class="zoombar" role="group" aria-label="관계도 확대 축소">
+        <span>관계도 크기</span>
+        <button type="button" id="zout" aria-label="축소" title="축소">−</button>
+        <output id="zval" aria-live="polite">100%</output>
+        <button type="button" id="zin" aria-label="확대" title="확대">+</button>
+        <button type="button" id="zreset" title="원래 크기(100%)">100%</button>
+        <button type="button" id="zfit" title="화면 폭에 맞춤">맞춤</button>
+      </div>
+      <div class="er"><svg id="er" role="img" aria-label="테이블 관계도"></svg></div>
+    </div>
+    <h3>컬럼 사전</h3>
+    <div id="dicts" style="display:flex;flex-direction:column;gap:14px"></div>
+  </section>
+
+  <section id="sec-flows" aria-labelledby="h-flows" hidden>
+    <h2 id="h-flows"></h2>
+    <p class="lead" id="flowlead"></p>
+    <div class="tabs" role="tablist" aria-label="흐름 선택" id="flowTabs"></div>
+    <div class="flow card" id="flowBody" role="tabpanel" aria-live="polite"></div>
+  </section>
+
+  <section id="sec-views" aria-labelledby="h-views" hidden>
+    <h2 id="h-views"></h2>
+    <p class="lead" id="viewlead"></p>
+    <h3 id="srcTitle"></h3>
+    <div class="scroll"><table id="srcTable"></table></div>
+    <div class="toggle" role="group" aria-label="화면 선택" id="viewToggle"></div>
+    <div class="scroll view" id="viewBox"></div>
+    <div id="viewNote" class="card" hidden></div>
+    <div class="grid2" id="rules"></div>
+  </section>
+
+  <div id="callouts" style="display:flex;flex-direction:column;gap:14px"></div>
+  <div class="foot" id="foot"></div>
+  <p class="basis" id="basis"></p>
+
+  <section class="agent" aria-labelledby="agent-h">
+    <div class="agent-head">
+      <h2 id="agent-h">에이전트용 텍스트</h2>
+      <span class="agent-sub">위 문서를 글로 옮긴 평문이다. 드래그해서 복사하거나 오른쪽 버튼으로 전체를 복사해 에이전트에게 붙여넣는다.</span>
+      <button type="button" id="copy">전체 복사</button>
+    </div>
+<pre id="agenttext" tabindex="0"><!--AGENT_TEXT--></pre>
+  </section>
+</div>
+
+<script>
+/* 데이터는 scripts/render.py 가 주입한다. 스키마는 kinds/data-model-doc.md 참고. 데이터의 모든 문자열은 이스케이프해서 넣는다. */
+const DATA = /*DATA_START*/{"tables":[],"flows":[]}/*DATA_END*/;
+
+const META = DATA.meta || {};
+const SEC = Object.assign({ schema: "1. 스키마", flows: "2. 처리 흐름별 테이블 변화", views: "3. 화면 노출 로직" }, META.sections || {});
+const TAG = { real: "실제", ex: "예시", new: "신규" };
+const OP = { ins: "INSERT", upd: "UPDATE", same: "변경 없음" };
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+// 이스케이프한 뒤 `코드` 와 **굵게** 만 허용한다
+const fmt = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+const cell = (v) => /\S →\s?\S/.test(String(v)) ? `<span class="chg">${esc(v)}</span>` : fmt(v);
+const T = {}; (DATA.tables || []).forEach(t => { T[t.id] = t; });
+const tone = (t) => (t && t.tone) || "a";
+const show = (id, on) => { $(id).hidden = !on; };
+
+/* ===== 머리말 ===== */
+document.title = META.title || "Data model";
+$("eyebrow").textContent = META.eyebrow || "";
+$("title").textContent = META.heading || META.title || "Data model";
+$("lead").textContent = META.lead || ""; show("lead", !!META.lead);
+$("ver").textContent = META.ver ? "ver. " + META.ver : "";
+$("basis").innerHTML = META.basis ? fmt(META.basis) : "";
+
+/* ===== 1. 스키마 ===== */
+const tables = DATA.tables || [];
+if (tables.length) {
+  show("sec-schema", true);
+  $("h-schema").textContent = SEC.schema;
+  $("cards").innerHTML = tables.map(t =>
+    `<div class="card ${tone(t)}"><span class="badge ${tone(t)}">${esc(t.role)}</span><h3>${esc(t.name)}</h3>` +
+    (t.where ? `<span class="where">${esc(t.where)}</span>` : "") + (t.summary ? `<p>${fmt(t.summary)}</p>` : "") + `</div>`).join("");
+  const ov = DATA.overview || {};
+  if (ov.formula) { $("formula").textContent = ov.formula; show("formula", true); }
+  if (ov.note) { $("ovnote").innerHTML = fmt(ov.note); show("ovnote", true); }
+  $("dicts").innerHTML = tables.map(t =>
+    `<div class="scroll"><div class="dict-head"><span class="badge ${tone(t)}">${esc(t.role)}</span><b>${esc(t.name)}</b>` +
+    (t.indexes ? `<span class="mono">${esc(t.indexes)}</span>` : "") + `</div>` +
+    `<table class="dict"><colgroup><col style="width:24%"><col style="width:18%"><col></colgroup><thead><tr><th>컬럼</th><th>타입</th><th>설명</th></tr></thead><tbody>` +
+    (t.columns || []).map(c => `<tr class="${c.key ? "key" : ""}"><td class="k">${esc(c.n)}</td><td class="t">${esc(c.t)}</td><td>${fmt(c.d)}</td></tr>`).join("") +
+    `</tbody></table></div>`).join("");
+  buildER();
+}
+
+/* ===== 관계도(SVG): 박스는 격자에 놓고, 관계는 서로 가까운 변의 중점을 곡선으로 잇는다 ===== */
+function buildER() {
+  const rels = DATA.relations || [];
+  if (!rels.length) return;
+  const svg = $("er"), NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; };
+  const BW = 290, HEAD = 34, ROW = 20, PAD = 10, GX = 170, GY = 90, M = 24;
+  // 2열 격자가 기본이다(3개면 규칙→내역 같은 건너뛰는 관계선이 박스 뒤로 지나가지 않는다). 7개 이상이면 3열.
+  const nc = tables.length <= 2 ? tables.length : (tables.length >= 7 ? 3 : 2);
+  const box = {};
+  tables.forEach((t, i) => {
+    const cols = (t.columns || []).filter(c => c.er);
+    const rows = cols.length ? cols : (t.columns || []).slice(0, 5);
+    const pos = t.pos || [i % nc, Math.floor(i / nc)];
+    box[t.id] = { t, rows, col: pos[0], row: pos[1], h: HEAD + rows.length * ROW + PAD };
+  });
+  const rowH = {}; Object.values(box).forEach(b => { rowH[b.row] = Math.max(rowH[b.row] || 0, b.h); });
+  const rowY = {}; let y = M;
+  Object.keys(rowH).map(Number).sort((a, b) => a - b).forEach(r => { rowY[r] = y; y += rowH[r] + GY; });
+  Object.values(box).forEach(b => { b.x = M + b.col * (BW + GX); b.y = rowY[b.row]; b.w = BW; });
+  const W = Math.max(...Object.values(box).map(b => b.x + b.w)) + M, H = y - GY + M;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const defs = el("defs", {}, svg);
+  const mk = el("marker", { id: "er-ah", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, defs);
+  el("path", { d: "M0,0 L10,5 L0,10 z", fill: "var(--muted)" }, mk);
+
+  // 같은 변에 관계가 여러 개면 겹치지 않게 앵커를 벌린다
+  const side = (a, b) => {
+    const dx = (b.x + b.w / 2) - (a.x + a.w / 2), dy = (b.y + b.h / 2) - (a.y + a.h / 2);
+    return Math.abs(dx) >= Math.abs(dy) * 0.6 ? (dx > 0 ? "r" : "l") : (dy > 0 ? "b" : "t");
+  };
+  const flip = { r: "l", l: "r", b: "t", t: "b" };
+  const used = {};
+  const plan = rels.map(r => {
+    const a = box[r.from], b = box[r.to], s = side(a, b), e = flip[s];
+    const ka = r.from + s, kb = r.to + e;
+    (used[ka] = used[ka] || []).push(r); (used[kb] = used[kb] || []).push(r);
+    return { r, a, b, s, e, ka, kb };
+  });
+  const anchor = (bx, s, key, r) => {
+    const list = used[key], i = list.indexOf(r), off = (i - (list.length - 1) / 2) * 22;
+    if (s === "r") return [bx.x + bx.w, bx.y + bx.h / 2 + off];
+    if (s === "l") return [bx.x, bx.y + bx.h / 2 + off];
+    if (s === "b") return [bx.x + bx.w / 2 + off, bx.y + bx.h];
+    return [bx.x + bx.w / 2 + off, bx.y];
+  };
+  const edges = el("g", {}, svg);
+  plan.forEach(p => {
+    const [x1, y1] = anchor(p.a, p.s, p.ka, p.r), [x2, y2] = anchor(p.b, p.e, p.kb, p.r);
+    const horiz = p.s === "r" || p.s === "l", k = (horiz ? Math.abs(x2 - x1) : Math.abs(y2 - y1)) / 2;
+    const sg = (p.s === "r" || p.s === "b") ? 1 : -1;
+    const d = horiz ? `M${x1},${y1} C${x1 + sg * k},${y1} ${x2 - sg * k},${y2} ${x2},${y2}` : `M${x1},${y1} C${x1},${y1 + sg * k} ${x2},${y2 - sg * k} ${x2},${y2}`;
+    el("path", { class: "rel", d, "marker-end": "url(#er-ah)" }, edges);
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    if (p.r.label) { el("text", { class: "rl halo", x: mx, y: my - 6, "text-anchor": "middle" }, edges, p.r.label); el("text", { class: "rl", x: mx, y: my - 6, "text-anchor": "middle" }, edges, p.r.label); }
+    const [c1, c2] = String(p.r.card || "1:N").split(":");
+    const o = 14, dx1 = horiz ? sg * o : 0, dy1 = horiz ? -6 : sg * o, dx2 = horiz ? -sg * o : 0, dy2 = horiz ? -6 : -sg * o;
+    // 세로 관계의 1/N 표시는 선 옆(오른쪽)에 둬서 화살표와 겹치지 않게 한다
+    el("text", { class: "rl", x: x1 + dx1 + (horiz ? 0 : 12), y: y1 + dy1, "text-anchor": "middle" }, edges, c1);
+    el("text", { class: "rl", x: x2 + dx2 + (horiz ? 0 : 12), y: y2 + dy2 + (horiz ? 0 : 4), "text-anchor": "middle" }, edges, c2);
+  });
+  Object.values(box).forEach(b => {
+    const g = el("g", {}, svg), tn = tone(b.t);
+    el("rect", { class: "card", x: b.x, y: b.y, width: b.w, height: b.h, rx: 8 }, g);
+    el("rect", { x: b.x, y: b.y, width: b.w, height: HEAD, rx: 8, fill: `var(--${tn}-bg)` }, g);
+    el("text", { class: "tn", x: b.x + 12, y: b.y + 22, fill: `var(--${tn})`, style: `fill:var(--${tn})` }, g, b.t.name);
+    b.rows.forEach((c, i) => {
+      const ty = b.y + HEAD + 16 + i * ROW;
+      el("text", { x: b.x + 12, y: ty, style: c.key ? "font-weight:700" : "" }, g, c.n);
+      el("text", { class: "ty", x: b.x + b.w - 12, y: ty, "text-anchor": "end" }, g, c.t);
+    });
+  });
+  show("erwrap", true);
+
+  // 줌: viewBox 폭을 CSS px 로 쓴다(브라우저 줌·핀치가 반영된다). 보조 컨트롤은 같은 폭에 배율을 곱한다.
+  const ZMIN = 0.4, ZMAX = 3; let zoom = 1, zfit = false;
+  const apply = () => { svg.style.width = zfit ? "100%" : Math.round(W * zoom) + "px"; $("zval").textContent = zfit ? "맞춤" : Math.round(zoom * 100) + "%"; };
+  const cur = () => zfit ? svg.getBoundingClientRect().width / W : zoom;
+  const step = (f) => { zoom = Math.min(ZMAX, Math.max(ZMIN, +(cur() * f).toFixed(3))); zfit = false; apply(); };
+  $("zin").addEventListener("click", () => step(1.2)); $("zout").addEventListener("click", () => step(1 / 1.2));
+  $("zreset").addEventListener("click", () => { zoom = 1; zfit = false; apply(); });
+  $("zfit").addEventListener("click", () => { zfit = true; apply(); });
+  apply();
+}
+
+/* ===== 2. 처리 흐름 ===== */
+const flows = DATA.flows || [];
+const grid = (cols, rows, num, withOp) => {
+  if (!rows.length) return `<div class="empty">추가되거나 변경되는 행이 없다.</div>`;
+  return `<table><thead><tr>${withOp ? "<th></th>" : ""}${cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>` +
+    rows.map(r => `<tr class="${esc(r.op || "")}">${withOp ? `<td><span class="chip">${esc(OP[r.op] || r.op)}</span></td>` : ""}` +
+      r.c.map((v, i) => `<td class="${(num || []).includes(i) ? "n" : ""}">${cell(v)}</td>`).join("") + `</tr>`).join("") + `</tbody></table>`;
+};
+if (flows.length) {
+  show("sec-flows", true);
+  $("h-flows").textContent = SEC.flows;
+  $("flowlead").textContent = (DATA.flowsLead) || "탭으로 흐름을 선택한다. 초록 행은 INSERT, 노랑 행은 UPDATE이다.";
+  const tabs = $("flowTabs"), body = $("flowBody");
+  const showFlow = (id) => {
+    const f = flows.find(x => x.id === id);
+    [...tabs.children].forEach(b => b.setAttribute("aria-selected", b.dataset.id === id ? "true" : "false"));
+    body.innerHTML = `<div class="flow-head"><h3>${esc(f.label)}</h3>` + (f.tag ? `<span class="badge ${esc(f.tag)}">${esc(f.tagLabel || TAG[f.tag] || f.tag)}</span>` : "") + `</div>` +
+      (f.who ? `<p>${fmt(f.who)}</p>` : "") +
+      (f.tables || []).map(ft => { const t = T[ft.ref] || { name: ft.ref, role: "", tone: "a" };
+        return `<div class="ledger"><div class="cap"><span class="badge ${tone(t)}">${esc(t.role)}</span> <span class="mono">${esc(t.name)}</span></div><div class="scroll">${grid(ft.cols, ft.rows || [], ft.num, true)}</div></div>`; }).join("") +
+      ((f.notes || []).length ? `<ul class="notes">${f.notes.map(n => `<li>${fmt(n)}</li>`).join("")}</ul>` : "");
+  };
+  flows.forEach(f => {
+    const b = document.createElement("button");
+    b.type = "button"; b.setAttribute("role", "tab"); b.textContent = f.label; b.dataset.id = f.id;
+    b.addEventListener("click", () => showFlow(f.id)); tabs.appendChild(b);
+  });
+  showFlow(flows[0].id);
+}
+
+/* ===== 3. 화면 노출: 원본 → 변환 결과 비교 (변환 결과는 데이터에 미리 계산해 둔다) ===== */
+const V = DATA.views;
+if (V && (V.tabs || []).length) {
+  show("sec-views", true);
+  $("h-views").textContent = SEC.views;
+  $("viewlead").textContent = V.lead || ""; show("viewlead", !!V.lead);
+  const src = V.source;
+  $("srcTitle").textContent = src ? (src.title || "원본") : ""; show("srcTitle", !!src); $("srcTable").parentElement.hidden = !src;
+  if (src) $("srcTable").innerHTML = `<thead><tr><th>구분</th>${src.cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>` +
+    src.rows.map(r => `<tr><td><span class="badge ${esc(r.tag || "real")}">${esc(TAG[r.tag || "real"])}</span></td>${r.c.map(v => `<td class="k">${esc(v)}</td>`).join("")}</tr>`).join("") + `</tbody>`;
+  const tg = $("viewToggle"), vb = $("viewBox"), vn = $("viewNote");
+  const showView = (id) => {
+    const tab = V.tabs.find(x => x.id === id);
+    [...tg.children].forEach(b => b.setAttribute("aria-pressed", b.dataset.id === id ? "true" : "false"));
+    vb.innerHTML = `<table><thead><tr><th></th>${tab.cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>` +
+      tab.rows.map(r => `<tr><td><span class="badge ${esc(r.tag || "real")}">${esc(TAG[r.tag || "real"])}</span></td>` +
+        r.c.map((v, i) => `<td class="${(tab.num || []).includes(i) ? "n" + (String(v).trim().startsWith("-") ? " neg" : "") : ""}">${fmt(v)}</td>`).join("") + `</tr>`).join("") + `</tbody></table>`;
+    vn.innerHTML = tab.note ? fmt(tab.note) : ""; vn.hidden = !tab.note;
+  };
+  V.tabs.forEach(t => {
+    const b = document.createElement("button");
+    b.type = "button"; b.setAttribute("aria-pressed", "false"); b.textContent = t.label; b.dataset.id = t.id;
+    b.addEventListener("click", () => showView(t.id)); tg.appendChild(b);
+  });
+  showView(V.tabs[0].id);
+  $("rules").innerHTML = V.tabs.filter(t => (t.rules || []).length).map(t =>
+    `<div class="card"><h3>${esc(t.rulesTitle || t.label)}</h3><ul class="rules">${t.rules.map(r => `<li>${fmt(r)}</li>`).join("")}</ul></div>`).join("");
+}
+
+/* ===== 경고 · 꼬리말 ===== */
+$("callouts").innerHTML = (DATA.callouts || []).map(c => `<div class="warn"><h3>${esc(c.title)}</h3><p>${fmt(c.body)}</p></div>`).join("");
+$("foot").innerHTML = (DATA.foot || []).map(s => `<b>${esc(s.title)}</b><ul>${(s.items || []).map(i => `<li>${fmt(i)}</li>`).join("")}</ul>`).join("");
+
+/* ===== 에이전트용 텍스트 복사 ===== */
+(function () {
+  const btn = $("copy"), box = $("agenttext");
+  const flash = (cls, label) => { btn.className = cls; btn.textContent = label; setTimeout(() => { btn.className = ""; btn.textContent = "전체 복사"; }, 1800); };
+  const legacy = (text) => {
+    const ta = document.createElement("textarea"); ta.value = text; ta.style.cssText = "position:fixed;opacity:0;top:0;left:0";
+    document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (_) {} ta.remove(); return ok;
+  };
+  const viaApi = (text) => !navigator.clipboard ? Promise.resolve(false) :
+    Promise.race([navigator.clipboard.writeText(text).then(() => true), new Promise(r => setTimeout(() => r(false), 1500))]).catch(() => false);
+  btn.addEventListener("click", async () => {
+    const text = box.textContent;
+    const ok = legacy(text) || await viaApi(text);
+    ok ? flash("done", "복사됨") : flash("fail", "복사 실패 — 직접 드래그하세요");
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><!--TITLE--></title>
+<style>
+  /* 레이아웃: 맨 위에 고정되는 탭 막대 + 탭마다 하나의 문서 패널. 각 문서는 Shadow DOM 안에서 자기 CSS 로 그려져 서로 충돌하지 않는다. */
+  :root {
+    --tb-bg: #ffffff; --tb-ink: #18202f; --tb-muted: #5a6579; --tb-line: #dce1ea; --tb-accent: #2b63d9; --tb-page: #f4f6f9;
+    --tb-font: system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --tb-bg: #161e2c; --tb-ink: #e7ecf6; --tb-muted: #98a4ba; --tb-line: #2a3650; --tb-accent: #7ba2ff; --tb-page: #0e141f;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --tb-bg: #161e2c; --tb-ink: #e7ecf6; --tb-muted: #98a4ba; --tb-line: #2a3650; --tb-accent: #7ba2ff; --tb-page: #0e141f;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--tb-page); color: var(--tb-ink); font-family: var(--tb-font); }
+  /* 안전 영역 위쪽 띠: 스크롤되는 내용이 호스트 컨트롤 아래로 비치지 않게 탭 막대와 같은 색으로 칠한다 */
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--tb-bg); }
+  .tabbar {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+    display: flex; gap: 6px; align-items: flex-end; overflow-x: auto;
+    height: 56px; padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+    background: var(--tb-bg); border-bottom: 1px solid var(--tb-line);
+  }
+  .tabbar button {
+    font: 500 14px/1 var(--tb-font); white-space: nowrap; cursor: pointer;
+    padding: 14px 16px 13px; margin-bottom: -1px; color: var(--tb-muted); background: transparent;
+    border: 0; border-bottom: 3px solid transparent;
+  }
+  .tabbar button:hover { color: var(--tb-ink); }
+  .tabbar button[aria-selected="true"] { color: var(--tb-ink); font-weight: 700; border-bottom-color: var(--tb-accent); }
+  .tabbar button:focus-visible { outline: 2px solid var(--tb-accent); outline-offset: -2px; border-radius: 4px; }
+  .host { display: block; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="tabbar" role="tablist" aria-label="문서 선택"><!--TAB_BUTTONS--></div>
+<!--TAB_HOSTS-->
+<!-- 탭마다 문서의 CSS 와 본문을 <template> 에 그대로 둔다. JS 없이 파일을 읽는 에이전트도 각 탭의 에이전트용 텍스트(pre#agenttext)를 읽을 수 있다. -->
+<!--TAB_TEMPLATES-->
+
+<script>
+/* 탭 목록은 scripts/render.py 가 주입한다. 스키마는 kinds/tabs.md 참고. */
+var KEYS = /*KEYS_START*/[]/*KEYS_END*/;
+var ROOTS = {};
+// 패널마다 Shadow DOM 을 만들고 <template> 내용을 복제해 넣는다
+KEYS.forEach(function (key) {
+  var host = document.getElementById('host-' + key);
+  var root = host.attachShadow({ mode: 'open' });
+  root.appendChild(document.getElementById('tpl-' + key).content.cloneNode(true));
+  ROOTS[key] = root;
+});
+// document 를 해당 패널로 한정한 프록시: 원본 문서 스크립트가 getElementById 로 자기 패널의 요소를 찾게 한다
+function scopedDocument(root) {
+  return new Proxy(document, {
+    get: function (t, k) {
+      if (k === 'getElementById') return function (id) { return root.getElementById(id); };
+      if (k === 'querySelector') return function (s) { return root.querySelector(s); };
+      if (k === 'querySelectorAll') return function (s) { return root.querySelectorAll(s); };
+      if (k === 'title') return '';
+      var v = t[k]; return typeof v === 'function' ? v.bind(t) : v;
+    },
+    set: function (t, k, v) { if (k !== 'title') t[k] = v; return true; }
+  });
+}
+</script>
+<!--TAB_SCRIPTS-->
+<script>
+(function () {
+  var rootEl = document.documentElement;
+  // 뷰어의 라이트·다크 선택(data-theme)을 각 패널 호스트에 그대로 옮긴다
+  var syncTheme = function () {
+    var th = rootEl.getAttribute('data-theme');
+    KEYS.forEach(function (k) {
+      var h = document.getElementById('host-' + k);
+      if (th) h.setAttribute('data-theme', th); else h.removeAttribute('data-theme');
+    });
+  };
+  new MutationObserver(syncTheme).observe(rootEl, { attributes: true, attributeFilter: ['data-theme'] });
+  syncTheme();
+
+  // 문서 스크립트는 패널이 보이는 상태에서 먼저 돌아야 레이아웃 계산이 맞다. 그래서 숨기는 것은 모든 스크립트가 끝난 뒤에 한다.
+  var select = function (key, remember) {
+    KEYS.forEach(function (k) {
+      var on = k === key, b = document.getElementById('tab-' + k);
+      b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
+      document.getElementById('host-' + k).hidden = !on;
+    });
+    if (remember) { try { history.replaceState(null, '', '#' + key); } catch (e) {} }
+    try { window.scrollTo(0, 0); } catch (e) {}
+  };
+  KEYS.forEach(function (k, i) {
+    var b = document.getElementById('tab-' + k);
+    b.addEventListener('click', function () { select(k, true); });
+    b.addEventListener('keydown', function (e) {
+      var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!d) return;
+      var n = KEYS[(i + d + KEYS.length) % KEYS.length]; select(n, true); document.getElementById('tab-' + n).focus();
+    });
+  });
+  var want = (location.hash || '').replace('#', '');
+  select(KEYS.indexOf(want) >= 0 ? want : KEYS[0], false);
+})();
+</script>
+</body>
+</html>
