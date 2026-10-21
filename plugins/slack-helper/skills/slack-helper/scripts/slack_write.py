@@ -10,8 +10,10 @@ from slack_common import (
     add_workspace_arg,
     parse_permalink,
     resolve_channel,
+    resolve_dm,
     run_main,
     slack_method,
+    token_for,
     user_token_for,
 )
 
@@ -60,6 +62,12 @@ def command_post(args: argparse.Namespace) -> int:
     return _report(token, response)
 
 
+def command_dm(args: argparse.Namespace) -> int:
+    token = user_token_for(args)
+    channel_id = resolve_dm(args.user, bot_token=token_for(args), user_token=token, create=True)
+    return _report(token, _post(token, channel_id, args.text, None))
+
+
 def command_reply(args: argparse.Namespace) -> int:
     permalink = getattr(args, "permalink", None)
     if permalink:
@@ -100,7 +108,7 @@ def command_react(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Slack 쓰기 명령(post/reply/react)",
+        description="Slack 쓰기 명령(post/dm/reply/react)",
         add_help=False,
     )
     parser.add_argument("-h", "--help", action="help", help="도움말 출력")
@@ -113,6 +121,12 @@ def build_parser() -> argparse.ArgumentParser:
     post.add_argument("--channel", required=True, help="채널 ID 또는 채널 이름 (이름은 conversations.list로 ID를 찾음)")
     post.add_argument("--text", required=True, help="보낼 메시지 본문")
     post.set_defaults(func=command_post)
+
+    dm = subparsers.add_parser("dm", help="1:1 DM 보내기 (im:write, 대화가 없으면 새로 연다)")
+    add_workspace_arg(dm)
+    dm.add_argument("--user", required=True, help="DM 상대 (U… ID, @핸들, 표시 이름) 또는 DM 채널 ID(D…)")
+    dm.add_argument("--text", required=True, help="보낼 메시지 본문")
+    dm.set_defaults(func=command_dm)
 
     reply = subparsers.add_parser("reply", help="스레드 안에 답글 게시")
     add_workspace_arg(reply)

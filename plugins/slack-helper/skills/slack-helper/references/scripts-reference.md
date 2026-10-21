@@ -14,9 +14,10 @@ Use this file when a Slack request does not exactly match one of the workflow fi
 | Script | Use For | Key Commands |
 | --- | --- | --- |
 | `slack_setup.py` | OAuth, auth checks, identity setup | `setup-guide`, `init-oauth`, `oauth-start`, `oauth-finish`, `auth-test`, `team-info`, `read-sample`, `doctor`, `set-me`, `resolve-me` |
-| `slack_read.py` | direct reads with bot token | `users`, `channels`, `channel-history [--on YYYY-MM-DD 또는 --after/--before] [--tz ...]`, `thread [--permalink URL 또는 --channel/--ts]` |
+| `slack_read.py` | direct reads with bot token (DM은 user token) | `users`, `channels`, `dms [--types im,mpim]`, `channel-history (--channel <id-or-name> 또는 --user <DM 상대>) [--on YYYY-MM-DD 또는 --after/--before] [--tz ...]`, `thread [--permalink URL 또는 --channel/--ts]` |
 | `slack_search.py` | search with user token | `search <keywords> [--from ...] [--in ...] [--to-me] [--after ...] [--days ...] [--limit N] [--jsonl]` |
-| `slack_write.py` | 메시지 전송 (user token, 본인 이름) | `post --channel <id-or-name> --text "..."`, `reply (--channel/--ts 또는 --permalink URL) --text "..."`, `react (--channel/--ts 또는 --permalink URL) --emoji thumbsup` |
+| `slack_write.py` | 메시지 전송 (user token, 본인 이름) | `post --channel <id-or-name> --text "..."`, `dm --user <U…/@핸들/이름/D…> --text "..."`, `reply (--channel/--ts 또는 --permalink URL) --text "..."`, `react (--channel/--ts 또는 --permalink URL) --emoji thumbsup` |
+| `slack_files.py` | 메시지 첨부 조회·다운로드, 파일 업로드 (user token) | `list (--permalink URL 또는 --channel/--ts)`, `download (--permalink/--file F…) [--dest DIR]`, `upload --file PATH (--channel/--user/--permalink) [--text ...]` |
 | `slack_common.py` | shared implementation | import-only; do not call as CLI |
 
 `slack_read.py`의 `--channel`은 채널 ID(`C...`) 또는 공개 채널 이름을 받는다. 이름이면 `conversations.list`로 ID를 찾는다. MEMORY.md에 별칭이 기록되어 있으면 에이전트가 거기 적힌 ID를 그대로 넘기는 편이 빠르다.
@@ -96,9 +97,50 @@ python3 "<SKILL_DIR>/scripts/slack_write.py" reply --channel C0123456789 --ts 17
 python3 "<SKILL_DIR>/scripts/slack_write.py" react --permalink "https://acme.slack.com/archives/C0123456789/p1717243200000100" --emoji thumbsup
 ```
 
+## DM 조회·전송
+
+DM은 봇이 읽을 수 없어 항상 사용자 토큰으로 처리한다 (`im:read`·`im:history`, 그룹 DM은 `mpim:*`). 상대는 U… ID, @핸들, 표시 이름 중 하나로 지정하며 이름이 하나로 특정되지 않으면 에러로 후보를 알려준다.
+
+```bash
+python3 "<SKILL_DIR>/scripts/slack_read.py" dms                       # D… ID · im/mpim · 상대 목록
+python3 "<SKILL_DIR>/scripts/slack_read.py" channel-history --user "@kim" --after 2026-10-01
+python3 "<SKILL_DIR>/scripts/slack_read.py" channel-history --channel D0123456789 --limit 30
+python3 "<SKILL_DIR>/scripts/slack_read.py" thread --channel D0123456789 --ts 1717243200.000100
+```
+
+DM 보내기 (`chat:write`, 아직 대화가 없는 상대는 `im:write`로 새로 연다). 받는 사람과 본문 전체를 확인받은 뒤 실행한다:
+
+```bash
+python3 "<SKILL_DIR>/scripts/slack_write.py" dm --user "@kim" --text "확인 부탁드립니다"
+```
+
+## 파일 다운로드·업로드 (slack_files.py)
+
+사용자 토큰으로 처리한다. 다운로드는 선택 권한 `files:read`(`files-read`), 업로드는 `files:write`(`files-write`)가 필요하다. 메시지 링크는 답글 permalink여도 그 메시지 자신의 첨부를 찾는다.
+
+```bash
+python3 "<SKILL_DIR>/scripts/slack_files.py" list --permalink "https://acme.slack.com/archives/C0123456789/p1717243200000100"
+python3 "<SKILL_DIR>/scripts/slack_files.py" download --permalink "<메시지 링크>"                 # 메시지의 파일 전부
+python3 "<SKILL_DIR>/scripts/slack_files.py" download --file F0123456789 --dest ~/Downloads/x     # 파일 ID로 하나씩
+```
+
+- 기본 저장 폴더는 `~/Downloads/slack-helper`, 같은 이름이 있으면 `이름 (1).확장자`로 저장하고 덮어쓰지 않는다. 파일 이름의 경로 구분자는 제거한다.
+- 권한이 없으면 Slack이 파일 대신 HTML 페이지를 돌려주는데, 스크립트가 감지해 에러로 처리한다.
+
+업로드 (본인 이름으로 게시, 올릴 파일 경로·대상·문구를 확인받은 뒤 실행). `--file`은 여러 번 줄 수 있고, 대상은 `--channel`(+`--ts`로 스레드) / `--user`(DM) / `--permalink`(스레드) 중 하나다:
+
+```bash
+python3 "<SKILL_DIR>/scripts/slack_files.py" upload --file ./report.pdf --channel backend --text "리포트 공유드립니다"
+python3 "<SKILL_DIR>/scripts/slack_files.py" upload --file ./a.png --file ./b.png --user "@kim"
+python3 "<SKILL_DIR>/scripts/slack_files.py" upload --file ./log.txt --permalink "<스레드 원 메시지 링크>"
+```
+
+`~/.config/slack-helper` 안의 파일(토큰이 있는 설정 폴더)은 업로드를 거부한다.
+
 ## Limits
 
-- 이 스킬은 **읽기 + 전송 + 이모지 추가**만 한다. 메시지 수정·삭제·리액션 제거는 제공하지 않는다.
-- 기본 User Token Scopes는 `search:read`, `channels:read`, `channels:history`, `groups:read`, `groups:history`, `chat:write`, `reactions:write`다. 공개 채널과 사용자가 들어간 비공개 채널은 User token fallback으로 직접 읽을 수 있다.
+- 이 스킬은 **읽기 + 전송(채널·스레드·DM) + 이모지 추가 + 파일 다운로드·업로드**만 한다. 메시지 수정·삭제·리액션 제거는 제공하지 않는다.
+- Slack "해야 할 일(To-dos)" 화면은 다루지 못한다. 공식 API가 없고, 리마인더 API(`reminders.*`)는 `add`가 성공을 반환해도 목록·조회에 나타나지 않는다(2026-10 실측).
+- User Token Scopes는 필수(`search:read`, `channels:read`, `channels:history`, `groups:read`, `groups:history`)와 선택(기능 묶음별)으로 나뉜다. 기능별 필요 권한은 `references/features.md`를 따른다. 공개 채널과 사용자가 들어간 비공개 채널은 User token fallback으로 직접 읽을 수 있다.
 - `slack_read.py channel-history` and `thread` try bot access first, then user access. If both direct reads fail, use `slack_search.py search` and rely on permalinks.
 - Do not store message bodies in `MEMORY.md`; channel notes stay one line.

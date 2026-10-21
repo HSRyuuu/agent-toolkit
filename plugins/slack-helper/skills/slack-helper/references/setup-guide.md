@@ -84,6 +84,10 @@ python3 "<SKILL_DIR>/scripts/slack_setup.py" init-oauth
 
 ## 3단계: 권한 설정 (브라우저에서)
 
+권한은 **필수**와 **선택**으로 나눠 두 번에 걸쳐 안내한다. 정확한 권한 표와 묶음 키는 `references/features.md`가 단일 출처이니 거기서 읽어 그대로 보여준다.
+
+### 3-1. 필수 권한 + Redirect URL
+
 Slack 앱 화면의 왼쪽 메뉴에서 **OAuth & Permissions**를 누르게 한 뒤, 두 가지를 순서대로 안내한다.
 
 1. **Redirect URLs** — 앱이 승인 결과를 돌려받을 주소 등록:
@@ -91,25 +95,25 @@ Slack 앱 화면의 왼쪽 메뉴에서 **OAuth & Permissions**를 누르게 한
    - `http://localhost:8765/slack-helper/callback`
    - `Add` → `Save URLs`를 차례로 누른다.
 2. 같은 화면을 아래로 내려 **Scopes(범위)** — 이 앱이 Slack에서 무엇을 읽을 수 있는지 정하는 권한 목록:
-   - **봇 토큰 범위(Bot Token Scopes)**의 `Add an OAuth Scope`에서 아래 4개를 하나씩 추가한다.
-     - `team:read` — 워크스페이스 기본 정보 읽기
-     - `users:read` — 사용자 목록 읽기
-     - `channels:read` — 공개 채널 목록 읽기
-     - `channels:history` — 공개 채널 대화 읽기
-   - **사용자 토큰 범위(User Token Scopes)**의 `Add an OAuth Scope`에서 아래 7개를 하나씩 추가한다.
-     - `search:read` — 메시지 검색 (검색은 이 사용자 범위가 꼭 필요하다. 봇 범위만으로는 검색이 안 된다.)
-     - `channels:read` — 공개 채널 목록 읽기
-     - `channels:history` — 공개 채널 대화와 스레드 직접 읽기
-     - `groups:read` — 사용자가 들어간 비공개 채널 목록 읽기
-     - `groups:history` — 사용자가 들어간 비공개 채널 대화와 스레드 직접 읽기
-     - `chat:write` — 본인 이름으로 메시지 보내기(채널 게시·스레드 답글)
-     - `reactions:write` — 본인 이름으로 메시지에 이모지 달기
+   - **봇 토큰 범위(Bot Token Scopes)**의 `Add an OAuth Scope`에서 `features.md`의 `## 필수 권한` 봇 표 4개를 하나씩 추가한다.
+   - **사용자 토큰 범위(User Token Scopes)**의 `Add an OAuth Scope`에서 같은 문서의 사용자 표 5개를 하나씩 추가한다. (검색은 사용자 범위가 꼭 필요하다. 봇 범위만으로는 검색이 안 된다.)
 
-이 단계에서 아래 안내 문구와 **권한 표**(`## 권한과 할 수 있는 일` 섹션)를 반드시 함께 전달한다.
+`features.md`의 `## 필수 권한` 표를 함께 보여주고 이렇게 안내한다.
 
-> 이 스킬은 여기서 등록한 권한까지만 Slack에서 동작해요. 아래 표에서 켠 권한만큼만 됩니다. 여기에 없는 권한이 필요한 일(예: DM 읽기, 메시지 수정·삭제)은 이 스킬로는 안 돼요.
+> 지금은 읽기·검색에 꼭 필요한 권한만 켜요. 메시지 보내기, DM, 파일 같은 기능은 다음에 골라서 켤 수 있어요.
 
 안내는 "여기까지 다 됐으면 완료됐다고 말해주세요."로 끝맺는다.
+
+### 3-2. 선택 기능 고르기
+
+3-1 완료 후 **다음 응답에서** `features.md`의 `## 선택 기능` 표를 보여주고 묻는다.
+
+> 추가로 쓰고 싶은 기능이 있나요? (여러 개 가능, 없으면 "없음")
+> - 메시지 보내기(`send`) / 이모지 달기(`react`) / DM(`dm`) / 파일 다운로드(`files-read`) / 파일 업로드(`files-write`)
+
+- 고른 묶음의 **권한만** Slack 앱 User Token Scopes에 추가하도록 한 단계씩 안내한다. "없음"이면 이 단계를 건너뛴다.
+- DM을 보내려면 `send`와 `dm`이 모두 필요하고, 업로드·다운로드는 대상 대화를 읽을 권한이 필요하다(`features.md`의 기능 목록 참고).
+- 고른 묶음 키를 기억해 4단계 `oauth-start`의 `--features`에 넘긴다.
 
 **에이전트 확인:** 이 단계는 Slack 웹 화면 작업이라 로컬에서 검증할 수 없다. 사용자가 완료했다고 하면 4단계로 넘어간다 (실수는 4단계 승인 과정에서 에러로 드러나므로 그때 되짚는다).
 
@@ -118,8 +122,10 @@ Slack 앱 화면의 왼쪽 메뉴에서 **OAuth & Permissions**를 누르게 한
 1. 에이전트가 승인 화면을 브라우저로 연다:
 
 ```bash
-python3 "<SKILL_DIR>/scripts/slack_setup.py" oauth-start --open
+python3 "<SKILL_DIR>/scripts/slack_setup.py" oauth-start --open --features "send,dm"
 ```
+
+`--features`에는 3-2에서 고른 묶음 키만 쉼표로 넣는다(없으면 이 옵션을 빼고 필수 권한만 요청한다). 고른 묶음은 config에 저장되어 재설치 때도 유지된다.
 
 2. 사용자에게 안내한다:
    - 브라우저에 Slack 허용(Allow) 화면이 뜨면 **허용** 버튼을 눌러 주세요.
@@ -205,30 +211,27 @@ python3 "<SKILL_DIR>/scripts/slack_read.py" channels --limit 100
 
 ## 권한과 할 수 있는 일
 
-온보딩 3단계에서, 그리고 작업이 권한 부족(`missing_scope`, `not_in_channel`, "User token이 없습니다" 등)으로 실패했을 때 이 표를 사용자에게 그대로 보여준다. **각 권한을 켜면 그 줄의 작업을 이 스킬로 할 수 있다.** 실패한 작업에 필요한 권한 줄을 짚어주고, 없으면 Slack App에 추가한 뒤 OAuth를 다시 승인하도록 안내한다.
+권한 목록은 `references/features.md`가 단일 출처다 (필수 권한 / 선택 기능 묶음 / 기능 목록).
 
-**봇 토큰 범위 (Bot Token Scopes)** — 앱이 워크스페이스에서 직접 하는 일
+- **작업이 권한 부족으로 실패했을 때**(`missing_scope`, `not_in_channel`, "User token이 없습니다" 등): `features.md`의 `## 기능 목록`에서 실패한 기능의 행을 짚어 필요한 권한·묶음 키를 알려주고, 아래 "기능 추가·재설치"로 안내한다.
+- **필수 권한이 빠진 경우**는 `slack_setup.py doctor`가 `User scope 부족`으로 알려준다.
+- 표에 없는 일(메시지 수정·삭제, To-dos 화면)은 이 스킬 범위 밖이다.
 
-| 권한 | Slack 설명 | 켜면 할 수 있는 일 |
-| --- | --- | --- |
-| `team:read` | 워크스페이스의 이름·이메일 도메인·아이콘 보기 | 워크스페이스 기본 정보 확인 |
-| `users:read` | 워크스페이스의 사람 보기 | 작성자·`@멘션`을 실제 이름으로 표시 |
-| `channels:read` | 공개 채널의 기본 정보 보기 | 공개 채널 목록 조회, 채널 이름 → ID 찾기 |
-| `channels:history` | 앱이 추가된 공개 채널의 메시지·콘텐츠 보기 | 공개 채널 히스토리·스레드 직접 읽기 |
+## 기능 추가·재설치
 
-**사용자 토큰 범위 (User Token Scopes)** — 나(사용자)를 대신해 하는 일
+이미 설정을 끝낸 사용자가 선택 기능을 더 켜거나 다시 설치할 때의 절차다. 한 응답에 한 단계씩 진행한다.
 
-| 권한 | Slack 설명 | 켜면 할 수 있는 일 |
-| --- | --- | --- |
-| `search:read` | 워크스페이스의 콘텐츠 검색 | **메시지 검색** (봇 토큰만으로는 불가, 검색의 필수 권한) |
-| `channels:read` | 공개 채널의 기본 정보 보기 | 공개 채널 이름 → ID 해석 |
-| `channels:history` | 내 공개 채널의 메시지·콘텐츠 보기 | 공개 채널 히스토리·스레드 읽기(봇 실패 시 대체) |
-| `groups:read` | 내 비공개 채널의 기본 정보 보기 | 내가 속한 비공개 채널 목록·이름 → ID |
-| `groups:history` | 내 비공개 채널의 메시지·콘텐츠 보기 | 비공개 채널 히스토리·스레드 읽기 |
-| `chat:write` | 나를 대신하여 메시지 보내기 | **채널에 메시지 게시, 스레드에 답글** |
-| `reactions:write` | 나를 대신하여 이모지 리액션 추가 | **메시지에 이모지 달기** |
+1. `slack_setup.py doctor`로 현재 `선택 기능 켜짐/꺼짐`을 확인하고, `features.md`의 `## 선택 기능` 표에 켜짐·꺼짐을 표시해 보여준다.
+2. 켜고 싶은 묶음의 권한을 Slack 앱 **OAuth & Permissions → User Token Scopes**에 추가하게 안내한다 (필수 권한이 빠졌다면 `## 필수 권한` 표로 함께 안내).
+3. 완료하면 승인 화면을 연다. 이미 켠 묶음은 config에 저장돼 있으니 **새로 켤 묶음만** 넘긴다:
 
-읽기(검색·조회)만 쓰면 `chat:write` 없이도 되고, 메시지를 보내려면 `chat:write`, 이모지를 달려면 `reactions:write`가 반드시 있어야 한다. 표에 없는 권한이 필요한 일(DM 읽기, 메시지 수정·삭제 등)은 이 스킬 범위 밖이다.
+```bash
+python3 "<SKILL_DIR>/scripts/slack_setup.py" oauth-start --open --features "files-write"
+```
+
+4. 이후는 4단계와 같다: 허용 → 주소 붙여넣기 → `oauth-finish`. 끝나면 `doctor`로 켜짐 상태를 다시 확인한다.
+
+권한을 뺄 때는 Slack 앱에서 해당 권한을 지우고, 토큰에서 실제로 빠지도록 한 번 더 재승인(`oauth-start --user-scopes "<남길 권한 전체>"`)해야 한다.
 
 ## Avoid
 

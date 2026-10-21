@@ -1522,6 +1522,181 @@ def case_write_react_payload() -> bool:
     return check("slack_write react strips colons and targets the message ts", expected in calls, str(calls))
 
 
+def case_dm_resolve_read_and_write() -> bool:
+    write = load_module("slack_write")
+    read = load_module("slack_read")
+    calls: list[tuple[str, dict[str, object]]] = []
+    original = common.slack_method
+    im_list = [{"id": "D1", "user": "U111", "is_im": True}]
+
+    def fake(method, *, token=None, payload=None, http_method="POST", **kwargs):
+        calls.append((method, payload or {}))
+        if method == "users.list":
+            return {"ok": True, "members": [{"id": "U111", "name": "kim", "profile": {"display_name": "Kim"}},
+                                            {"id": "U222", "name": "lee", "profile": {}}]}
+        if method == "conversations.list":
+            return {"ok": True, "channels": im_list}
+        if method == "conversations.open":
+            return {"ok": True, "channel": {"id": "D2"}}
+        if method == "conversations.history":
+            return {"ok": True, "messages": [{"ts": "1717243200.000100", "user": "U111", "text": "hi"}]}
+        if method == "users.info":
+            return {"ok": False, "error": "user_not_found"}
+        return {"ok": True, "channel": "D1", "ts": "1717243200.000200"}
+
+    def args(**kw):
+        return type("Args", (), {"workspace": None, **kw})()
+
+    bad_name = False
+    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
+        os.environ["SLACK_HELPER_CONFIG_DIR"] = tmp
+        try:
+            common.write_json_secure(
+                Path(tmp) / "config.json",
+                {"default_workspace": "default",
+                 "workspaces": {"default": {"token": "t", "authed_user": {"access_token": "u"}}}},
+            )
+            for mod in (common, write, read):
+                mod.slack_method = fake
+            with redirect_stdout(io.StringIO()):
+                write.command_dm(args(user="@Kim", text="hello"))      # 기존 DM 재사용
+                write.command_dm(args(user="U222", text="new"))        # DM 없음 → conversations.open
+                read.command_channel_history(
+                    args(channel=None, user="kim", limit=5, on=None, after=None, before=None,
+                         tz=None, raw=False, jsonl=False)
+                )
+            try:
+                common.resolve_dm("nobody", bot_token="t", user_token="u")
+            except common.SlackHelperError:
+                bad_name = True
+        finally:
+            common.slack_method = original
+            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+
+    return check(
+        "DM: name→D id via conversations.list, open only on write, history read with --user",
+        ("chat.postMessage", {"channel": "D1", "text": "hello"}) in calls
+        and ("conversations.open", {"users": "U222"}) in calls
+        and ("chat.postMessage", {"channel": "D2", "text": "new"}) in calls
+        and any(m == "conversations.history" and p["channel"] == "D1" for m, p in calls)
+        and bad_name,
+        str(calls),
+    )
+
+
+def case_files_list_download_upload() -> bool:
+    files = load_module("slack_files")
+    calls: list[tuple[str, dict[str, object]]] = []
+    curl_calls: list[tuple] = []
+    original = common.slack_method
+    msg_files = [{"id": "F1", "name": "../evil.html", "size": 2048, "mimetype": "text/html"}]
+
+    def fake(method, *, token=None, payload=None, http_method="POST", **kwargs):
+        calls.append((method, payload or {}))
+        if method == "conversations.replies":
+            return {"ok": True, "messages": [{"ts": "1717243200.000100", "files": msg_files}]}
+        if method == "files.info":
+            return {"ok": True, "file": {"id": "F1", "name": "../evil.html", "mimetype": "text/html",
+                                         "url_private_download": "https://files.example/F1"}}
+        if method == "files.getUploadURLExternal":
+            return {"ok": True, "upload_url": "https://upload.example/u", "file_id": "FUP"}
+        if method == "files.completeUploadExternal":
+            return {"ok": True, "files": [{"id": "FUP", "name": "a.txt", "permalink": "https://x/f"}]}
+        return {"ok": True}
+
+    def fake_curl(url, *, token=None, output=None, upload=None):
+        curl_calls.append((url, token, upload))
+        if output:
+            Path(output).write_bytes(b"<html>ok</html>")
+        return 200, "text/html"
+
+    def args(**kw):
+        base = {"workspace": None, "channel": None, "ts": None, "permalink": None, "file": None,
+                "dest": None, "user": None, "text": None, "title": None}
+        return type("Args", (), {**base, **kw})()
+
+    link = "https://x.slack.com/archives/C1234567/p1717243200000100"
+    out = io.StringIO()
+    escaped = unsafe_blocked = config_blocked = False
+    with tempfile.TemporaryDirectory(prefix="slack-helper-test-") as tmp:
+        os.environ["SLACK_HELPER_CONFIG_DIR"] = str(Path(tmp) / "cfg")
+        try:
+            common.write_json_secure(
+                Path(tmp) / "cfg" / "config.json",
+                {"default_workspace": "default",
+                 "workspaces": {"default": {"token": "t", "authed_user": {"access_token": "u"}}}},
+            )
+            for mod in (common, files):
+                mod.slack_method = fake
+            files._curl = fake_curl
+            dest = Path(tmp) / "dl"
+            sample = Path(tmp) / "a.txt"
+            sample.write_text("hello")
+            with redirect_stdout(out):
+                files.command_list(args(permalink=link))
+                files.command_download(args(permalink=link, dest=str(dest)))
+                files.command_download(args(permalink=link, dest=str(dest)))  # 두 번째는 이름이 겹치지 않아야 한다
+                files.command_upload(args(file=[str(sample)], channel="C1234567", text="hi"))
+            try:
+                files.command_upload(args(file=[str(Path(tmp) / "cfg" / "config.json")], channel="C1234567"))
+            except common.SlackHelperError:
+                config_blocked = True
+            try:
+                files.command_upload(args(file=[str(sample)], channel="C1234567", user="U1"))
+            except common.SlackHelperError:
+                unsafe_blocked = True
+            saved = sorted(p.name for p in dest.iterdir())
+            escaped = (Path(tmp) / "evil.html").exists()
+        finally:
+            common.slack_method = original
+            os.environ.pop("SLACK_HELPER_CONFIG_DIR", None)
+
+    text = out.getvalue()
+    complete = [p for m, p in calls if m == "files.completeUploadExternal"]
+    return check(
+        "files: list, download (sanitized, no overwrite), upload flow, config-dir and target guards",
+        "F1 | ../evil.html | 2.0 KB" in text
+        and saved == ["evil (1).html", "evil.html"] and not escaped
+        and ("files.getUploadURLExternal", {"filename": "a.txt", "length": 5}) in calls
+        and any(c[0] == "https://upload.example/u" and c[2] is not None for c in curl_calls)
+        and complete == [{"files": [{"id": "FUP", "title": "a.txt"}], "channel_id": "C1234567", "initial_comment": "hi"}]
+        and config_blocked and unsafe_blocked and "https://x/f" in text,
+        f"{saved} {calls}",
+    )
+
+
+def case_setup_required_and_optional_scopes() -> bool:
+    ns = lambda **kw: type("Args", (), {"user_scopes": None, "features": None, **kw})()  # noqa: E731
+    required = common.REQUIRED_USER_SCOPES
+    base = setup.configured_user_scopes({}, ns()).split(",")
+    with_dm = setup.configured_user_scopes({}, ns(features="send,dm")).split(",")
+    # 저장된 예전 목록이 있어도 필수가 빠지지 않고, 중복 없이 합쳐진다.
+    legacy = setup.configured_user_scopes({"user_scopes": ["chat:write", "search:read"]}, ns(features="send")).split(",")
+    explicit = setup.configured_user_scopes({}, ns(user_scopes="search:read"))
+    unknown_rejected = False
+    try:
+        common.scopes_for_features("send,nope")
+    except common.SlackHelperError:
+        unknown_rejected = True
+    return check(
+        "scopes: default is required only, features add optional, stored list kept, unknown feature rejected",
+        base == required
+        and set(with_dm) == set(required) | {"chat:write", "im:read", "im:history", "im:write", "mpim:read", "mpim:history"}
+        and legacy.count("chat:write") == 1 and set(required) <= set(legacy)
+        and explicit == "search:read"
+        and unknown_rejected,
+        f"{base} {with_dm} {legacy}",
+    )
+
+
+def case_features_doc_matches_scope_constants() -> bool:
+    doc = (SCRIPT_DIR.parent / "references" / "features.md").read_text(encoding="utf-8")
+    scopes = common.REQUIRED_USER_SCOPES + [x for v in common.OPTIONAL_USER_SCOPES.values() for x in v]
+    missing = [x for x in scopes if f"`{x}`" not in doc]
+    keys_missing = [k for k in common.OPTIONAL_USER_SCOPES if f"`{k}`" not in doc]
+    return check("features.md lists every scope and bundle key defined in code", not missing and not keys_missing, f"{missing} {keys_missing}")
+
+
 def main() -> int:
     cases = [
         case_curl_config_quote_escapes_control_chars,
@@ -1568,6 +1743,10 @@ def main() -> int:
         case_setup_doctor_reports_status,
         case_write_post_and_reply_payloads,
         case_write_react_payload,
+        case_setup_required_and_optional_scopes,
+        case_features_doc_matches_scope_constants,
+        case_dm_resolve_read_and_write,
+        case_files_list_download_upload,
     ]
     results = [case() for case in cases]
     print(f"\n{sum(results)}/{len(results)} passed")

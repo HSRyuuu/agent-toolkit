@@ -8,15 +8,19 @@ import argparse
 from slack_common import (
     SlackHelperError,
     add_workspace_arg,
+    DM_ID_RE,
     day_bounds,
+    ensure_users_cached,
     format_channels,
     format_history,
     format_jsonl,
     format_users,
+    load_users_cache,
     parse_permalink,
     print_compact_or_raw,
     range_bounds,
     resolve_channel,
+    resolve_dm,
     run_main,
     slack_method,
     token_for,
@@ -58,6 +62,9 @@ def _user_token_or_error(args: argparse.Namespace, operation: str) -> str:
 
 
 def _resolve_channel_for_read(args: argparse.Namespace, bot_token: str) -> tuple[str, str | None]:
+    # DM은 봇이 읽을 수 없으니 처음부터 User token으로 읽는다.
+    if DM_ID_RE.match(args.channel.strip()):
+        return args.channel.strip(), _user_token_or_error(args, "DM 읽기")
     try:
         return resolve_channel(args.channel, bot_token), None
     except SlackHelperError as bot_error:
@@ -144,6 +151,40 @@ def command_channels(args: argparse.Namespace) -> int:
     return print_compact_or_raw(response, format_channels, raw=args.raw)
 
 
+def format_dms(response: dict, users: dict[str, str]) -> str:
+    lines = []
+    for entry in response.get("channels", []):
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("is_im"):
+            user_id = str(entry.get("user") or "-")
+            lines.append("\t".join([str(entry.get("id")), "im", f"@{users.get(user_id, user_id)}"]))
+        else:
+            lines.append("\t".join([str(entry.get("id")), "mpim", str(entry.get("name") or "-")]))
+    return "\n".join(lines)
+
+
+def command_dms(args: argparse.Namespace) -> int:
+    response = slack_method(
+        "conversations.list",
+        token=user_token_for(args),
+        payload={"limit": args.limit, "types": args.types, "exclude_archived": "true"},
+        http_method="GET",
+    )
+    _ensure_ok(response, "conversations.list")
+    if args.raw:
+        return print_compact_or_raw(response, "", raw=True)
+    ids = [str(e["user"]) for e in response.get("channels", []) if isinstance(e, dict) and e.get("user")]
+    try:
+        users = ensure_users_cached(ids, token_for(args))
+    except Exception:
+        users = load_users_cache()
+    text = format_dms(response, users)
+    if text:
+        print(text)
+    return 0
+
+
 def command_channel_history(args: argparse.Namespace) -> int:
     validate_output_flags(args)
     on = getattr(args, "on", None)
@@ -153,6 +194,11 @@ def command_channel_history(args: argparse.Namespace) -> int:
     if on and (after or before):
         raise SlackHelperError("--on은 --after/--before와 함께 쓸 수 없습니다.")
     token = token_for(args)
+    dm_user = getattr(args, "user", None)
+    if bool(args.channel) == bool(dm_user):
+        raise SlackHelperError("--channel 또는 --user 중 하나만 지정해 주세요.")
+    if dm_user:
+        args.channel = resolve_dm(dm_user, bot_token=token, user_token=user_token_for(args))
     channel_id, user_token = _resolve_channel_for_read(args, token)
     payload: dict = {"channel": channel_id, "limit": args.limit}
     if on:
@@ -226,9 +272,17 @@ def build_parser() -> argparse.ArgumentParser:
     channels.add_argument("--raw", action="store_true", help="compact 대신 원본 JSON 출력")
     channels.set_defaults(exclude_archived=True, func=command_channels)
 
-    history = subparsers.add_parser("channel-history", help="Slack conversations.history 호출")
+    dms = subparsers.add_parser("dms", help="내 DM·그룹 DM 목록 (User token, im:read/mpim:read)")
+    add_workspace_arg(dms)
+    dms.add_argument("--limit", type=int, default=50)
+    dms.add_argument("--types", default="im,mpim", help="쉼표로 구분한 types (im=1:1, mpim=그룹 DM)")
+    dms.add_argument("--raw", action="store_true", help="compact 대신 원본 JSON 출력")
+    dms.set_defaults(func=command_dms)
+
+    history = subparsers.add_parser("channel-history", help="Slack conversations.history 호출 (DM은 --user 또는 D… ID)")
     add_workspace_arg(history)
-    history.add_argument("--channel", required=True, help="채널 ID 또는 공개 채널 이름 (이름은 conversations.list로 ID를 찾음)")
+    history.add_argument("--channel", help="채널 ID(DM은 D…) 또는 공개 채널 이름 (이름은 conversations.list로 ID를 찾음)")
+    history.add_argument("--user", help="1:1 DM 상대 (U… ID, @핸들, 표시 이름). --channel 대신 사용")
     history.add_argument("--limit", type=int, default=20)
     history.add_argument("--on", help="특정 일자(YYYY-MM-DD)의 메시지만 조회. --after/--before와 함께 쓸 수 없음")
     history.add_argument("--after", help="이 일자(YYYY-MM-DD) 00:00부터 조회 (해당 일자 포함)")

@@ -23,20 +23,28 @@ CONFIG_FILE = "config.json"
 USERS_CACHE_FILE = "users.json"
 LEGACY_CONFIG_FILES = ("oauth-app.json", "api-key.json", "context.json", "channel-info.json")
 DEFAULT_BOT_SCOPES = ["team:read", "users:read", "channels:read", "channels:history"]
-DEFAULT_USER_SCOPES = [
+# 최초 설치 때 항상 요청하는 필수 권한 — 읽기·검색. references/features.md 와 일치해야 한다.
+REQUIRED_USER_SCOPES = [
     "search:read",
     "channels:read",
     "channels:history",
     "groups:read",
     "groups:history",
-    "chat:write",
-    "reactions:write",
 ]
+# 기능 묶음 키 → 선택 권한. 사용자가 고른 묶음만 OAuth 요청에 더한다.
+OPTIONAL_USER_SCOPES = {
+    "send": ["chat:write"],
+    "react": ["reactions:write"],
+    "dm": ["im:read", "im:history", "im:write", "mpim:read", "mpim:history"],
+    "files-read": ["files:read"],
+    "files-write": ["files:write"],
+}
 DEFAULT_REDIRECT_URI = "http://localhost:8765/slack-helper/callback"
 SLACK_API_BASE = "https://slack.com/api"
 SLACK_AUTHORIZE_URL = "https://slack.com/oauth/v2/authorize"
 USER_ID_RE = re.compile(r"^[UW][A-Z0-9]+$")
 CHANNEL_ID_RE = re.compile(r"^[CDG][A-Z0-9]+$")
+DM_ID_RE = re.compile(r"^D[A-Z0-9]+$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 PERMALINK_RE = re.compile(r"/archives/([CDG][A-Z0-9]+)/p(\d{10})(\d{6})")
 USER_MENTION_RE = re.compile(r"<@([UW][A-Z0-9]+)(?:\|([^>]*))?>")
@@ -84,6 +92,18 @@ def write_json_secure(path: Path, data: dict[str, Any]) -> None:
         temp_name = handle.name
     os.chmod(temp_name, stat.S_IRUSR | stat.S_IWUSR)
     os.replace(temp_name, path)
+
+
+def scopes_for_features(value: str | None) -> list[str]:
+    """`send,dm` 같은 기능 묶음 키를 권한 목록으로 바꾼다. 모르는 키는 에러."""
+    scopes: list[str] = []
+    for key in split_scopes(value or ""):
+        if key not in OPTIONAL_USER_SCOPES:
+            raise SlackHelperError(
+                f"알 수 없는 기능 묶음입니다: {key} (가능: {', '.join(OPTIONAL_USER_SCOPES)})"
+            )
+        scopes.extend(scope for scope in OPTIONAL_USER_SCOPES[key] if scope not in scopes)
+    return scopes
 
 
 def split_scopes(value: str) -> list[str]:
@@ -831,6 +851,60 @@ def resolve_channel(value: str, token: str, *, types: str = "public_channel") ->
     raise SlackHelperError(
         f"'{value}' 채널을 찾지 못했습니다. slack_read.py channels로 채널 이름/ID를 확인해 주세요."
     )
+
+
+def _paged_list(method: str, token: str, key: str, payload: dict[str, Any]) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    cursor = ""
+    while True:
+        page = {**payload, "limit": 200, **({"cursor": cursor} if cursor else {})}
+        response = slack_method(method, token=token, payload=page, http_method="GET")
+        if response.get("ok") is not True:
+            raise SlackHelperError(f"{method} failed: {response.get('_slack_error') or response}")
+        items.extend(item for item in response.get(key, []) if isinstance(item, dict))
+        metadata = response.get("response_metadata")
+        cursor = str(metadata.get("next_cursor") or "") if isinstance(metadata, dict) else ""
+        if not cursor:
+            return items
+
+
+def find_user_id(value: str, token: str) -> str:
+    """U… ID는 그대로 쓰고, 이름·@핸들·표시 이름이면 users.list에서 정확히 일치하는 한 명을 찾는다."""
+    target = normalize_user_identifier(value)
+    if USER_ID_RE.match(target.upper()):
+        return target.upper()
+    needle = target.lower()
+    matches = []
+    for member in _paged_list("users.list", token, "members", {}):
+        profile = member.get("profile") if isinstance(member.get("profile"), dict) else {}
+        names = (member.get("name"), member.get("real_name"), profile.get("display_name"), profile.get("real_name"))
+        if not member.get("deleted") and any(isinstance(n, str) and n.lower() == needle for n in names):
+            matches.append(member)
+    if len(matches) != 1:
+        found = "; ".join(f"{m.get('id')} / @{m.get('name')}" for m in matches[:5])
+        raise SlackHelperError(
+            f"'{value}'와 일치하는 사용자가 {'없습니다' if not matches else '여러 명입니다: ' + found}. "
+            "U로 시작하는 member ID나 정확한 표시 이름으로 다시 지정해 주세요."
+        )
+    return str(matches[0]["id"])
+
+
+def resolve_dm(value: str, *, bot_token: str, user_token: str, create: bool = False) -> str:
+    """DM 채널 ID(D…)·사용자 ID·이름을 DM 채널 ID로 바꾼다. create=True일 때만 없는 DM을 연다(im:write)."""
+    target = value.strip()
+    if DM_ID_RE.match(target):
+        return target
+    user_id = find_user_id(target, bot_token)
+    for im in _paged_list("conversations.list", user_token, "channels", {"types": "im", "exclude_archived": "true"}):
+        if im.get("user") == user_id and im.get("id"):
+            return str(im["id"])
+    if not create:
+        raise SlackHelperError(f"'{value}'({user_id})와 나눈 DM이 없습니다.")
+    response = slack_method("conversations.open", token=user_token, payload={"users": user_id})
+    channel = response.get("channel")
+    if response.get("ok") is not True or not isinstance(channel, dict) or not channel.get("id"):
+        raise SlackHelperError(f"conversations.open failed: {response.get('_slack_error') or response}")
+    return str(channel["id"])
 
 
 def add_workspace_arg(parser: Any) -> None:

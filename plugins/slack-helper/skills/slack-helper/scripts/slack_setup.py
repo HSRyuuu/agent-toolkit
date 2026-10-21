@@ -17,7 +17,8 @@ from typing import Any
 from slack_common import (
     DEFAULT_BOT_SCOPES,
     DEFAULT_REDIRECT_URI,
-    DEFAULT_USER_SCOPES,
+    OPTIONAL_USER_SCOPES,
+    REQUIRED_USER_SCOPES,
     SLACK_AUTHORIZE_URL,
     SlackHelperError,
     add_workspace_arg,
@@ -32,6 +33,7 @@ from slack_common import (
     run_main,
     save_config,
     slack_method,
+    scopes_for_features,
     split_scopes,
     token_for,
     update_users_cache_from_members,
@@ -145,19 +147,18 @@ def configured_scopes(oauth_app: dict[str, Any], args: argparse.Namespace) -> st
 
 
 def configured_user_scopes(oauth_app: dict[str, Any], args: argparse.Namespace) -> str:
-    scopes = args.user_scopes or oauth_app.get("user_scopes") or DEFAULT_USER_SCOPES
-    if isinstance(scopes, str):
-        scope_list = split_scopes(scopes)
-        if args.user_scopes:
-            return ",".join(scope_list)
-        scope_list.extend(scope for scope in DEFAULT_USER_SCOPES if scope not in scope_list)
-        return ",".join(scope_list)
-    if isinstance(scopes, list) and all(isinstance(item, str) for item in scopes):
-        scope_list = [scope for scope in scopes if scope]
-        if not args.user_scopes:
-            scope_list.extend(scope for scope in DEFAULT_USER_SCOPES if scope not in scope_list)
-        return ",".join(scope_list)
-    raise SlackHelperError("user_scopes must be a string or list of strings")
+    """요청할 User scope. 명시한 --user-scopes가 우선, 아니면 저장된 목록 + 필수 + --features 묶음."""
+    if args.user_scopes:
+        return ",".join(split_scopes(args.user_scopes))
+    stored = oauth_app.get("user_scopes") or []
+    if isinstance(stored, str):
+        stored = split_scopes(stored)
+    if not isinstance(stored, list) or not all(isinstance(item, str) for item in stored):
+        raise SlackHelperError("user_scopes must be a string or list of strings")
+    scope_list = [scope for scope in stored if scope]
+    extra = REQUIRED_USER_SCOPES + scopes_for_features(getattr(args, "features", None))
+    scope_list.extend(scope for scope in extra if scope not in scope_list)
+    return ",".join(scope_list)
 
 
 def oauth_url(args: argparse.Namespace) -> str:
@@ -201,7 +202,11 @@ def command_init_oauth(args: argparse.Namespace) -> int:
     # 앞의 둘은 사용자가 Slack 웹 화면에서 직접 설정하고, 이름은 연결 테스트 후 set-me로 저장한다.
     redirect_uri = args.redirect_uri or DEFAULT_REDIRECT_URI
     scopes = split_scopes(args.scopes) if args.scopes else list(DEFAULT_BOT_SCOPES)
-    user_scopes = split_scopes(args.user_scopes) if args.user_scopes else list(DEFAULT_USER_SCOPES)
+    user_scopes = (
+        split_scopes(args.user_scopes)
+        if args.user_scopes
+        else REQUIRED_USER_SCOPES + scopes_for_features(args.features)
+    )
 
     if not client_id:
         raise SlackHelperError("Client ID가 비어 있습니다.")
@@ -233,12 +238,19 @@ def command_init_oauth(args: argparse.Namespace) -> int:
     print(f"설정 파일을 저장했습니다: {config_path()}")
     print(f"기본 Redirect URI: {redirect_uri}")
     print(f"기본 Bot Token Scopes: {', '.join(scopes)}")
-    print(f"기본 User Token Scopes: {', '.join(user_scopes)}")
+    print(f"User Token Scopes (필수{' + 선택' if len(user_scopes) > len(REQUIRED_USER_SCOPES) else ''}): {', '.join(user_scopes)}")
     return 0
 
 
 def command_oauth_start(args: argparse.Namespace) -> int:
     url = oauth_url(args)
+    if args.features or args.user_scopes:
+        # 고른 선택 기능(또는 명시한 전체 목록)을 저장해 두면 재설치 때 같은 권한을 다시 요청한다.
+        config = load_config()
+        app = config.get("app")
+        if isinstance(app, dict):
+            app["user_scopes"] = configured_user_scopes(app, args).split(",")
+            save_config(config)
     print(url)
     if args.open:
         opened = webbrowser.open(url)
@@ -603,11 +615,14 @@ def command_doctor(args: argparse.Namespace) -> int:
             else:
                 bad(f"User token 인증 실패: {response.get('_slack_error', 'unknown_error')}")
             user_scopes = split_scopes(str(authed_user.get("scope") or ""))
-            missing = [scope for scope in DEFAULT_USER_SCOPES if scope not in user_scopes]
+            missing = [scope for scope in REQUIRED_USER_SCOPES if scope not in user_scopes]
             if user_scopes and missing:
                 warn(f"User scope 부족: {', '.join(missing)} — Slack App에서 추가 후 oauth 재승인 필요")
             elif user_scopes:
-                good("User scopes OK")
+                good("User scopes OK (필수)")
+                on = [key for key, scopes in OPTIONAL_USER_SCOPES.items() if all(x in user_scopes for x in scopes)]
+                off = [key for key in OPTIONAL_USER_SCOPES if key not in on]
+                print(f"ℹ️ 선택 기능 켜짐: {', '.join(on) or '없음'} / 꺼짐: {', '.join(off) or '없음'}")
             else:
                 warn("config에 User scope 기록이 없어 점검을 건너뜁니다 — oauth-finish를 다시 실행하면 기록됩니다.")
 
@@ -673,12 +688,14 @@ def build_parser() -> argparse.ArgumentParser:
     init_oauth.add_argument("--redirect-uri", "--redirect_uri", dest="redirect_uri", help="Slack OAuth Redirect URL")
     init_oauth.add_argument("--scopes", help="쉼표로 구분한 Bot Token Scopes")
     init_oauth.add_argument("--user-scopes", "--user_scopes", dest="user_scopes", help="쉼표로 구분한 User Token Scopes")
+    init_oauth.add_argument("--features", help="켜고 싶은 선택 기능 묶음(쉼표 구분): send, react, dm, files-read, files-write. 필수 권한에 더해 요청한다")
     init_oauth.set_defaults(func=command_init_oauth)
 
     oauth_start = subparsers.add_parser("oauth-start", help="Slack OAuth 승인 URL 출력 또는 브라우저 열기")
     oauth_start.add_argument("--open", action="store_true", help="브라우저에서 승인 URL 열기")
     oauth_start.add_argument("--scopes", help="쉼표로 구분한 Bot Token Scopes")
     oauth_start.add_argument("--user-scopes", help="쉼표로 구분한 User Token Scopes")
+    oauth_start.add_argument("--features", help="켜고 싶은 선택 기능 묶음(쉼표 구분): send, react, dm, files-read, files-write. 필수 권한에 더해 요청한다")
     oauth_start.add_argument("--redirect-uri", "--redirect_uri", dest="redirect_uri", help="config.json의 redirect_uri 대신 사용할 값")
     oauth_start.add_argument("--state", help="선택 OAuth state 값")
     oauth_start.add_argument("--team", help="선택 Slack team ID 힌트")
