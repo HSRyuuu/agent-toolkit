@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architecture</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --ink: #1c2330; --muted: #5d6879; --line: #d5dae3;
+    --grp: #eef1f6; --node: #ffffff; --node-line: #aeb7c6;
+    --edge: #3b6fd8; --edge-unk: #8a93a3;
+    --r: #2f6fdd; --w: #1e8e5a; --u: #c27a12; --d: #c4403a;
+    --focus: #e8f0ff; --ext: #fdf1e3; --queue: #efe9fb;
+    --shadow: 0 8px 28px rgba(20, 30, 50, .22);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151b; --panel: #1b1f27; --ink: #e6e9ef; --muted: #98a2b3; --line: #2c3340;
+      --grp: #181c24; --node: #222733; --node-line: #3b4455;
+      --edge: #6c9bff; --edge-unk: #7b8496;
+      --r: #6c9bff; --w: #48c78e; --u: #e0a040; --d: #ef7a73;
+      --focus: #1a2740; --ext: #2d2418; --queue: #251f3a;
+      --shadow: 0 8px 28px rgba(0, 0, 0, .55);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12151b; --panel: #1b1f27; --ink: #e6e9ef; --muted: #98a2b3; --line: #2c3340;
+    --grp: #181c24; --node: #222733; --node-line: #3b4455;
+    --edge: #6c9bff; --edge-unk: #7b8496;
+    --r: #6c9bff; --w: #48c78e; --u: #e0a040; --d: #ef7a73;
+    --focus: #1a2740; --ext: #2d2418; --queue: #251f3a;
+    --shadow: 0 8px 28px rgba(0, 0, 0, .55);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 13px/1.5 system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", sans-serif; }
+  .ver { padding: 12px 20px 0; color: var(--muted); font: 600 12px/1.2 ui-monospace, Menlo, Consolas, monospace; }
+  header { padding: 6px 20px 6px; display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: baseline; }
+  h1 { font-size: 18px; margin: 0; font-weight: 650; }
+  header p { margin: 0; color: var(--muted); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 4px 20px 10px; color: var(--muted); font-size: 12px; align-items: center; }
+  .legend .it { display: inline-flex; align-items: center; gap: 6px; }
+  .legend svg { width: 34px; height: 10px; overflow: visible; }
+  .op { display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 4px; font: 700 11px/17px ui-monospace, Menlo, monospace; color: #fff; text-align: center; }
+  .op.R { background: var(--r); } .op.W { background: var(--w); } .op.U { background: var(--u); } .op.D { background: var(--d); }
+  .wrap { overflow: auto; padding: 0 12px 24px; }
+  svg#map { display: block; margin: 0 auto; width: 100%; height: auto; }
+  .grp rect.box { fill: var(--grp); stroke: var(--line); stroke-width: 1; }
+  .grp.focus rect.box { fill: var(--focus); }
+  .grp.ext rect.box { fill: var(--ext); }
+  .grp.queue rect.box { fill: var(--queue); }
+  .grp text.gt { fill: var(--ink); font-weight: 650; font-size: 13px; }
+  .grp text.gs { fill: var(--muted); font-size: 11px; }
+  .grp .hit { fill: transparent; cursor: help; }
+  .node rect { fill: var(--node); stroke: var(--node-line); stroke-width: 1.2; transition: stroke .12s, stroke-width .12s; }
+  .node { cursor: help; }
+  .node:hover rect { stroke: var(--edge); stroke-width: 2.2; }
+  .node text.nl { fill: var(--ink); font-weight: 600; font-size: 12px; }
+  .node text.np { fill: var(--muted); font: 10.5px ui-monospace, Menlo, Consolas, monospace; }
+  .node .opb.R { fill: var(--r); } .node .opb.W { fill: var(--w); } .node .opb.U { fill: var(--u); } .node .opb.D { fill: var(--d); }
+  .node .opt { fill: #fff; font: 700 10px ui-monospace, Menlo, monospace; pointer-events: none; }
+  .node.stub rect { stroke-dasharray: 4 3; }
+  .node.stub text.nl { fill: var(--muted); font-weight: 500; }
+  .edge path { fill: none; stroke-width: 1.8; }
+  .edge.ok path { stroke: var(--edge); }
+  .edge.unk path { stroke: var(--edge-unk); stroke-dasharray: 2 4; }
+  .edge .num circle { fill: var(--panel); stroke: currentColor; stroke-width: 1.4; }
+  .edge .num text { fill: var(--ink); font: 700 10px system-ui, sans-serif; }
+  .edge.ok { color: var(--edge); } .edge.unk { color: var(--edge-unk); }
+  svg.hovering .edge { opacity: .18; }
+  svg.hovering .edge.hl { opacity: 1; }
+  svg.hovering .edge.hl path { stroke-width: 2.8; }
+  #tip { position: fixed; z-index: 10; max-width: min(560px, calc(100vw - 24px)); max-height: 78vh; overflow: auto; background: var(--panel); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 12px 14px; pointer-events: none; display: none; }
+  #tip.pin { pointer-events: auto; }
+  #tip h3 { margin: 0 0 2px; font-size: 13px; }
+  #tip .sub { color: var(--muted); font: 11px ui-monospace, Menlo, monospace; word-break: break-all; margin-bottom: 8px; }
+  #tip .desc { margin: 0 0 8px; color: var(--muted); }
+  #tip h4 { margin: 10px 0 4px; font-size: 11px; letter-spacing: .04em; color: var(--muted); text-transform: uppercase; }
+  #tip table { border-collapse: collapse; width: 100%; }
+  #tip td { padding: 3px 6px 3px 0; vertical-align: top; border-top: 1px solid var(--line); }
+  #tip td.o { white-space: nowrap; width: 1%; }
+  #tip td.s { font: 12px ui-monospace, Menlo, monospace; word-break: break-all; }
+  #tip .n { display: block; color: var(--muted); font: 11.5px/1.45 system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", sans-serif; margin: 1px 0 2px; }
+  #tip .e { display: block; color: var(--muted); font: 10.5px ui-monospace, Menlo, monospace; opacity: .85; }
+  #tip .lv { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 999px; font: 10px system-ui; border: 1px solid var(--line); color: var(--muted); }
+  #tip .lv.ok { color: var(--w); border-color: var(--w); }
+  #tip .lv.est { color: var(--u); border-color: var(--u); }
+  #tip .none { color: var(--muted); font-style: italic; }
+  #tip .x { position: absolute; right: 8px; top: 6px; border: 0; background: transparent; color: var(--muted); font-size: 16px; cursor: pointer; display: none; }
+  #tip.pin .x { display: block; }
+  #tip .hint { position: sticky; bottom: -12px; margin: 10px -14px -12px; padding: 6px 14px; background: var(--panel); border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; display: none; }
+  #tip.long:not(.pin) .hint { display: block; }
+  .agent { margin: 0 20px 36px; max-width: 1100px; }
+  .agent-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 8px; }
+  .agent h2 { margin: 0; font-size: 14px; }
+  .agent-sub { color: var(--muted); font-size: 12px; flex: 1 1 280px; }
+  #copy { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 5px 14px; font: 600 12px system-ui, sans-serif; cursor: pointer; }
+  #copy:hover { border-color: var(--edge); }
+  #copy.done { color: var(--w); border-color: var(--w); } #copy.fail { color: var(--d); border-color: var(--d); }
+  #agenttext { margin: 0; padding: 12px 14px; max-height: 62vh; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    font: 12px/1.6 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-word; user-select: text; -webkit-user-select: text; cursor: text; }
+  .foot { padding: 0 20px 28px; color: var(--muted); font-size: 12px; max-width: 1100px; }
+  .foot b { color: var(--ink); }
+  .foot ul { margin: 4px 0 8px; padding-left: 18px; }
+</style>
+</head>
+<body>
+<div class="ver" id="ver"></div>
+<header><h1 id="title"></h1><p id="hint"></p></header>
+<div class="legend" id="legend"></div>
+<div class="wrap"><svg id="map" role="img"></svg></div>
+<div id="tip" role="dialog"><button class="x" aria-label="닫기">×</button><div id="tipbody"></div></div>
+<div class="foot" id="foot"></div>
+<section class="agent" aria-labelledby="agent-h">
+  <div class="agent-head">
+    <h2 id="agent-h">에이전트용 텍스트</h2>
+    <span class="agent-sub">위 지도를 글로 옮긴 평문입니다. 드래그해서 복사하거나 오른쪽 버튼으로 전체를 복사해 에이전트에게 붙여넣으세요.</span>
+    <button type="button" id="copy">전체 복사</button>
+  </div>
+<pre id="agenttext" tabindex="0"><!--AGENT_TEXT--></pre>
+</section>
+
+<script>
+/* 데이터는 scripts/render.py 가 주입한다. 스키마는 SKILL.md 참고. */
+const DATA = /*DATA_START*/{"groups":[],"edges":[]}/*DATA_END*/;
+
+const META = DATA.meta || {};
+const NS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById("map");
+const tip = document.getElementById("tip"), tipbody = document.getElementById("tipbody");
+const $ = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const h = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* ===== 머리말 ===== */
+document.title = META.title || "Architecture";
+document.getElementById("title").textContent = META.title || "Architecture";
+document.getElementById("hint").textContent = META.hint || "박스에 마우스를 올리면 상세 팝업이 나옵니다. 클릭하면 고정되고, Esc 로 닫습니다.";
+document.getElementById("ver").textContent = META.ver ? "ver. " + META.ver : "";
+
+/* ===== 레이아웃: col/row 로 좌표 계산 (x/y/w/h 를 직접 주면 그 값을 우선) ===== */
+const NODE_H = 62, ROW_H = 100, TOP = 110, MX = 20, GAP = 50, DEF_W = 270;
+const colW = {};
+DATA.groups.forEach(g => { if (g.col != null) colW[g.col] = Math.max(colW[g.col] || 0, g.w || DEF_W); });
+const maxCol = Math.max(-1, ...Object.keys(colW).map(Number));
+const colX = {}; let cx = MX;
+for (let c = 0; c <= maxCol; c++) { colX[c] = cx; cx += (colW[c] || DEF_W) + GAP; }
+DATA.groups.forEach(g => {
+  g.nodes.forEach(n => { if (n.y == null) n.y = TOP + (n.row || 0) * ROW_H; });
+  if (g.x == null) g.x = colX[g.col ?? 0];
+  if (g.w == null) g.w = colW[g.col ?? 0] || DEF_W;
+  if (g.y == null) g.y = Math.min(...g.nodes.map(n => n.y)) - 50;
+  if (g.h == null) g.h = Math.max(...g.nodes.map(n => n.y + NODE_H)) + 16 - g.y;
+});
+const minY = Math.min(...DATA.groups.map(g => g.y)), maxY = Math.max(...DATA.groups.map(g => g.y + g.h));
+const W = Math.max(...DATA.groups.map(g => g.x + g.w)) + MX, VH = maxY - minY + 60;
+svg.setAttribute("viewBox", `0 ${minY - 30} ${W} ${VH}`);
+svg.style.minWidth = Math.round(W * 0.78) + "px";
+
+const nodeById = {};
+DATA.groups.forEach(g => g.nodes.forEach(n => { n.group = g; nodeById[n.id] = n; }));
+const boxOf = (n) => ({ x: n.group.x + 14, y: n.y, w: n.group.nodeW || (n.group.w - 28), h: NODE_H });
+
+const defs = $("defs", {}, svg);
+[["ok", "var(--edge)"], ["unk", "var(--edge-unk)"]].forEach(([k, c]) => {
+  const m = $("marker", { id: "ah-" + k, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 8, markerHeight: 8, orient: "auto-start-reverse" }, defs);
+  $("path", { d: "M0,0 L10,5 L0,10 z", fill: c }, m);
+});
+
+function wrapPath(s, max) {
+  const parts = s.split(/(?=[\/.])/), lines = []; let cur = "";
+  parts.forEach(p => { if ((cur + p).length > max && cur) { lines.push(cur); cur = p; } else cur += p; });
+  if (cur) lines.push(cur); return lines.slice(0, 2);
+}
+
+/* ===== 그룹 ===== */
+const gLayer = $("g", {}, svg), eLayer = $("g", {}, svg), nLayer = $("g", {}, svg);
+DATA.groups.forEach(g => {
+  const el = $("g", { class: "grp " + (g.kind || "") }, gLayer);
+  $("rect", { class: "box", x: g.x, y: g.y, width: g.w, height: g.h, rx: 12 }, el);
+  $("text", { class: "gt", x: g.x + 14, y: g.y + 22 }, el).textContent = g.title;
+  if (g.sub) $("text", { class: "gs", x: g.x + 14, y: g.y + 38 }, el).textContent = g.sub;
+  const hit = $("rect", { class: "hit", x: g.x, y: g.y, width: g.w, height: 46, rx: 12 }, el);
+  hit.addEventListener("mouseenter", ev => showTip(groupTip(g), ev));
+  hit.addEventListener("mousemove", moveTip); hit.addEventListener("mouseleave", hideTip);
+  hit.addEventListener("click", ev => pinTip(groupTip(g), ev));
+});
+
+/* ===== 노드 ===== */
+DATA.groups.forEach(g => g.nodes.forEach(n => {
+  const b = boxOf(n), el = $("g", { class: "node" + (n.stub ? " stub" : ""), "data-id": n.id }, nLayer);
+  $("rect", { x: b.x, y: b.y, width: b.w, height: b.h, rx: 8 }, el);
+  $("text", { class: "nl", x: b.x + 10, y: b.y + 18 }, el).textContent = n.label;
+  const full = ((n.method ? n.method + " " : "") + (n.path || "")).trim();
+  wrapPath(full, Math.floor((b.w - 20) / 6.3)).forEach((ln, i) => { $("text", { class: "np", x: b.x + 10, y: b.y + 34 + i * 13 }, el).textContent = ln; });
+  const ops = [..."RWUD"].filter(o => (n.db || []).some(r => r.op.includes(o)));
+  ops.forEach((o, i) => {
+    const bx = b.x + b.w - 8 - 14 * (ops.length - i) - 3 * (ops.length - i - 1);
+    $("rect", { class: "opb " + o, x: bx, y: b.y + 6, width: 14, height: 14, rx: 3 }, el);
+    $("text", { class: "opt", x: bx + 7, y: b.y + 16.5, "text-anchor": "middle" }, el).textContent = o;
+  });
+  el.addEventListener("mouseenter", ev => { showTip(nodeTip(n), ev); highlight(n.id, true); });
+  el.addEventListener("mousemove", moveTip);
+  el.addEventListener("mouseleave", () => { hideTip(); highlight(n.id, false); });
+  el.addEventListener("click", ev => { pinTip(nodeTip(n), ev); ev.stopPropagation(); });
+}));
+
+/* ===== 화살표 ===== */
+const edgeEls = [];
+DATA.edges.forEach(e => {
+  const kind = e.kind === "unk" ? "unk" : "ok";
+  const a = boxOf(nodeById[e.from]), z = boxOf(nodeById[e.to]);
+  const sideA = e.fromSide || (z.x > a.x + a.w ? "r" : z.x + z.w < a.x ? "l" : (z.y > a.y ? "b" : "t"));
+  const sideZ = e.toSide || (sideA === "r" ? "l" : sideA === "l" ? "r" : sideA === "b" ? "t" : "b");
+  const pt = (bx, s, off) => s === "r" ? [bx.x + bx.w, bx.y + bx.h / 2 + off] : s === "l" ? [bx.x, bx.y + bx.h / 2 + off] : s === "b" ? [bx.x + bx.w / 2 + off, bx.y + bx.h] : [bx.x + bx.w / 2 + off, bx.y];
+  const [x1, y1] = pt(a, sideA, e.offA || 0), [x2, y2] = pt(z, sideZ, e.offZ || 0);
+  let d;
+  if (sideA === "r" || sideA === "l") { const dx = Math.max(40, Math.abs(x2 - x1) * .5) * (sideA === "r" ? 1 : -1); d = `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx * (sideZ === "l" ? 1 : -1)},${y2} ${x2},${y2}`; }
+  else { const dy = Math.max(30, Math.abs(y2 - y1) * .5) * (sideA === "b" ? 1 : -1); d = `M${x1},${y1} C${x1},${y1 + dy} ${x2},${y2 - dy} ${x2},${y2}`; }
+  const el = $("g", { class: "edge " + kind }, eLayer);
+  const p = $("path", { d, "marker-end": `url(#ah-${kind})` }, el);
+  if (e.n != null) {
+    const mid = p.getPointAtLength(p.getTotalLength() * (e.t ?? .5)), num = $("g", { class: "num" }, el);
+    $("circle", { cx: mid.x, cy: mid.y, r: 9 }, num);
+    $("text", { x: mid.x, y: mid.y + 3.5, "text-anchor": "middle" }, num).textContent = e.n;
+  }
+  $("title", {}, el).textContent = e.note || "";
+  edgeEls.push({ e, el });
+});
+function highlight(id, on) {
+  svg.classList.toggle("hovering", on);
+  edgeEls.forEach(({ e, el }) => el.classList.toggle("hl", on && (e.from === id || e.to === id)));
+}
+
+/* ===== 팝업 ===== */
+let pinned = false;
+const opBadge = (ops) => ops.split("").map(o => `<span class="op ${o}">${o}</span>`).join(" ");
+const LV = { 1: META.confirmedLabel || "확인", 0: META.estimatedLabel || "추정" };
+function rows(list) {
+  return `<table>` + list.map(r => `<tr><td class="o">${opBadge(r.op)}</td><td class="s">${h(r.s)}` +
+    (r.c === 1 || r.c === 0 ? `<span class="lv ${r.c ? "ok" : "est"}">${h(LV[r.c])}</span>` : "") +
+    (r.n ? `<span class="n">${h(r.n)}</span>` : "") + (r.e ? `<span class="e">${h(r.e)}</span>` : "") + `</td></tr>`).join("") + `</table>`;
+}
+/* 저장소 종류는 "redis:키" 처럼 접두어로 구분하고, 없으면 DB 로 묶는다. g 를 주면 그 이름으로 묶는다. */
+function dbSections(db) {
+  const kind = r => { const m = /^([a-z0-9_-]+):/i.exec(r.s); return m ? m[1][0].toUpperCase() + m[1].slice(1) : "DB"; };
+  const groups = new Map();
+  db.forEach(r => { const k = r.g || kind(r); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
+  let out = ""; groups.forEach((list, k) => { out += `<h4>${h(k)}</h4>` + rows(list); });
+  return out || `<p class="none">이 경로에서 저장소 접근 없음 (확인 범위 내)</p>`;
+}
+function nodeTip(n) {
+  let s = `<h3>${h(n.label)}</h3><div class="sub">${h(n.group.title)} · ${h(((n.method ? n.method + " " : "") + (n.path || "")).trim())}</div>`;
+  if (n.desc) s += `<p class="desc">${h(n.desc)}</p>`;
+  s += dbSections(n.db || []);
+  if (n.ext && n.ext.length) s += `<h4>외부 호출</h4><table>` + n.ext.map(x => `<tr><td class="s">${h(x.t)}<span class="n">${h(x.n || "")}</span><span class="e">${h(x.e || "")}</span></td></tr>`).join("") + `</table>`;
+  if (n.note) s += `<p class="desc" style="margin-top:10px">${h(n.note)}</p>`;
+  return s;
+}
+function groupTip(g) {
+  const agg = new Map();
+  g.nodes.forEach(n => (n.db || []).forEach(r => {
+    const cur = agg.get(r.s) || { s: r.s, op: "", c: r.c }; [...r.op].forEach(o => { if (!cur.op.includes(o)) cur.op += o; });
+    if (r.c !== 1) cur.c = r.c; agg.set(r.s, cur);
+  }));
+  const list = [...agg.values()].map(r => ({ ...r, op: [..."RWUD"].filter(o => r.op.includes(o)).join("") }));
+  return `<h3>${h(g.title)}</h3><div class="sub">${h(g.sub || "")}</div><p class="desc">이 박스 안 항목들이 닿는 저장소의 합집합입니다.</p>` + dbSections(list);
+}
+function place(ev) {
+  const pad = 14, r = tip.getBoundingClientRect(); let x = ev.clientX + 18, y = ev.clientY + 14;
+  if (x + r.width > innerWidth - pad) x = ev.clientX - r.width - 18;
+  if (x < pad) x = pad; if (y + r.height > innerHeight - pad) y = innerHeight - r.height - pad; if (y < pad) y = pad;
+  tip.style.left = x + "px"; tip.style.top = y + "px";
+}
+const HINT = `<div class="hint">내용이 더 있습니다. 박스를 클릭하면 팝업이 고정되어 스크롤할 수 있습니다 (Esc 로 닫기)</div>`;
+function fill(html) { tipbody.innerHTML = html + HINT; tip.style.display = "block"; tip.classList.toggle("long", tip.scrollHeight > tip.clientHeight + 4); }
+function showTip(html, ev) { if (pinned) return; fill(html); place(ev); }
+function moveTip(ev) { if (!pinned) place(ev); }
+function hideTip() { if (!pinned) tip.style.display = "none"; }
+function pinTip(html, ev) { pinned = true; tip.classList.add("pin"); fill(html); place(ev); }
+function unpin() { pinned = false; tip.classList.remove("pin"); tip.style.display = "none"; }
+tip.querySelector(".x").addEventListener("click", unpin);
+document.addEventListener("keydown", e => { if (e.key === "Escape") unpin(); });
+svg.addEventListener("click", e => { if (pinned && !e.target.closest(".node, .hit")) unpin(); });
+
+/* ===== 범례·각주 ===== */
+const usesUnk = DATA.edges.some(e => e.kind === "unk");
+document.getElementById("legend").innerHTML =
+  `<span class="it"><svg><path d="M0,5 H34" stroke="var(--edge)" stroke-width="2" fill="none"/></svg>${h(META.okLabel || "확정된 호출")}</span>` +
+  (usesUnk ? `<span class="it"><svg><path d="M0,5 H34" stroke="var(--edge-unk)" stroke-width="2" stroke-dasharray="2 4" fill="none"/></svg>${h(META.unkLabel || "정확히 못 찾음")}</span>` : "") +
+  (DATA.groups.some(g => g.nodes.some(n => (n.db || []).length)) ? `<span class="it"><span class="op R">R</span>읽기 <span class="op W">W</span>insert <span class="op U">U</span>update <span class="op D">D</span>delete</span>` : "");
+document.getElementById("foot").innerHTML = (DATA.foot || []).map(sec =>
+  `<b>${h(sec.title)}</b><ul>` + (sec.items || []).map(i => `<li>${h(i)}</li>`).join("") + `</ul>`).join("");
+
+/* #n=노드id 로 팝업을 바로 연다 (공유·검증용) */
+(function () {
+  const m = /^#n=([\w-]+)$/.exec(location.hash); const n = m && nodeById[m[1]]; if (!n) return;
+  const b = boxOf(n), r = svg.getBoundingClientRect(), k = r.width / W;
+  highlight(n.id, true); pinTip(nodeTip(n), { clientX: r.left + (b.x + b.w) * k, clientY: r.top + (b.y - minY + 30 - 30) * k });
+})();
+
+/* ===== 에이전트용 텍스트 복사 ===== */
+(function () {
+  const btn = document.getElementById("copy"), box = document.getElementById("agenttext");
+  const flash = (cls, label) => { btn.className = cls; btn.textContent = label; setTimeout(() => { btn.className = ""; btn.textContent = "전체 복사"; }, 1800); };
+  const legacy = (text) => {   // execCommand 방식: 숨긴 textarea 를 선택해 복사
+    const ta = document.createElement("textarea"); ta.value = text; ta.style.cssText = "position:fixed;opacity:0;top:0;left:0";
+    document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (_) {} ta.remove(); return ok;
+  };
+  // 클립보드 API 는 포커스가 없으면 거절이 아니라 응답 없이 멈출 수 있어 1.5초로 제한한다
+  const viaApi = (text) => !navigator.clipboard ? Promise.resolve(false) :
+    Promise.race([navigator.clipboard.writeText(text).then(() => true), new Promise(r => setTimeout(() => r(false), 1500))]).catch(() => false);
+  btn.addEventListener("click", async () => {
+    const text = box.textContent;
+    const ok = legacy(text) || await viaApi(text);   // 동기 복사를 먼저(사용자 클릭 안에서 가장 안정적), 실패하면 API
+    ok ? flash("done", "복사됨") : flash("fail", "복사 실패 — 직접 드래그하세요");
+  });
+})();
+</script>
+</body>
+</html>

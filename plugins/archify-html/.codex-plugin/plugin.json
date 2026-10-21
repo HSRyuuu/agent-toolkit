@@ -1,0 +1,23 @@
+{
+  "name": "archify-html",
+  "version": "1.0.0",
+  "description": "주어진 구조 정보로 마우스오버 팝업이 있는 단일 HTML 아키텍처 지도를 작성한다.",
+  "author": {
+    "name": "happyhsryu"
+  },
+  "keywords": [
+    "skills",
+    "agent-toolkit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "archify-html",
+    "shortDescription": "주어진 구조 정보로 마우스오버 팝업이 있는 단일 HTML 아키텍처 지도를 작성한다.",
+    "developerName": "happyhsryu",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

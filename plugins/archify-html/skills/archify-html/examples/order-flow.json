@@ -1,0 +1,261 @@
+{
+  "meta": {
+    "title": "주문 흐름 (예제)"
+  },
+  "groups": [
+    {
+      "id": "web",
+      "title": "storefront-web",
+      "sub": "웹",
+      "col": 0,
+      "nodes": [
+        {
+          "id": "web_cart",
+          "label": "장바구니 담기",
+          "method": "POST",
+          "path": "/api/cart",
+          "row": 0,
+          "desc": "상품을 장바구니에 담는다.",
+          "db": []
+        },
+        {
+          "id": "web_order",
+          "label": "주문하기",
+          "method": "POST",
+          "path": "/api/orders",
+          "row": 2,
+          "desc": "장바구니 상품으로 주문을 만든다.",
+          "db": []
+        }
+      ]
+    },
+    {
+      "id": "order",
+      "title": "order-api",
+      "sub": "주문 서비스",
+      "col": 1,
+      "nodes": [
+        {
+          "id": "o_cart",
+          "label": "장바구니 저장",
+          "method": "POST",
+          "path": "/cart",
+          "row": 0,
+          "desc": "장바구니 항목을 저장한다.",
+          "db": [
+            {
+              "s": "shop.cart_items",
+              "op": "W",
+              "n": "사용자·상품·수량 INSERT",
+              "e": "CartRepository.java",
+              "c": 1
+            },
+            {
+              "s": "shop.products",
+              "op": "R",
+              "n": "판매 가능 여부 확인",
+              "e": "ProductRepository.java",
+              "c": 1
+            }
+          ]
+        },
+        {
+          "id": "o_order",
+          "label": "주문 생성",
+          "method": "POST",
+          "path": "/orders",
+          "row": 2,
+          "desc": "재고를 차감하고 주문을 저장한 뒤 결제를 요청한다.",
+          "db": [
+            {
+              "s": "shop.orders",
+              "op": "W",
+              "n": "status=CREATED",
+              "e": "OrderRepository.java",
+              "c": 1,
+              "g": "핵심"
+            },
+            {
+              "s": "shop.order_items",
+              "op": "W",
+              "e": "OrderRepository.java",
+              "c": 1,
+              "g": "핵심"
+            },
+            {
+              "s": "shop.products",
+              "op": "RU",
+              "n": "재고 차감 (stock - qty)",
+              "e": "ProductRepository.java",
+              "c": 1,
+              "g": "핵심"
+            },
+            {
+              "s": "redis:stock:{sku}",
+              "op": "RU",
+              "n": "재고 캐시",
+              "c": 0
+            }
+          ],
+          "ext": [
+            {
+              "t": "payment-api  POST /charges",
+              "n": "동기, 타임아웃 10초",
+              "e": "PaymentClient.java"
+            }
+          ],
+          "note": "결제 실패 시 재고를 되돌리는지는 확인하지 못했다."
+        },
+        {
+          "id": "o_paid",
+          "label": "결제 완료 수신",
+          "method": "Kafka",
+          "path": "OrderListener.onOrderPaid",
+          "row": 4,
+          "desc": "결제 완료 이벤트를 받아 주문 상태를 바꾼다.",
+          "db": [
+            {
+              "s": "shop.orders",
+              "op": "U",
+              "n": "status=PAID",
+              "e": "OrderListener.java",
+              "c": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pay",
+      "title": "payment-api",
+      "sub": "결제 서비스",
+      "col": 2,
+      "kind": "focus",
+      "nodes": [
+        {
+          "id": "p_charge",
+          "label": "결제 요청",
+          "method": "POST",
+          "path": "/charges",
+          "row": 2,
+          "desc": "PG 에 결제를 요청하고 결과를 기록한다.",
+          "db": [
+            {
+              "s": "pay.charges",
+              "op": "WU",
+              "n": "INSERT 후 status 갱신",
+              "e": "ChargeRepository.java",
+              "c": 1
+            },
+            {
+              "s": "pay.charge_events",
+              "op": "W",
+              "e": "ChargeEventRepository.java",
+              "c": 1
+            }
+          ],
+          "ext": [
+            {
+              "t": "PG  POST /v1/payments",
+              "n": "재시도 없음",
+              "e": "PgClient.java"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pg",
+      "title": "PG",
+      "sub": "외부 결제사",
+      "col": 3,
+      "kind": "ext",
+      "nodes": [
+        {
+          "id": "pg_pay",
+          "label": "결제 승인",
+          "method": "POST",
+          "path": "/v1/payments",
+          "row": 2,
+          "db": []
+        }
+      ]
+    },
+    {
+      "id": "mq",
+      "title": "Kafka",
+      "sub": "이벤트",
+      "col": 2,
+      "kind": "queue",
+      "nodes": [
+        {
+          "id": "topic",
+          "label": "결제 완료 토픽",
+          "path": "order.paid",
+          "row": 4,
+          "db": []
+        }
+      ]
+    },
+    {
+      "id": "pub",
+      "title": "발행자",
+      "sub": "확인하지 못함",
+      "col": 3,
+      "nodes": [
+        {
+          "id": "pub_n",
+          "label": "발행 주체 미확인",
+          "path": "order.paid",
+          "row": 4,
+          "stub": true,
+          "db": []
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "n": "1",
+      "from": "web_cart",
+      "to": "o_cart"
+    },
+    {
+      "n": "2",
+      "from": "web_order",
+      "to": "o_order"
+    },
+    {
+      "n": "3",
+      "from": "o_order",
+      "to": "p_charge",
+      "note": "주문 서비스 → 결제 서비스"
+    },
+    {
+      "n": "4",
+      "from": "p_charge",
+      "to": "pg_pay"
+    },
+    {
+      "n": "5",
+      "from": "pub_n",
+      "to": "topic",
+      "kind": "unk",
+      "note": "발행 코드를 찾지 못함"
+    },
+    {
+      "n": "6",
+      "from": "topic",
+      "to": "o_paid"
+    }
+  ],
+  "foot": [
+    {
+      "title": "읽는 법",
+      "items": [
+        "숫자는 호출 순서입니다.",
+        "회색 점선은 확인하지 못한 연결입니다."
+      ]
+    }
+  ]
+}
