@@ -93,7 +93,7 @@ codex plugin list
 - 바뀐 플러그인만, `plugins/<plugin>/.claude-plugin/plugin.json`과
   `.codex-plugin/plugin.json`의 `version`을 **같은 값으로** 올린다.
   `scripts/bump-plugin.sh <plugin> [patch|minor|major]`가 둘을 함께 올린다.
-  기본은 patch, 기능 단위 릴리스면 minor.
+  repo 대격변 = major(맨 앞), 스킬 추가·삭제 = minor(가운데), 스킬 수정 = patch(맨 뒤).
 - `marketplace.json`의 `plugins[]`에는 version을 넣지 않는다. 넣으면 `plugin.json`
   값이 경고 없이 이기고 캐시 디버깅이 꼬인다.
 
@@ -101,7 +101,8 @@ codex plugin list
 
 이 저장소의 변경을 다른 머신까지 전달하는 절차는 프로젝트 로컬
 `publish-agent-toolkit` 스킬이 소유한다. 순서는 verify-secrets → 커밋 → 바뀐 플러그인 버전 범프 →
-`git push origin main` → 위 업데이트 명령.
+push → 위 업데이트 명령. `plugins/` 변경은 plugin 단위 PR(제목 앞에 `[v1.2.3]` 형식으로 새 버전, PR 후 바로 머지해도 됨)로,
+그 밖의 변경은 `git push origin main`으로 올린다.
 
 다른 머신은 이 루프에서 닿지 않는다. 각 머신에서 업데이트 명령을 직접 실행해야
 한다.

@@ -49,7 +49,7 @@ agent-toolkit/
 
 ## 배포
 
-검증부터 배포까지는 프로젝트 로컬 `publish-agent-toolkit` 스킬이 소유한다 — 문서 동기화 → verify-secrets → 커밋 → 바뀐 plugin의 두 manifest 버전 동시 범프(`scripts/bump-plugin.sh`) → `git push origin main` → 설치 플러그인 업데이트. 어느 단계든 실패하면 멈춘다.
+검증부터 배포까지는 프로젝트 로컬 `publish-agent-toolkit` 스킬이 소유한다 — 문서 동기화 → verify-secrets → 커밋 → 바뀐 plugin의 두 manifest 버전 동시 범프(`scripts/bump-plugin.sh`) → push(`plugins/` 변경은 plugin 단위 PR, 제목 앞에 `[vX.Y.Z]`, 바로 머지해도 됨 / 그 밖은 `main`에 바로 push) → 설치 플러그인 업데이트. 어느 단계든 실패하면 멈춘다. 범프 기준은 repo 대격변 = major, 스킬 추가·삭제 = minor, 스킬 수정 = patch.
 
 두 호스트 모두 plugin별 `version`을 캐시 키로 쓰므로 범프 없는 push는 설치된 머신에서 아무 변화가 없다. 호스트 CLI 명령, 캐시 경로, 문제 해결은 `docs/how-to-install.md`에 있다.
 
