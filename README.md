@@ -51,7 +51,7 @@ jq empty .claude-plugin/marketplace.json .agents/plugins/marketplace.json plugin
 | 플러그인 | 포함 스킬 |
 |---|---|
 | `project-setup` | setup-* 6개, si-project-docs, update-project-docs (+ `templates/`) |
-| `html-tools` | html-db-schema-viewer-creator |
+| `html-tools` | archify-html, html-db-schema-viewer-creator |
 | `excel-docs` | excel-doc-updater, excel-ui-test-doc-creator |
 | `prompt-tools` | prompt-composer, prompt-modernizer, writing-great-skill (+ `snippets/`) |
 | `writing-tools` | docs-writing, ux-writing |

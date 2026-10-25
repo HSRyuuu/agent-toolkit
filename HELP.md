@@ -22,7 +22,7 @@
 | 결과가 왜 그렇게 나왔는지 가설을 경쟁시켜 원인 추적 | `trace` |
 | 커밋, 커밋 분리, PR, 충돌 해결, rebase | `git-actions` |
 | 현재 브랜치 변경을 사람이 보기 쉬운 단일 HTML로 리뷰 | `diff-review` |
-| 서비스·API·DB 구조를 마우스오버 팝업이 있는 HTML 지도로 | `archify-html` |
+| 서비스·API·DB 구조를 마우스오버 팝업이 있는 HTML 지도로 | `archify-html` (`html-tools`) |
 | DB 스키마(DBML·DDL)를 정적 HTML 뷰어로 | `html-db-schema-viewer-creator` (`html-tools`) |
 | PRD·테이블 목록에서 Mermaid ERD(개념/논리/물리) | `create-mermaid-erd` |
 | 백엔드 소스에서 프론트·QA 전달용 REST API 명세서 | `api-spec-docs` |
@@ -54,7 +54,7 @@
 | 플러그인 | 스킬 |
 |---|---|
 | `project-setup` | `setup-agent-entrypoint`, `setup-codebase-context-map`, `setup-project-docs`, `setup-project-level-agent-skill`, `setup-project-setting-recommend`, `setup-self-improvement-loop`, `si-project-docs`, `update-project-docs` |
-| `html-tools` | `html-db-schema-viewer-creator` |
+| `html-tools` | `archify-html`, `html-db-schema-viewer-creator` |
 | `excel-docs` | `excel-doc-updater`, `excel-ui-test-doc-creator` |
 | `prompt-tools` | `prompt-composer`, `prompt-modernizer`, `writing-great-skill` (+ `snippets/`) |
 | `writing-tools` | `docs-writing`, `ux-writing` |
@@ -64,7 +64,7 @@
 
 - **연동:** `slack-helper`, `atlassian-helper`, `datadog-helper`, `postman-helper`
 - **작업 흐름:** `kb`, `daily-work-log`, `handoff`, `grill-me`, `trace`, `git-actions`, `dev-teacher`
-- **시각화·문서 생성:** `archify-html`, `diff-review`, `create-mermaid-erd`, `api-spec-docs`, `ui-feature-spec-docs`
+- **시각화·문서 생성:** `diff-review`, `create-mermaid-erd`, `api-spec-docs`, `ui-feature-spec-docs`
 - **검증·운영:** `ui-test-runner`, `local-plugin-manager`
 
 ## 설치 없이 이 저장소에서만 쓰는 스킬
