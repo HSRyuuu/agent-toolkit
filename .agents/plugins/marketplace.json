@@ -65,18 +65,6 @@
       "category": "Productivity"
     },
     {
-      "name": "coding-convention",
-      "source": {
-        "source": "local",
-        "path": "./plugins/coding-convention"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
       "name": "create-mermaid-erd",
       "source": {
         "source": "local",

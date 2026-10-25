@@ -7,7 +7,7 @@
 
 ## 설치
 
-marketplace 이름은 `hsryuuu`이고, **플러그인 단위로 골라 설치한다.** 관련 스킬은 한 플러그인에 묶여 함께 설치된다 (예: `coding-convention` = Java + Kotlin 컨벤션).
+marketplace 이름은 `hsryuuu`이고, **플러그인 단위로 골라 설치한다.** 관련 스킬은 한 플러그인에 묶여 함께 설치된다 (예: `html-tools`, `project-setup`).
 
 ```text
 /plugin marketplace add HSRyuuu/agent-toolkit
@@ -47,7 +47,6 @@ jq empty .claude-plugin/marketplace.json .agents/plugins/marketplace.json plugin
 
 | 플러그인 | 포함 스킬 |
 |---|---|
-| `coding-convention` | springboot-java-convention, springboot-kotlin-standards |
 | `project-setup` | setup-* 6개, si-project-docs, update-project-docs (+ `templates/`) |
 | `html-tools` | html-cheat-sheet-creator, html-db-schema-viewer-creator, html-docs-creator |
 | `excel-docs` | excel-doc-updater, excel-ui-test-doc-creator |

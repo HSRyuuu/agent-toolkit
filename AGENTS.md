@@ -27,6 +27,7 @@ agent-toolkit/
 │   ├── skills/<skill>/SKILL.md
 │   ├── templates/           # only where a plugin's skills need them (project-setup)
 │   └── snippets/            # prompt snippets read by prompt-composer (prompt-tools only)
+├── old/                    # 더 이상 배포하지 않는 보관 스킬 (marketplace 미등록)
 ├── scripts/bump-plugin.sh   # bumps both manifests of one plugin
 ├── templates/rules/         # copied external guideline references
 └── docs/catalog.md          # human catalog of plugins and skills

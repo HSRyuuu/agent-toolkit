@@ -59,16 +59,6 @@
       "repository": "https://github.com/HSRyuuu/agent-toolkit"
     },
     {
-      "name": "coding-convention",
-      "source": "./plugins/coding-convention",
-      "description": "Spring Boot 코딩 컨벤션 (Java, Kotlin).",
-      "author": {
-        "name": "happyhsryu"
-      },
-      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
-      "repository": "https://github.com/HSRyuuu/agent-toolkit"
-    },
-    {
       "name": "create-mermaid-erd",
       "source": "./plugins/create-mermaid-erd",
       "description": "PRD·DDL 등에서 Mermaid ERD 생성.",
