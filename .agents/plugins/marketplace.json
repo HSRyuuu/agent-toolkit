@@ -137,18 +137,6 @@
       "category": "Productivity"
     },
     {
-      "name": "fastapi-guide",
-      "source": {
-        "source": "local",
-        "path": "./plugins/fastapi-guide"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
       "name": "git-actions",
       "source": {
         "source": "local",
@@ -233,18 +221,6 @@
       "category": "Productivity"
     },
     {
-      "name": "node-backend-patterns",
-      "source": {
-        "source": "local",
-        "path": "./plugins/node-backend-patterns"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
       "name": "personal-tools",
       "source": {
         "source": "local",
@@ -285,18 +261,6 @@
       "source": {
         "source": "local",
         "path": "./plugins/prompt-tools"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
-      "name": "rest-api-design",
-      "source": {
-        "source": "local",
-        "path": "./plugins/rest-api-design"
       },
       "policy": {
         "installation": "AVAILABLE",

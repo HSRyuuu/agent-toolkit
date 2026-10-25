@@ -119,16 +119,6 @@
       "repository": "https://github.com/HSRyuuu/agent-toolkit"
     },
     {
-      "name": "fastapi-guide",
-      "source": "./plugins/fastapi-guide",
-      "description": "FastAPI 코드 작성·리뷰 가이드.",
-      "author": {
-        "name": "happyhsryu"
-      },
-      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
-      "repository": "https://github.com/HSRyuuu/agent-toolkit"
-    },
-    {
       "name": "git-actions",
       "source": "./plugins/git-actions",
       "description": "커밋, 푸시, PR/MR 등 git 작업.",
@@ -199,16 +189,6 @@
       "repository": "https://github.com/HSRyuuu/agent-toolkit"
     },
     {
-      "name": "node-backend-patterns",
-      "source": "./plugins/node-backend-patterns",
-      "description": "Express, Next.js API, NestJS 백엔드 패턴.",
-      "author": {
-        "name": "happyhsryu"
-      },
-      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
-      "repository": "https://github.com/HSRyuuu/agent-toolkit"
-    },
-    {
       "name": "personal-tools",
       "source": "./plugins/personal-tools",
       "description": "hsryuuu 개인 전용 스킬 모음 (개인 개발 블로그 글 작성).",
@@ -242,16 +222,6 @@
       "name": "prompt-tools",
       "source": "./plugins/prompt-tools",
       "description": "프롬프트 작성·진단, 프롬프트 조각 삽입, 스킬 작성 가이드.",
-      "author": {
-        "name": "happyhsryu"
-      },
-      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
-      "repository": "https://github.com/HSRyuuu/agent-toolkit"
-    },
-    {
-      "name": "rest-api-design",
-      "source": "./plugins/rest-api-design",
-      "description": "REST API 계약 설계·리뷰.",
       "author": {
         "name": "happyhsryu"
       },
