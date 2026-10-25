@@ -25,7 +25,8 @@ agent-toolkit/
 │   ├── .claude-plugin/plugin.json
 │   ├── .codex-plugin/plugin.json
 │   ├── skills/<skill>/SKILL.md
-│   └── templates/           # only where a plugin's skills need them (project-setup)
+│   ├── templates/           # only where a plugin's skills need them (project-setup)
+│   └── snippets/            # prompt snippets read by prompt-composer (prompt-tools only)
 ├── scripts/bump-plugin.sh   # bumps both manifests of one plugin
 ├── templates/rules/         # copied external guideline references
 └── docs/catalog.md          # human catalog of plugins and skills
