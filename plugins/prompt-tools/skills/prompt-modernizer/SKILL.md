@@ -201,4 +201,4 @@ eval이 없으면: 대표 작업 3~5개를 골라 before/after 출력을 나란�
 - [Verification loops with skills](https://claude.com/blog/building-verification-loops-in-claude-code-with-skills) — 검증은 프롬프트가 아니라 하네스로
 - [A field guide to Claude Fable](https://claude.com/blog/a-field-guide-to-claude-fable-finding-your-unknowns) — 인터뷰·블라인드 스팟 패스
 
-새 프롬프트를 처음부터 쓰는 것은 `prompt-master`, 하네스 계약 설계는 `agent-harness-construction`.
+새 프롬프트를 처음부터 쓰는 것은 `prompt-master`.
