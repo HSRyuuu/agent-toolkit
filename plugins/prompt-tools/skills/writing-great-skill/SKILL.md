@@ -27,7 +27,6 @@ description: >
 | [`references/principles.md`](references/principles.md) | **A3·A4·B2·B4 진입 전 항상.** invocation 선택, description 작성, 정보 계층, progressive disclosure, leading word, 실패모드 — 이 스킬의 판정 어휘 전부 |
 | [`references/GLOSSARY.md`](references/GLOSSARY.md) | principles의 굵은 용어 하나가 애매할 때만. 전량 통독하지 않는다 |
 | [`references/testing-skills-with-subagents.md`](references/testing-skills-with-subagents.md) | A2·B3에서 시나리오를 **실제로 작성할 때**. 압박 유형, 시나리오 문안, 메타 테스트 |
-| [`references/anthropic-best-practices.md`](references/anthropic-best-practices.md) | 1150행. 공식 문서 근거가 필요할 때 **해당 절만** 찾아 읽는다. 통독 금지 |
 | [`references/persuasion-principles.md`](references/persuasion-principles.md) | discipline 스킬의 압박 시나리오를 설계할 때만 |
 | [`references/examples/CLAUDE_MD_TESTING.md`](references/examples/CLAUDE_MD_TESTING.md) | 테스트 캠페인 전체가 어떻게 굴러가는지 실제 사례가 필요할 때 |
 
