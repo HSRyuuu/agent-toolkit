@@ -39,8 +39,9 @@ git status --short
 ## 1. 문서 동기화
 
 스킬을 추가·이동·삭제했거나 `SKILL.md` frontmatter 또는 manifest를 바꿨으면 커밋
-전에 `update-project-docs`로 `README.md`, `docs/catalog.md`,
-`AGENTS.md`, `.claude/CLAUDE.md`를 맞춘다. 해당 없으면 건너뛴다.
+전에 로컬 `sync-docs`로 설명 문서(`README.md`, `HELP.md`, `docs/catalog.md`,
+`AGENTS.md`, `.claude/CLAUDE.md`, `old/README.md`)를 맞추고 `python3 .claude/skills/sync-docs/scripts/check_docs.py`가
+`OK`인지 확인한다. 해당 없으면 건너뛴다.
 
 ## 2. verify-secrets
 

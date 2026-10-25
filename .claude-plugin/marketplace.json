@@ -129,16 +129,6 @@
       "repository": "https://github.com/HSRyuuu/agent-toolkit"
     },
     {
-      "name": "help-agent-toolkit",
-      "source": "./plugins/help-agent-toolkit",
-      "description": "설치된 스킬 목록 안내와 작업별 스킬 추천.",
-      "author": {
-        "name": "happyhsryu"
-      },
-      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
-      "repository": "https://github.com/HSRyuuu/agent-toolkit"
-    },
-    {
       "name": "html-tools",
       "source": "./plugins/html-tools",
       "description": "DB 스키마(DBML)를 자기완결형 정적 HTML 뷰어로 만든다.",
@@ -212,16 +202,6 @@
       "name": "slack-helper",
       "source": "./plugins/slack-helper",
       "description": "Slack 검색, 요약, 메시지 발송.",
-      "author": {
-        "name": "happyhsryu"
-      },
-      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
-      "repository": "https://github.com/HSRyuuu/agent-toolkit"
-    },
-    {
-      "name": "test-sync-verifier",
-      "source": "./plugins/test-sync-verifier",
-      "description": "코드 변경에 맞춰 테스트 검증·수정.",
       "author": {
         "name": "happyhsryu"
       },

@@ -19,25 +19,28 @@ marketplace 이름은 `hsryuuu`이고, **플러그인 단위로 골라 설치한
 ## 무엇이 들어 있나
 
 - `plugins/<name>/` - 플러그인 하나. `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `skills/<skill>/SKILL.md`를 가진다
+- `HELP.md` - 하려는 일로 스킬 찾기 (의도별 표, 플러그인별 구성)
 - `docs/catalog.md` - 플러그인·스킬 카탈로그 (`plugins/*/skills/*/SKILL.md` frontmatter에서 생성)
 - `docs/how-to-install.md` - 설치, 업데이트, 버전 범프, 배포, 문제 해결
+- `old/` - 더 이상 배포하지 않는 보관 스킬 ([old/README.md](old/README.md))
 - `scripts/bump-plugin.sh` - 플러그인 한 개의 두 manifest 버전을 같은 값으로 올린다
 - `templates/rules/` - 외부 가이드라인 사본
 - `.claude-plugin/marketplace.json` - Claude Code marketplace
 - `.agents/plugins/marketplace.json` - Codex marketplace
 
-전체 목록과 트리거는 [docs/catalog.md](docs/catalog.md)를 본다.
+어떤 스킬을 쓸지는 [HELP.md](HELP.md), 전체 목록과 트리거는 [docs/catalog.md](docs/catalog.md)를 본다.
 
 KB 스킬의 최초 설정과 선택적 Obsidian 연동은
 [`plugins/kb/skills/kb/README.md`](plugins/kb/skills/kb/README.md)를 본다.
 
 ## 갱신
 
-플러그인이나 스킬을 추가·이동·삭제했거나 manifest를 바꿨으면 `update-project-docs` 스킬로 문서를 동기화한다.
+플러그인이나 스킬을 추가·이동·삭제했거나 manifest를 바꿨으면 로컬 `sync-docs` 스킬로 설명 문서를 동기화한다.
 
 기본 점검 명령:
 
 ```bash
+python3 .claude/skills/sync-docs/scripts/check_docs.py
 find plugins -mindepth 4 -maxdepth 4 -path '*/skills/*' -name SKILL.md -print | sort | wc -l
 grep -oE '\(\.\./plugins/[^)]+/SKILL\.md\)' docs/catalog.md | tr -d '()' | sed 's#^../##' | while read p; do test -f "$p" || echo "MISSING: $p"; done
 jq empty .claude-plugin/marketplace.json .agents/plugins/marketplace.json plugins/*/.claude-plugin/plugin.json plugins/*/.codex-plugin/plugin.json

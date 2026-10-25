@@ -1,9 +1,5 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-06-21 17:56:42 KST
-**Commit:** 184dd02
-**Branch:** main
-
 ## OVERVIEW
 
 `agent-toolkit` is a personal Claude Code / Codex plugin marketplace (`hsryuuu`) for reusable agent skills,
@@ -27,10 +23,11 @@ agent-toolkit/
 │   ├── skills/<skill>/SKILL.md
 │   ├── templates/           # only where a plugin's skills need them (project-setup)
 │   └── snippets/            # prompt snippets read by prompt-composer (prompt-tools only)
+├── HELP.md                  # skill-finder guide (by intent, by plugin)
 ├── old/                    # 더 이상 배포하지 않는 보관 스킬 (marketplace 미등록)
 ├── scripts/bump-plugin.sh   # bumps both manifests of one plugin
 ├── templates/rules/         # copied external guideline references
-└── docs/catalog.md          # human catalog of plugins and skills
+└── docs/catalog.md          # human catalog of plugins and skills (+ how-to-install.md)
 ```
 
 ## WHERE TO LOOK
@@ -44,7 +41,9 @@ agent-toolkit/
 | Update local pre-commit verification | `.claude/skills/verify-secrets/`, `.codex/skills/verify-secrets/` | Keep this outside `plugins/`; it is not part of the plugin catalog. |
 | Publish the repo end to end | `.claude/skills/publish-agent-toolkit/`, `.codex/skills/publish-agent-toolkit/` | Owns the release loop. Kept outside `plugins/`, like `verify-secrets`. |
 | Document install/update/publish commands | `docs/how-to-install.md` | Single home for host CLI commands, cache-key rules, and troubleshooting. `README.md` links here. |
-| Refresh catalog/docs | `README.md`, `docs/catalog.md`, `AGENTS.md`, `.claude/CLAUDE.md` | Use `update-project-docs` after adding/moving/removing skills. |
+| Sync every doc that describes the repo | `README.md`, `HELP.md`, `docs/catalog.md`, `docs/how-to-install.md`, `AGENTS.md`, `.claude/CLAUDE.md`, `old/README.md` | Run `sync-docs` (`.claude/skills/sync-docs/`, `.codex/skills/sync-docs/`) after adding/moving/removing skills or changing structure. Its bundled `check_docs.py` is the read-only consistency check. |
+| Find which skill fits a task | `HELP.md` | Hand-curated, grounded in `SKILL.md` descriptions; kept in sync by `sync-docs`. |
+| Archived skills | `old/` (see `old/README.md`) | Not in any marketplace; do not document them as current. |
 | Edit project setup templates | `plugins/project-setup/templates/` | These are placeholder skeletons, not facts about this repo. |
 
 ## CODE MAP
@@ -69,6 +68,7 @@ agent-toolkit/
 - `description` is the trigger surface. Keep it concrete and searchable; do not bury the actual trigger in body prose only.
 - The plugin skill inventory is `find plugins -mindepth 4 -maxdepth 4 -path '*/skills/*' -name SKILL.md -print | sort`.
 - Claude Code loads `plugins/<plugin>/.claude-plugin/plugin.json`; Codex loads `plugins/<plugin>/.codex-plugin/plugin.json`. Both must carry the same `version`.
+- **After any change to plugins, skills, manifests, or structure, run `sync-docs` before committing.** `python3 .claude/skills/sync-docs/scripts/check_docs.py` must print `OK`.
 - Treat `docs/catalog.md` as a generated human index. The source of truth is live `SKILL.md` frontmatter plus the plugin manifests.
 - Skills must be self-contained inside their plugin: reference only files under the same `plugins/<plugin>/` (relative paths), never the repo root or another plugin.
 - Keep category labels as metadata. Do not create loader topology by category.
@@ -93,6 +93,9 @@ find plugins -mindepth 4 -maxdepth 4 -path '*/skills/*' -name SKILL.md -print | 
 
 # Catalog link check
 grep -oE '\(\.\./plugins/[^)]+/SKILL\.md\)' docs/catalog.md | tr -d '()' | sed 's#^../##' | while read p; do test -f "$p" || echo "MISSING: $p"; done
+
+# Docs consistency (read-only; prints OK or one line per problem)
+python3 .claude/skills/sync-docs/scripts/check_docs.py
 
 # Plugin validation
 python3 /Users/happyhsryu/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py /Users/happyhsryu/dev/personal/agent-toolkit

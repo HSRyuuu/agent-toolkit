@@ -149,18 +149,6 @@
       "category": "Productivity"
     },
     {
-      "name": "help-agent-toolkit",
-      "source": {
-        "source": "local",
-        "path": "./plugins/help-agent-toolkit"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
       "name": "html-tools",
       "source": {
         "source": "local",
@@ -249,18 +237,6 @@
       "source": {
         "source": "local",
         "path": "./plugins/slack-helper"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
-      "name": "test-sync-verifier",
-      "source": {
-        "source": "local",
-        "path": "./plugins/test-sync-verifier"
       },
       "policy": {
         "installation": "AVAILABLE",
