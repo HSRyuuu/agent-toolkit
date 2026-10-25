@@ -7,8 +7,8 @@ description: >
   Triggers: "프롬프트 조각 목록 보여줘", "스니펫 뭐 있어", "이 스니펫 무슨 내용이야",
   "ASD-STE100 규칙 CLAUDE.md에 넣어줘", "이 조각 AGENTS.md에 추가해줘",
   "응답 스타일 프롬프트 설치해줘", "/prompt-composer". Do NOT use for writing a
-  new prompt from scratch (use `prompt-master`) or for diagnosing an existing
-  prompt (use `prompt-modernizer`).
+  new prompt from scratch or for diagnosing an existing prompt (use
+  `prompt-modernizer`).
 ---
 
 # Prompt Composer

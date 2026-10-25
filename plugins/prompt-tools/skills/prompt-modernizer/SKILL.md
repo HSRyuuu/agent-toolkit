@@ -9,7 +9,7 @@ description: >
   "예전 프롬프트 손볼 곳 있나", "시스템 프롬프트 다이어트", "CLAUDE.md 너무 길어",
   "AGENTS.md 줄여줘", "모델 바꿨는데 프롬프트 그대로 써도 돼?", "prompt migration",
   "context diet", "/prompt-modernizer". Do NOT use for writing a new prompt from
-  scratch (use `prompt-master`) or for general doc cleanup.
+  scratch or for general doc cleanup.
 ---
 
 # Prompt Modernizer
@@ -201,4 +201,4 @@ eval이 없으면: 대표 작업 3~5개를 골라 before/after 출력을 나란�
 - [Verification loops with skills](https://claude.com/blog/building-verification-loops-in-claude-code-with-skills) — 검증은 프롬프트가 아니라 하네스로
 - [A field guide to Claude Fable](https://claude.com/blog/a-field-guide-to-claude-fable-finding-your-unknowns) — 인터뷰·블라인드 스팟 패스
 
-새 프롬프트를 처음부터 쓰는 것은 `prompt-master`.
+새 프롬프트를 처음부터 쓰는 것은 이 스킬의 범위가 아니다.
