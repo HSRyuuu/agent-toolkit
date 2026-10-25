@@ -19,16 +19,6 @@
       "repository": "https://github.com/HSRyuuu/agent-toolkit"
     },
     {
-      "name": "create-mermaid-erd",
-      "source": "./plugins/create-mermaid-erd",
-      "description": "PRD·DDL 등에서 Mermaid ERD 생성.",
-      "author": {
-        "name": "happyhsryu"
-      },
-      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
-      "repository": "https://github.com/HSRyuuu/agent-toolkit"
-    },
-    {
       "name": "daily-work-log",
       "source": "./plugins/daily-work-log",
       "description": "세션과 KB 기록에서 일일 업무 로그 작성.",

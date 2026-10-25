@@ -19,4 +19,5 @@
 | `html-tools/` | `html-docs-creator`, `html-cheat-sheet-creator` | 고정 디자인 템플릿(`base.html`)이 자산이다 |
 | `agent-harness/` | `agent-harness-construction`, `agent-introspection-debugging` | harness-as-usual이 같은 규칙을 이미 갖고 있다 |
 | `si-project/` | `si-project-docs`, `excel-doc-updater`, `excel-ui-test-doc-creator`, `ui-feature-spec-docs`, `api-spec-docs` | SI 납품 문서(요구사항·설계서, 양식 엑셀, 기능 정의서, API 규격) 작업이 끝나 보관한다. 고정 양식과 스크립트가 자산이다 |
+| `others/` | `create-mermaid-erd` | 개념/논리/물리 3단계 Mermaid ERD 형식(예제 3개, `viewer.html`)을 더 쓰지 않아 보관한다 |
 | `prompt-tools/` | `prompt-master` | 최신 모델 비적용 게이트만 걷어내고 작성 기법과 `references/`는 그대로 보존했다 |

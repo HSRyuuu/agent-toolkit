@@ -24,7 +24,6 @@
 | 현재 브랜치 변경을 사람이 보기 쉬운 단일 HTML로 리뷰 | `diff-review` |
 | 서비스·API·DB 구조를 마우스오버 팝업이 있는 HTML 지도로 | `archify-html` (`html-tools`) |
 | DB 스키마(DBML·DDL)를 정적 HTML 뷰어로 | `html-db-schema-viewer-creator` (`html-tools`) |
-| PRD·테이블 목록에서 Mermaid ERD(개념/논리/물리) | `create-mermaid-erd` |
 | 기능 정의서·시나리오로 브라우저 UI 점검 | `ui-test-runner` |
 | 남이 읽을 Markdown 문서(보고서·공지·정리) 쓰기 | `docs-writing` (`writing-tools`) |
 | 웹 UI 문구(버튼·에러·빈 화면 메시지) 쓰기·리뷰 | `ux-writing` (`writing-tools`) |
@@ -57,7 +56,7 @@
 
 - **연동:** `slack-helper`, `atlassian-helper`, `datadog-helper`, `postman-helper`
 - **작업 흐름:** `kb`, `daily-work-log`, `handoff`, `grill-me`, `trace`, `git-actions`, `dev-teacher`
-- **시각화·문서 생성:** `diff-review`, `create-mermaid-erd`
+- **시각화·문서 생성:** `diff-review`
 - **검증·운영:** `ui-test-runner`, `local-plugin-manager`
 
 ## 설치 없이 이 저장소에서만 쓰는 스킬

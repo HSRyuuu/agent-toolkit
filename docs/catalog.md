@@ -9,8 +9,8 @@
 
 | 항목 | 개수 |
 |---|---:|
-| Plugins under `plugins/` | 20 |
-| Skills under `plugins/*/skills/` | 24 |
+| Plugins under `plugins/` | 19 |
+| Skills under `plugins/*/skills/` | 23 |
 
 스킬은 플러그인 단위로 설치한다 (`/plugin install <plugin>@hsryuuu`). 관련 스킬은 한 플러그인에 묶여 함께 설치된다.
 호출 이름은 `<plugin>:<skill>`이며 이름이 같으면 `kb:kb`처럼 된다.
@@ -20,7 +20,6 @@
 | 플러그인 | 디렉토리 | Frontmatter name | Frontmatter description |
 |---|---|---|---|
 | `atlassian-helper` | [atlassian-helper](../plugins/atlassian-helper/skills/atlassian-helper/SKILL.md) | `atlassian-helper` | Use when the user asks to set up Atlassian (Jira/Confluence) API credentials, find their own tickets by period or status (내 티켓), look up tickets by keyword (티켓 찾아줘), list tickets due soon or overdue (기한 임박, 마감, 연체), review what they worked on over a period (지난 2주 작업한 내용), read an issue's detail or comments by key (ABC-123), run raw JQL or count issues, create a ticket or comment (티켓 만들어줘, 코멘트 달아줘), edit, transition, or delete their own ticket, search, read, create, update, and delete Confluence pages (컨플루언스 문서 찾아줘, 위키 페이지 만들어줘, 페이지 수정해줘), or upload/replace an image or attachment on a page or issue (이미지 올려줘, 첨부 파일 업로드, 이미지 바꿔줘/교체해줘, 스크린샷 첨부). Triggers: "지라", "Jira", "컨플루언스", "Confluence", "위키", "JQL", "CQL", "첨부", "attachment", and in Atlassian context: "기억해", "기억해줘", "memory", "MEMORY". |
-| `create-mermaid-erd` | [create-mermaid-erd](../plugins/create-mermaid-erd/skills/create-mermaid-erd/SKILL.md) | `create-mermaid-erd` | Use when the user wants an ERD or database relationship diagram from a PRD, domain description, table list, DDL, DB schema, or existing Mermaid ERD. Triggers: "ERD 만들어줘", "테이블 관계도", "DB 설계 시각화", "데이터 모델링", "개념 ERD", "논리 ERD", "물리 ERD", "mermaid ERD", "DB 스키마 그려줘", "ERD HTML 미리보기". |
 | `daily-work-log` | [daily-work-log](../plugins/daily-work-log/skills/daily-work-log/SKILL.md) | `daily-work-log` | Use when the user wants to create a personal daily work log from Codex/Claude sessions, set up a work-log template, or search saved work logs by date, tag, or keyword. Triggers: "daily work log", "오늘 한 일 정리", "어제 한 일 정리", "퇴근 전 회고", "지난주에 뭐 했지", "work log 찾아줘". |
 | `datadog-helper` | [datadog-helper](../plugins/datadog-helper/skills/datadog-helper/SKILL.md) | `datadog-helper` | Use when the user asks to set up Datadog API keys, search Datadog logs, count or aggregate logs (top paths, status distribution, 자주 발생하는 에러), inspect service errors or stack traces, build incident timelines, investigate deploy regressions, query APM traces or spans, check API latency (p95/p99, 느린 API), inspect a trace by trace_id, remember frequently used Datadog queries, or manage local Datadog access context. Triggers: "Datadog 로그", "datadog api", "서비스 에러 로그", "로그 집계", "몇 건이야", "장애 타임라인", "배포 후 에러", "APM", "트레이스", "trace_id", "스팬", "느린 API", "레이턴시", and in Datadog context: "기억해", "기억해줘", "memory", "MEMORY", "빨리 찾아줘", "빠르게", "fast 모드", "max 모드", "깊게 파봐". |
 | `dev-teacher` | [dev-teacher](../plugins/dev-teacher/skills/dev-teacher/SKILL.md) | `dev-teacher` | Manual-only. Invoke this skill ONLY when the user directly types the "/dev-teacher" slash command. NEVER auto-select or infer this skill from the content of a request — no question, keyword, or topic (code explanation, architecture, flow, structure, design, patterns, "설명해줘", "어떻게 동작해?", etc.) should ever trigger it. If the user did not type "/dev-teacher", ignore this skill entirely and answer normally. |

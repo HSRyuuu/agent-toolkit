@@ -17,18 +17,6 @@
       "category": "Productivity"
     },
     {
-      "name": "create-mermaid-erd",
-      "source": {
-        "source": "local",
-        "path": "./plugins/create-mermaid-erd"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
       "name": "daily-work-log",
       "source": {
         "source": "local",
