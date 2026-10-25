@@ -140,7 +140,6 @@ public class OrderRunDto {
 
 ## 계층과 인터페이스
 
-- Controller는 입력과 응답을 연결한다. 여러 저장소 작업의 순서·검증·트랜잭션은 Service, 조회와 변경 쿼리는 Repository가 맡는다. Controller에 SQL·트랜잭션이 있으면 Service/Repository로 옮긴다.
 - 단순 위임만 늘리는 계층은 만들지 않는다.
 - 구현이 하나뿐인 `XxxService` + `XxxServiceImpl` 쌍을 관성으로 만들지 않는다. 구체 클래스 하나로 시작한다.
 - 같은 동작의 활성/비활성만 다른 구현(`KafkaPublisher` + `NoopPublisher`)은 한 구체 클래스와 `enabled` 플래그 조기 반환으로 합친다. 실제로 늘어나는 전략이나 독립 전송 방식은 인터페이스로 유지한다.
@@ -155,7 +154,6 @@ public class OrderRunDto {
 - 긴 SQL이 로직을 가리면 같은 패키지의 `<사용클래스>Sql`로 옮긴다(package-private final class, `static final String`, private 생성자).
 - JDBC는 실제 bulk insert/upsert나 ORM으로 표현하기 어려운 쿼리에만 쓴다. 조회 전체를 JDBC로 바꾸거나 공통 repository 프레임워크를 만들지 않는다.
 
-예시: `references/jpa-patterns.md`
 
 ## 값 객체와 시간
 
@@ -186,7 +184,6 @@ public record TimeRange(LocalDateTime from, LocalDateTime to) {
 - 오류 코드 이름이 응답으로 나가면 enum 상수 이름 변경도 계약 변경이다.
 - 프로그래밍 오류(`IllegalArgumentException`, `IllegalStateException` 등)는 표준 예외를 유지한다.
 
-예시: `references/spring-boot-patterns.md`의 예외 처리 절
 
 ## Entity와 Lombok
 
@@ -206,21 +203,8 @@ public record TimeRange(LocalDateTime from, LocalDateTime to) {
 - 정책을 계산하는 메서드는 그 메서드가 지키는 정책을 한 줄로 적을 수 있다. 예: `// 성공 이력이 없으면 최초 경계에서 조회 오프셋을 뺀 시각을 조회 시작점으로 삼는다.`
 - 이름을 풀어 쓴 설명, 결정 근거, 변경 이력은 남기지 않는다.
 
-## 포매팅
-
-- 프로젝트에 formatter·Checkstyle·`.editorconfig`가 있으면 그것을 따른다.
-- 없으면: 120자, K&R 중괄호, 단일 문장에도 중괄호, 와일드카드 import 금지, static import → 일반 import 순서.
-
 ## 테스트
 
 - 변경된 동작의 경계와 실패 경로를 그 프로젝트의 기존 테스트 방식으로 검증한다.
 - 순수 계산은 Spring 컨텍스트 없이, DB 원자성은 필요한 만큼의 통합 테스트로 확인한다.
 - 리플렉션으로 필드를 주입하지 않는다. 포맷 변경에 전용 테스트를 새로 만들지 않는다.
-
-예시: `references/junit-test-patterns.md`
-
-## 상세 참조
-
-- **Controller/Service/DTO/예외 처리 예시**: `references/spring-boot-patterns.md`
-- **JPA Entity/Repository/QueryDSL 예시**: `references/jpa-patterns.md`
-- **JUnit 테스트 예시**: `references/junit-test-patterns.md`
