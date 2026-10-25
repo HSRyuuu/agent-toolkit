@@ -9,26 +9,6 @@
   },
   "plugins": [
     {
-      "name": "agent-harness-construction",
-      "source": "./plugins/agent-harness-construction",
-      "description": "AI 에이전트 하네스, 툴 계약, 서브에이전트 위임 설계·리뷰.",
-      "author": {
-        "name": "happyhsryu"
-      },
-      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
-      "repository": "https://github.com/HSRyuuu/agent-toolkit"
-    },
-    {
-      "name": "agent-introspection-debugging",
-      "source": "./plugins/agent-introspection-debugging",
-      "description": "멈추거나 루프 도는 에이전트 실행을 자가 진단한다.",
-      "author": {
-        "name": "happyhsryu"
-      },
-      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
-      "repository": "https://github.com/HSRyuuu/agent-toolkit"
-    },
-    {
       "name": "api-spec-docs",
       "source": "./plugins/api-spec-docs",
       "description": "프론트엔드·QA 전달용 REST API 명세서 작성.",
