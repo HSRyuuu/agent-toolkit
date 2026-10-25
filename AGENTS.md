@@ -52,6 +52,7 @@ agent-toolkit/
 |---|---|---|---|
 | `main()` | Python CLI | `plugins/html-tools/skills/html-db-schema-viewer-creator/build.py` | DBML-to-static-site generator. |
 | `main()` | Python CLI | `plugins/html-tools/skills/html-db-schema-viewer-creator/tools/mysql_to_dbml.py` | MySQL schema extraction helper. |
+| `main()` | Python CLI | `plugins/project-setup/skills/project-setup/scripts/scan_project.py` / `check_harness.py` / `build_context_map.py` / `validate_context_map.py` | Read-only project profile scan, post-install harness contract check, and SOURCE_MAP/CODEBASE_CONTEXT generator for target projects. |
 | `main()` | Python CLI | `plugins/slack-helper/skills/slack-helper/scripts/slack_setup.py` / `slack_search.py` / `slack_read.py` | Slack Web API OAuth setup and read/search helpers using curl. |
 | `main()` | Python CLI | `plugins/datadog-helper/skills/datadog-helper/scripts/datadog_setup.py` / `datadog_logs.py` / `datadog_apm.py` | Datadog logs/APM read-only helpers using curl. |
 | `main()` | Python CLI | `plugins/atlassian-helper/skills/atlassian-helper/scripts/atlassian_setup.py` / `jira.py` / `confluence.py` | Jira + Confluence Cloud read/write helpers using curl; modify/delete guarded by an author check. |

@@ -1,11 +1,14 @@
 ---
 name: manage-skills
-description: 세션 변경사항을 분석하여 검증 스킬 누락을 탐지합니다. 기존 스킬을 동적으로 탐색하고, 새 스킬을 생성하거나 기존 스킬을 업데이트한 뒤 CLAUDE.md를 관리합니다.
+description: 세션 변경사항을 분석하여 검증 스킬 누락을 탐지합니다. 기존 스킬을 동적으로 탐색하고, 새 스킬을 생성하거나 기존 스킬을 업데이트한 뒤 진입점의 프로젝트 스킬 표를 맞춥니다.
 disable-model-invocation: true
 argument-hint: "[선택사항: 특정 스킬 이름 또는 집중할 영역]"
 ---
 
 # 세션 기반 스킬 유지보수
+
+> `<skills-dir>` = 이 스킬이 설치된 디렉토리 (예: `.claude/skills/`). 프로젝트가 여러 호스트의 스킬 디렉토리를 함께 쓰면, 만들거나 고친 스킬을 각 디렉토리에 같은 내용으로 둡니다.
+> 진입점 = 문서 매핑 표가 있는 `AGENTS.md` 또는 `CLAUDE.md`. `CLAUDE.md`가 `@AGENTS.md`만 가져오면 `AGENTS.md`가 진입점입니다.
 
 ## 목적
 
@@ -43,11 +46,11 @@ argument-hint: "[선택사항: 특정 스킬 이름 또는 집중할 영역]"
 # 커밋되지 않은 변경사항
 git diff HEAD --name-only
 
-# 현재 브랜치의 커밋 (main에서 분기된 경우)
-git log --oneline main..HEAD 2>/dev/null
+# 현재 브랜치의 커밋 ({BASE_BRANCH}에서 분기된 경우)
+git log --oneline {BASE_BRANCH}..HEAD 2>/dev/null
 
-# main에서 분기된 이후의 모든 변경사항
-git diff main...HEAD --name-only 2>/dev/null
+# {BASE_BRANCH}에서 분기된 이후의 모든 변경사항
+git diff {BASE_BRANCH}...HEAD --name-only 2>/dev/null
 ```
 
 중복을 제거한 목록으로 합칩니다. 선택적 인수로 스킬 이름이나 영역이 지정된 경우 관련 파일만 필터링합니다.
@@ -77,7 +80,7 @@ git diff main...HEAD --name-only 2>/dev/null
 
 등록된 스킬이 0개인 경우, Step 4 (CREATE vs UPDATE 결정)로 바로 이동합니다. 모든 변경 파일이 "UNCOVERED"로 처리됩니다.
 
-등록된 스킬이 1개 이상인 경우, 각 스킬의 `.claude/skills/verify-<name>/SKILL.md`를 읽고 다음에서 추가 파일 경로 패턴을 추출합니다:
+등록된 스킬이 1개 이상인 경우, 각 스킬의 `<skills-dir>/verify-<name>/SKILL.md`를 읽고 다음에서 추가 파일 경로 패턴을 추출합니다:
 
 1. **Related Files** 섹션 — 테이블을 파싱하여 파일 경로 및 glob 패턴 추출
 2. **Workflow** 섹션 — grep/glob/read 명령어에서 파일 경로 추출
@@ -217,7 +220,7 @@ grep -n "pattern" path/to/file.ts
    - 사용자가 `verify-` 접두사 없이 이름을 제공하면 자동으로 앞에 추가하고 사용자에게 알립니다
    - kebab-case를 사용합니다 (예: `verify-error-handling`, `verify_error_handling` 아님)
 
-3. **생성** — `.claude/skills/verify-<name>/SKILL.md`를 다음 템플릿에 따라 생성합니다:
+3. **생성** — `<skills-dir>/verify-<name>/SKILL.md`를 다음 템플릿에 따라 생성합니다:
 
 ```yaml
 ---
@@ -238,21 +241,17 @@ description: <한 줄 설명>. <트리거 조건> 후 사용.
 - **Output Format** — 결과를 위한 마크다운 테이블
 - **Exceptions** — 최소 2-3개의 현실적인 "위반이 아닌" 케이스
 
-4. **연관 스킬 파일 업데이트** — 새 스킬 생성 후 반드시 아래 3개 파일을 업데이트합니다:
+4. **연관 파일 업데이트** — 새 스킬 생성 후 반드시 아래 2곳을 업데이트합니다 (`verify-implementation`은 `verify-*` 디렉토리를 직접 찾으므로 고치지 않습니다):
 
    **4a. 이 파일 자체 (`manage-skills/SKILL.md`) 업데이트:**
    - **등록된 검증 스킬** 섹션의 테이블에 새 스킬 행을 추가합니다
-   - 첫 번째 스킬 추가 시 "(아직 등록된 검증 스킬이 없습니다)" 텍스트와 HTML 주석을 제거하고 테이블로 교체합니다
+   - 첫 번째 스킬 추가 시 "(아직 등록된 검증 스킬이 없습니다)" 텍스트를 제거하고 테이블로 교체합니다
    - 형식: `| verify-<name> | <설명> | <커버 파일 패턴> |`
 
-   **4b. `verify-implementation/SKILL.md` 업데이트:**
-   - **실행 대상 스킬** 섹션의 테이블에 새 스킬 행을 추가합니다
-   - 첫 번째 스킬 추가 시 "(아직 등록된 검증 스킬이 없습니다)" 텍스트와 HTML 주석을 제거하고 테이블로 교체합니다
-   - 형식: `| <번호> | verify-<name> | <설명> |`
-
-   **4c. `CLAUDE.md` 업데이트:**
-   - `## Skills` 테이블에 새 스킬 행을 추가합니다
-   - 형식: `| verify-<name> | <한 줄 설명> |`
+   **4b. 진입점 프로젝트 스킬 표 업데이트:**
+   - 진입점의 `## 문서 매핑` → `### 프로젝트 스킬` 표에 새 스킬 행을 추가합니다
+   - 형식: `| \`/verify-<name>\` | <한 줄 설명> |`
+   - 스킬을 삭제했으면 두 표 모두에서 행을 지웁니다
 
 ### Step 7: 검증
 
@@ -267,7 +266,7 @@ ls <file-path> 2>/dev/null || echo "MISSING: <file-path>"
 ```
 
 4. 업데이트된 각 스킬에서 탐지 명령어 하나를 드라이런하여 문법 유효성 검증
-5. **등록된 검증 스킬** 테이블과 **실행 대상 스킬** 테이블이 동기화되어 있는지 확인
+5. **등록된 검증 스킬** 표, `<skills-dir>/verify-*/` 디렉토리, 진입점 **프로젝트 스킬** 표가 같은 스킬을 가리키는지 확인
 
 ### Step 8: 요약 보고서
 
@@ -286,9 +285,8 @@ ls <file-path> 2>/dev/null || echo "MISSING: <file-path>"
 - `verify-<name>`: <패턴> 커버
 
 ### 업데이트된 연관 파일:
-- `manage-skills/SKILL.md`: 등록된 검증 스킬 테이블 업데이트
-- `verify-implementation/SKILL.md`: 실행 대상 스킬 테이블 업데이트
-- `CLAUDE.md`: Skills 테이블 업데이트
+- `manage-skills/SKILL.md`: 등록된 검증 스킬 표 업데이트
+- 진입점: 프로젝트 스킬 표 업데이트
 
 ### 영향없는 스킬: Z개
 - (관련 변경사항 없음)
@@ -315,9 +313,9 @@ ls <file-path> 2>/dev/null || echo "MISSING: <file-path>"
 
 | File | Purpose |
 |------|---------|
-| `.claude/skills/verify-implementation/SKILL.md` | 통합 검증 스킬 (이 스킬이 실행 대상 목록을 관리) |
-| `.claude/skills/manage-skills/SKILL.md` | 이 파일 자체 (등록된 검증 스킬 목록을 관리) |
-| `CLAUDE.md` | 프로젝트 지침 (이 스킬이 Skills 섹션을 관리) |
+| `<skills-dir>/verify-implementation/SKILL.md` | 통합 검증 스킬 (`verify-*` 디렉토리를 직접 찾아 실행) |
+| `<skills-dir>/manage-skills/SKILL.md` | 이 파일 자체 (등록된 검증 스킬 목록을 관리) |
+| 진입점(`AGENTS.md` / `CLAUDE.md`) | 문서 매핑의 프로젝트 스킬 표 (이 스킬이 verify 행을 관리) |
 
 ## 예외사항
 
@@ -328,6 +326,6 @@ ls <file-path> 2>/dev/null || echo "MISSING: <file-path>"
 3. **문서 파일** — `README.md`, `CHANGELOG.md`, `LICENSE` 등은 검증이 필요한 코드 패턴이 아님
 4. **테스트 픽스처 파일** — 테스트 픽스처로 사용되는 디렉토리의 파일(예: `fixtures/`, `__fixtures__/`, `test-data/`)은 프로덕션 코드가 아님
 5. **영향받지 않은 스킬** — UNAFFECTED로 표시된 스킬은 검토 불필요; 대부분의 세션에서 대부분의 스킬이 이에 해당
-6. **CLAUDE.md 자체** — CLAUDE.md의 변경은 문서 업데이트이며, 검증이 필요한 코드 패턴이 아님
+6. **진입점 자체** — `AGENTS.md`/`CLAUDE.md`의 변경은 문서 업데이트이며, 검증이 필요한 코드 패턴이 아님
 7. **벤더/서드파티 코드** — `vendor/`, `node_modules/` 또는 복사된 라이브러리 디렉토리의 파일은 외부 규칙을 따름
 8. **CI/CD 설정** — `.github/`, `.gitlab-ci.yml`, `Dockerfile` 등은 인프라이며, 검증 스킬이 필요한 애플리케이션 패턴이 아님

@@ -36,7 +36,7 @@
 | 프롬프트 조각을 CLAUDE.md·AGENTS.md에 넣기 | `prompt-composer` (`prompt-tools`) |
 | 낡은 프롬프트·CLAUDE.md를 최신 모델 기준으로 진단 | `prompt-modernizer` (`prompt-tools`) |
 | 스킬을 새로 쓰거나 점검·다이어트 | `writing-great-skill` (`prompt-tools`) |
-| 프로젝트에 맞는 에이전트 진입점·문서·컨텍스트 맵·로컬 스킬 안내와 설치 | `project-setup` |
+| 프로젝트를 분석해 에이전트 하네스(진입점·문서·규칙·로컬 스킬) 안내·설치·점검 | `project-setup` |
 | 로컬 plugin·marketplace 만들기·등록·갱신 | `local-plugin-manager` |
 
 ## 플러그인별 구성

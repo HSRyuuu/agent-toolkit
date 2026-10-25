@@ -14,22 +14,27 @@
 
 ## 절차
 
-1. 저장소 루트와 기존 문서를 확인한다.
-2. 생성기를 돌린다.
+1. 출력 디렉토리를 정한다(규약 §5). 기본 `docs`, 에이전트 전용으로 두고 싶으면 `.claude`.
+2. 생성기를 돌린다. 먼저 `--dry-run`으로 쓸 경로를 보여 준다.
 
    ```bash
-   python3 <skill>/scripts/build_context_map.py "$TARGET"
+   python3 <skill>/scripts/build_context_map.py "$TARGET" --output-dir docs --dry-run
+   python3 <skill>/scripts/build_context_map.py "$TARGET" --output-dir docs
    ```
 
    Node/npx가 있고 담당자가 `.codesight/` 출력을 원할 때만 `--run-codesight`를 붙인다. Codesight 설치나 MCP·watch·hook 연동을 원하면 먼저 `codesight-install.md`를 읽는다.
-3. 생성된 `docs/SOURCE_MAP.md`, `docs/CODEBASE_CONTEXT.md`를 검토한다. 사람만 아는 맥락은 생성 구역이 아니라 `## Manual Notes`에 적는다.
+3. 프로필의 컨텍스트 맵 지원 수준에 따라 보강한다.
+   - `full` (Next.js, Spring, Express): 생성 결과를 검토만 한다.
+   - `partial`: 생성기는 스택 이름과 디렉토리만 잡는다. FastAPI·NestJS·Go·Kotlin 라우터 등은 진입 파일을 읽고 라우트·컨트롤러·서비스 행을 직접 채운다.
+   - multi-module / monorepo: 모듈별 섹션(`## backend/`, `## frontend/`)으로 나눠 정리한다.
+   사람만 아는 맥락은 생성 구역이 아니라 `## Manual Notes`에 적는다.
 4. 경로 참조를 검증한다.
 
    ```bash
-   python3 <skill>/scripts/validate_context_map.py "$TARGET"
+   python3 <skill>/scripts/validate_context_map.py "$TARGET" --docs-dir docs
    ```
 
-5. 진입점 매핑 표에 두 문서를 넣고, 넓은 탐색 전에 `SOURCE_MAP.md`를 먼저 읽으라고 적는다.
+5. 진입점 `### 외부문서`에 두 문서를 넣는다. 용도 칸에 "넓게 탐색하기 전에 먼저 읽는다"를 적는다.
 
 `templates/docs/SOURCE_MAP.md`는 생성기를 쓸 수 없는 환경에서 손으로 작성할 때의 형식 참고용이다.
 
