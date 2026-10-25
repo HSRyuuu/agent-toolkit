@@ -18,4 +18,5 @@
 | `coding-conventions/` | `springboot-java-convention`, `springboot-kotlin-standards`, `fastapi-guide`, `node-backend-patterns`, `rest-api-design` | 범용 예제와 `references/`를 걷어내고 고유 규칙만 남겼다 |
 | `html-tools/` | `html-docs-creator`, `html-cheat-sheet-creator` | 고정 디자인 템플릿(`base.html`)이 자산이다 |
 | `agent-harness/` | `agent-harness-construction`, `agent-introspection-debugging` | harness-as-usual이 같은 규칙을 이미 갖고 있다 |
+| `project-setup/` | `si-project-docs` | 한국 SI 산출물 양식 모음(파일 47개)이 자산이다. 더 이상 쓰지 않아 보관한다 |
 | `prompt-tools/` | `prompt-master` | 최신 모델 비적용 게이트만 걷어내고 작성 기법과 `references/`는 그대로 보존했다 |

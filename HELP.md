@@ -30,7 +30,6 @@
 | 기능 정의서·시나리오로 브라우저 UI 점검 | `ui-test-runner` |
 | 테스트 시나리오·결과를 단위테스트 산출물 Excel로 | `excel-ui-test-doc-creator` (`excel-docs`) |
 | 양식 기반 기존 Excel(인터페이스 정의서 등) 갱신 | `excel-doc-updater` (`excel-docs`) |
-| 한국 SI 프로젝트 산출물(요구사항·설계서 등) 원문 Markdown | `si-project-docs` (`project-setup`) |
 | 남이 읽을 Markdown 문서(보고서·공지·정리) 쓰기 | `docs-writing` (`writing-tools`) |
 | 웹 UI 문구(버튼·에러·빈 화면 메시지) 쓰기·리뷰 | `ux-writing` (`writing-tools`) |
 | 내 블로그 말투로 글 쓰기 | `dev-blog-writing-hsryuuu` (`personal-tools`) |
@@ -53,7 +52,7 @@
 
 | 플러그인 | 스킬 |
 |---|---|
-| `project-setup` | `setup-agent-entrypoint`, `setup-codebase-context-map`, `setup-project-docs`, `setup-project-level-agent-skill`, `setup-project-setting-recommend`, `setup-self-improvement-loop`, `si-project-docs`, `update-project-docs` |
+| `project-setup` | `setup-agent-entrypoint`, `setup-codebase-context-map`, `setup-project-docs`, `setup-project-level-agent-skill`, `setup-project-setting-recommend`, `setup-self-improvement-loop`, `update-project-docs` |
 | `html-tools` | `archify-html`, `html-db-schema-viewer-creator` |
 | `excel-docs` | `excel-doc-updater`, `excel-ui-test-doc-creator` |
 | `prompt-tools` | `prompt-composer`, `prompt-modernizer`, `writing-great-skill` (+ `snippets/`) |
