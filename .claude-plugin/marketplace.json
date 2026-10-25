@@ -119,16 +119,6 @@
       "repository": "https://github.com/HSRyuuu/agent-toolkit"
     },
     {
-      "name": "docs-writing",
-      "source": "./plugins/docs-writing",
-      "description": "공유용 Markdown 문서 작성·다듬기.",
-      "author": {
-        "name": "happyhsryu"
-      },
-      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
-      "repository": "https://github.com/HSRyuuu/agent-toolkit"
-    },
-    {
       "name": "excel-docs",
       "source": "./plugins/excel-docs",
       "description": "양식 기반 xlsx 갱신과 UI 테스트 문서 xlsx 생성.",
@@ -322,6 +312,16 @@
       "name": "ui-test-runner",
       "source": "./plugins/ui-test-runner",
       "description": "라이브 dev 서버 대상 브라우저 UI 검증.",
+      "author": {
+        "name": "happyhsryu"
+      },
+      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+      "repository": "https://github.com/HSRyuuu/agent-toolkit"
+    },
+    {
+      "name": "writing-tools",
+      "source": "./plugins/writing-tools",
+      "description": "공유용 문서와 UI 문구 작성·다듬기.",
       "author": {
         "name": "happyhsryu"
       },

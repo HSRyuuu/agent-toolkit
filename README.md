@@ -52,6 +52,7 @@ jq empty .claude-plugin/marketplace.json .agents/plugins/marketplace.json plugin
 | `html-tools` | html-cheat-sheet-creator, html-db-schema-viewer-creator, html-docs-creator |
 | `excel-docs` | excel-doc-updater, excel-ui-test-doc-creator |
 | `prompt-tools` | prompt-master, prompt-modernizer, writing-great-skill |
+| `writing-tools` | docs-writing, ux-writing |
 | `personal-tools` | dev-blog-writing-hsryuuu (개인 전용 스킬 모음) |
 
 나머지는 스킬 이름 = 플러그인 이름인 1:1 플러그인이다.

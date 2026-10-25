@@ -5,7 +5,7 @@
 ## 정체성
 
 - **개인 큐레이션 베이스** — 직접 만든 것, 외부 OSS에서 가져와 다듬은 것, 실험 중인 것까지 자유롭게 담는다.
-- **스킬(묶음)당 plugin 하나** — 관련 스킬은 한 plugin에 묶어 함께 설치하고(`coding-convention`, `project-setup`, `html-tools`, `excel-docs`, `prompt-tools`), 개인 전용 스킬은 `personal-tools`에 모으며, 나머지는 스킬 하나가 plugin 하나다. 버전도 plugin별로 독립이다.
+- **스킬(묶음)당 plugin 하나** — 관련 스킬은 한 plugin에 묶어 함께 설치하고(`coding-convention`, `project-setup`, `html-tools`, `excel-docs`, `prompt-tools`, `writing-tools`), 개인 전용 스킬은 `personal-tools`에 모으며, 나머지는 스킬 하나가 plugin 하나다. 버전도 plugin별로 독립이다.
 - **공통 plugin 트리** — Claude Code와 Codex 모두 이 저장소의 `plugins/<name>/`을 읽는다.
 - **두 가지 설치 경로** — marketplace 이름은 `hsryuuu`. 개발 머신은 로컬 directory marketplace, 그 외 머신은 GitHub marketplace(`HSRyuuu/agent-toolkit`)로 설치한다. 한 머신에는 한 방식만 쓴다. plugin은 `/plugin install <plugin>@hsryuuu`로 개별 설치한다.
 - **편한 게 우선** — 필요하면 추가하고, 안 맞으면 지운다. 단, 로더 구조는 단순하게 유지한다.

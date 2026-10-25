@@ -1,7 +1,7 @@
 {
-  "name": "docs-writing",
+  "name": "writing-tools",
   "version": "1.0.0",
-  "description": "공유용 Markdown 문서 작성·다듬기.",
+  "description": "공유용 문서와 UI 문구 작성·다듬기.",
   "author": {
     "name": "happyhsryu"
   },
