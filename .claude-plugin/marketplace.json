@@ -99,16 +99,6 @@
       "repository": "https://github.com/HSRyuuu/agent-toolkit"
     },
     {
-      "name": "dev-blog-writing-hsryuuu",
-      "source": "./plugins/dev-blog-writing-hsryuuu",
-      "description": "개인 개발 블로그 글 작성.",
-      "author": {
-        "name": "happyhsryu"
-      },
-      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
-      "repository": "https://github.com/HSRyuuu/agent-toolkit"
-    },
-    {
       "name": "dev-teacher",
       "source": "./plugins/dev-teacher",
       "description": "개발 개념 튜터링 (수동 호출 전용).",
@@ -232,6 +222,16 @@
       "name": "node-backend-patterns",
       "source": "./plugins/node-backend-patterns",
       "description": "Express, Next.js API, NestJS 백엔드 패턴.",
+      "author": {
+        "name": "happyhsryu"
+      },
+      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
+      "repository": "https://github.com/HSRyuuu/agent-toolkit"
+    },
+    {
+      "name": "personal-tools",
+      "source": "./plugins/personal-tools",
+      "description": "hsryuuu 개인 전용 스킬 모음 (개인 개발 블로그 글 작성).",
       "author": {
         "name": "happyhsryu"
       },

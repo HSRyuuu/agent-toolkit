@@ -11,7 +11,7 @@ templates, and future agent assets. Each plugin is installed on its own. This re
 skill/template files is the delivery path, and local plugin marketplace registration is the
 runtime surface.
 
-Skills ship as one plugin per skill (or per group of related skills): `plugins/<plugin>/skills/<skill>/SKILL.md`. Claude Code and Codex read the same `plugins/` tree.
+Skills ship as one plugin per skill (or per group of related skills; personal-only skills are grouped in `personal-tools`): `plugins/<plugin>/skills/<skill>/SKILL.md`. Claude Code and Codex read the same `plugins/` tree.
 
 ## STRUCTURE
 
