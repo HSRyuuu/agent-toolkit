@@ -37,7 +37,7 @@
 | 프롬프트 조각을 CLAUDE.md·AGENTS.md에 넣기 | `prompt-composer` (`prompt-tools`) |
 | 낡은 프롬프트·CLAUDE.md를 최신 모델 기준으로 진단 | `prompt-modernizer` (`prompt-tools`) |
 | 스킬을 새로 쓰거나 점검·다이어트 | `writing-great-skill` (`prompt-tools`) |
-| 새 프로젝트에 에이전트 진입점·문서·로컬 스킬 세팅 | `setup-*` (`project-setup`) |
+| 프로젝트에 맞는 에이전트 진입점·문서·컨텍스트 맵·로컬 스킬 안내와 설치 | `project-setup` |
 | 로컬 plugin·marketplace 만들기·등록·갱신 | `local-plugin-manager` |
 
 ## 플러그인별 구성
@@ -48,7 +48,6 @@
 
 | 플러그인 | 스킬 |
 |---|---|
-| `project-setup` | `setup-agent-entrypoint`, `setup-codebase-context-map`, `setup-project-docs`, `setup-project-level-agent-skill`, `setup-project-setting-recommend`, `setup-self-improvement-loop`, `update-project-docs` |
 | `html-tools` | `archify-html`, `html-db-schema-viewer-creator` |
 | `prompt-tools` | `prompt-composer`, `prompt-modernizer`, `writing-great-skill` (+ `snippets/`) |
 | `writing-tools` | `docs-writing`, `ux-writing` |

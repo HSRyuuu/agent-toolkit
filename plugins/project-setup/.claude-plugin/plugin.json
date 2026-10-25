@@ -1,7 +1,7 @@
 {
   "name": "project-setup",
   "version": "1.0.0",
-  "description": "프로젝트에 에이전트 진입점, 문서, 컨텍스트 맵, 로컬 스킬, 자기개선 루프를 세팅한다.",
+  "description": "프로젝트에 맞는 에이전트 진입점, 문서, 컨텍스트 맵, 자기개선 루프, 프로젝트 레벨 스킬을 안내하고 골라서 설치한다.",
   "author": {
     "name": "happyhsryu"
   },
