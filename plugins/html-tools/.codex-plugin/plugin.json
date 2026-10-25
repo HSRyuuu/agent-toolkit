@@ -1,7 +1,7 @@
 {
   "name": "html-tools",
   "version": "1.0.0",
-  "description": "자기완결형 HTML 치트시트, DB 스키마 뷰어, 문서 생성.",
+  "description": "DB 스키마(DBML)를 자기완결형 정적 HTML 뷰어로 만든다.",
   "author": {
     "name": "happyhsryu"
   },
@@ -12,7 +12,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "html-tools",
-    "shortDescription": "자기완결형 HTML 치트시트, DB 스키마 뷰어, 문서 생성.",
+    "shortDescription": "DB 스키마(DBML)를 자기완결형 정적 HTML 뷰어로 만든다.",
     "developerName": "happyhsryu",
     "category": "Productivity",
     "capabilities": [
