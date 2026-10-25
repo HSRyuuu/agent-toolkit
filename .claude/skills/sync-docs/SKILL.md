@@ -17,7 +17,7 @@ description: Use after changing this repository's plugins, skills, manifests, ma
 | `docs/how-to-install.md` | 설치·배포하는 사람 | 호스트 CLI 명령, 캐시 규칙 (명령이 바뀐 경우만) |
 | `AGENTS.md` | Codex 등 공통 에이전트 | 구조 트리, WHERE TO LOOK, CODE MAP, 규칙 |
 | `.claude/CLAUDE.md` | Claude Code | 정체성, 디렉토리 구조, 규칙 |
-| `old/README.md` | 보관 스킬을 찾는 사람 | 폴더별 스킬 목록과 보관 사유 |
+| `archived/README.md` | 보관 스킬을 찾는 사람 | 폴더별 스킬 목록과 보관 사유 |
 | manifest·marketplace | 호스트 | plugin 이름·version 일치, marketplace와 `plugins/` 1:1 |
 
 `docs/kb-skill-improvement-plan.md` 같은 개별 계획 문서는 대상이 아니다.
@@ -32,7 +32,7 @@ repo 루트에서 읽기 전용 검사를 돌린다.
 python3 .claude/skills/sync-docs/scripts/check_docs.py
 ```
 
-출력은 `[분류] 설명` 한 줄씩이고, 문제가 없으면 `OK` 한 줄이다. 분류는 `marketplace` `manifest` `version` `skill` `catalog` `help` `path` `old` `local` `doc` `json`이다.
+출력은 `[분류] 설명` 한 줄씩이고, 문제가 없으면 `OK` 한 줄이다. 분류는 `marketplace` `manifest` `version` `skill` `catalog` `help` `path` `archived` `local` `doc` `json`이다.
 
 검사가 보지 못하는 것은 다음 단계에서 사람이 읽고 확인한다.
 
@@ -50,7 +50,7 @@ python3 .claude/skills/sync-docs/scripts/check_docs.py
   - 개수는 적지 않는다(catalog가 소유한다).
 - **`README.md`**: "플러그인 묶음" 표는 여러 스킬을 가진 plugin만 적는다. 나머지는 이름이 같은 1:1 plugin이라고 한 줄로 둔다.
 - **`AGENTS.md`, `.claude/CLAUDE.md`**: 두 파일은 같은 저장소 사실을 말한다. 구조 트리, 묶음 plugin 이름, 로컬 스킬 목록, CODE MAP의 스크립트 경로를 실제와 맞춘다. 생성 시각·커밋 해시 같은 금방 낡는 값은 적지 않는다.
-- **`old/README.md`**: `old/` 아래 폴더마다 포함 스킬과 비고를 적는다. 스킬을 옮겼으면 폴더 표에 반영한다.
+- **`archived/README.md`**: `archived/` 아래 폴더마다 포함 스킬과 비고를 적는다. 스킬을 옮겼으면 폴더 표에 반영한다.
 - **manifest·marketplace**: 범위 밖이면 고치지 않고 보고만 한다. plugin을 새로 만든 작업이면 두 manifest(같은 version, 시작 `1.0.0`)와 두 marketplace 항목을 추가한다. `.claude-plugin/marketplace.json`의 `plugins[]`에는 `version`을 두지 않는다.
 
 ### 3. 로컬 스킬 사본
@@ -77,6 +77,6 @@ jq empty .claude-plugin/marketplace.json .agents/plugins/marketplace.json plugin
 ## 하지 말 것
 
 - 문서를 보고 문서를 고치지 않는다. 항상 `plugins/`와 manifest의 실제 상태를 먼저 확인한다.
-- `old/`의 스킬을 현재 plugin처럼 `README.md`, `HELP.md`, `docs/catalog.md`에 올리지 않는다.
+- `archived/`의 스킬을 현재 plugin처럼 `README.md`, `HELP.md`, `docs/catalog.md`에 올리지 않는다.
 - 이 스킬과 검사 스크립트를 `plugins/`로 옮기지 않는다. 로컬 전용이며 `docs/catalog.md`에도 올리지 않는다.
 - 범위 밖 manifest를 임의로 바꾸지 않는다.

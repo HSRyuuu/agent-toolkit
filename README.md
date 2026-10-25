@@ -22,7 +22,7 @@ marketplace 이름은 `hsryuuu`이고, **플러그인 단위로 골라 설치한
 - `HELP.md` - 하려는 일로 스킬 찾기 (의도별 표, 플러그인별 구성)
 - `docs/catalog.md` - 플러그인·스킬 카탈로그 (`plugins/*/skills/*/SKILL.md` frontmatter에서 생성)
 - `docs/how-to-install.md` - 설치, 업데이트, 버전 범프, 배포, 문제 해결
-- `old/` - 더 이상 배포하지 않는 보관 스킬 ([old/README.md](old/README.md))
+- `archived/` - 더 이상 배포하지 않는 보관 스킬 ([archived/README.md](archived/README.md))
 - `scripts/bump-plugin.sh` - 플러그인 한 개의 두 manifest 버전을 같은 값으로 올린다
 - `templates/rules/` - 외부 가이드라인 사본
 - `.claude-plugin/marketplace.json` - Claude Code marketplace

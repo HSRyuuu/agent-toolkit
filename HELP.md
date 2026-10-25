@@ -79,7 +79,7 @@
 
 ## 보관된 스킬
 
-더 이상 배포하지 않는 스킬은 `old/`에 있다. marketplace에 등록되어 있지 않아 설치되지 않는다. 목록은 [old/README.md](old/README.md)를 본다.
+더 이상 배포하지 않는 스킬은 `archived/`에 있다. marketplace에 등록되어 있지 않아 설치되지 않는다. 목록은 [archived/README.md](archived/README.md)를 본다.
 
 ## 없는 스킬이 필요할 때
 

@@ -103,7 +103,7 @@ for n in sorted(set(plugins) | set(skill_names)):
         bad("help", f"HELP.md에 언급 없음: {n}")
 
 # 6. 문서가 가리키는 경로가 실제로 있는가 -----------------------------------
-doc_files = ["README.md", "AGENTS.md", ".claude/CLAUDE.md", "HELP.md", "docs/how-to-install.md", "old/README.md"]
+doc_files = ["README.md", "AGENTS.md", ".claude/CLAUDE.md", "HELP.md", "docs/how-to-install.md", "archived/README.md"]
 for d in doc_files:
     if not (ROOT / d).exists():
         bad("doc", f"{d} 없음")
@@ -118,26 +118,26 @@ for d in doc_files:
             bad("path", f"{d}: 존재하지 않는 경로 `{ref}`")
 
 # 7. 옮겨진 스킬을 현재 plugin처럼 쓰고 있지 않은가 ---------------------------
-old_skills = {p.parent.name for p in (ROOT / "old").glob("**/SKILL.md")}
+archived_skills = {p.parent.name for p in (ROOT / "archived").glob("**/SKILL.md")}
 for d in doc_files + ["docs/catalog.md"]:
-    if not (ROOT / d).exists() or d == "old/README.md":
+    if not (ROOT / d).exists() or d == "archived/README.md":
         continue
     for line in read(d).splitlines():
-        for n in old_skills:
+        for n in archived_skills:
             if re.search(rf"\| `{re.escape(n)}` \|", line) or f"plugins/{n}" in line:
-                bad("old", f"{d}: old/에 있는 스킬을 현재 것처럼 참조 `{n}`")
+                bad("archived", f"{d}: archived/에 있는 스킬을 현재 것처럼 참조 `{n}`")
 
 # 8. 로컬 스킬: Claude/Codex 사본 이름이 같은가 ------------------------------
 local = {h: sorted(p.name for p in (ROOT / h / "skills").glob("*/") if (p / "SKILL.md").exists())
          for h in (".claude", ".codex")}
 if local[".claude"] != local[".codex"]:
     bad("local", f".claude/skills {local['.claude']} != .codex/skills {local['.codex']}")
-if (ROOT / "old").exists():
-    old_dirs = sorted(p.name for p in (ROOT / "old").iterdir() if p.is_dir())
-    oldrd = read("old/README.md") if (ROOT / "old/README.md").exists() else ""
-    for n in old_dirs:
-        if f"`{n}/`" not in oldrd and f"`old/{n}" not in oldrd and n not in oldrd:
-            bad("old", f"old/README.md에 묶음 설명 없음: {n}")
+if (ROOT / "archived").exists():
+    archived_dirs = sorted(p.name for p in (ROOT / "archived").iterdir() if p.is_dir())
+    archivedrd = read("archived/README.md") if (ROOT / "archived/README.md").exists() else ""
+    for n in archived_dirs:
+        if f"`{n}/`" not in archivedrd and f"`archived/{n}" not in archivedrd and n not in archivedrd:
+            bad("archived", f"archived/README.md에 묶음 설명 없음: {n}")
 
 if problems:
     print("\n".join(problems))

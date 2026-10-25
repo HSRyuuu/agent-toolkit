@@ -24,7 +24,7 @@ agent-toolkit/
 │   ├── templates/           # only where a plugin's skills need them (project-setup)
 │   └── snippets/            # prompt snippets read by prompt-composer (prompt-tools only)
 ├── HELP.md                  # skill-finder guide (by intent, by plugin)
-├── old/                    # 더 이상 배포하지 않는 보관 스킬 (marketplace 미등록)
+├── archived/               # 더 이상 배포하지 않는 보관 스킬 (marketplace 미등록)
 ├── scripts/bump-plugin.sh   # bumps both manifests of one plugin
 ├── templates/rules/         # copied external guideline references
 └── docs/catalog.md          # human catalog of plugins and skills (+ how-to-install.md)
@@ -41,9 +41,9 @@ agent-toolkit/
 | Update local pre-commit verification | `.claude/skills/verify-secrets/`, `.codex/skills/verify-secrets/` | Keep this outside `plugins/`; it is not part of the plugin catalog. |
 | Publish the repo end to end | `.claude/skills/publish-agent-toolkit/`, `.codex/skills/publish-agent-toolkit/` | Owns the release loop. Kept outside `plugins/`, like `verify-secrets`. |
 | Document install/update/publish commands | `docs/how-to-install.md` | Single home for host CLI commands, cache-key rules, and troubleshooting. `README.md` links here. |
-| Sync every doc that describes the repo | `README.md`, `HELP.md`, `docs/catalog.md`, `docs/how-to-install.md`, `AGENTS.md`, `.claude/CLAUDE.md`, `old/README.md` | Run `sync-docs` (`.claude/skills/sync-docs/`, `.codex/skills/sync-docs/`) after adding/moving/removing skills or changing structure. Its bundled `check_docs.py` is the read-only consistency check. |
+| Sync every doc that describes the repo | `README.md`, `HELP.md`, `docs/catalog.md`, `docs/how-to-install.md`, `AGENTS.md`, `.claude/CLAUDE.md`, `archived/README.md` | Run `sync-docs` (`.claude/skills/sync-docs/`, `.codex/skills/sync-docs/`) after adding/moving/removing skills or changing structure. Its bundled `check_docs.py` is the read-only consistency check. |
 | Find which skill fits a task | `HELP.md` | Hand-curated, grounded in `SKILL.md` descriptions; kept in sync by `sync-docs`. |
-| Archived skills | `old/` (see `old/README.md`) | Not in any marketplace; do not document them as current. |
+| Archived skills | `archived/` (rules and list in `archived/README.md`) | Not in any marketplace; do not document them as current. |
 | Edit project setup templates | `plugins/project-setup/templates/` | These are placeholder skeletons, not facts about this repo. |
 
 ## CODE MAP

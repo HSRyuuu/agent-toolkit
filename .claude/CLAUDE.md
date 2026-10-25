@@ -27,7 +27,7 @@ agent-toolkit/
 │   ├── skills/<skill>/SKILL.md
 │   ├── templates/          # 그 plugin 스킬이 쓰는 템플릿 (project-setup만)
 │   └── snippets/           # prompt-composer가 읽는 프롬프트 조각 (prompt-tools만)
-├── old/                    # 더 이상 배포하지 않는 보관 스킬 (marketplace 미등록)
+├── archived/               # 더 이상 배포하지 않는 보관 스킬 (marketplace 미등록)
 ├── scripts/bump-plugin.sh  # plugin 하나의 두 manifest 버전을 함께 올린다
 ├── templates/rules/        # 외부 가이드라인 사본
 ├── HELP.md                 # 스킬 찾기 안내 (의도별·플러그인별)
@@ -84,7 +84,7 @@ description: 언제 이 스킬을 써야 하는지 검색 가능한 문장으로
 플러그인·스킬을 추가·이동·삭제했거나 manifest·구조를 바꿨으면 커밋 전에 로컬 `sync-docs` 스킬(`.claude/skills/sync-docs/`)로 이 저장소를 설명하는 문서를 함께 맞춘다.
 
 - `README.md`, `HELP.md`, `docs/catalog.md`, `docs/how-to-install.md`
-- `AGENTS.md`, `.claude/CLAUDE.md`, `old/README.md`
+- `AGENTS.md`, `.claude/CLAUDE.md`, `archived/README.md`
 
 정합성은 `python3 .claude/skills/sync-docs/scripts/check_docs.py`가 읽기 전용으로 검사한다. `OK`가 나와야 커밋한다. 기준은 문서가 아니라 `plugins/` 실제 상태이고, 카탈로그는 다음 inventory로 생성한다.
 
@@ -92,4 +92,4 @@ description: 언제 이 스킬을 써야 하는지 검색 가능한 문장으로
 find plugins -mindepth 4 -maxdepth 4 -path '*/skills/*' -name SKILL.md -print | sort
 ```
 
-`old/`의 스킬은 marketplace에 없는 보관본이다. 현재 plugin처럼 문서에 올리지 않는다.
+`archived/`의 스킬은 marketplace에 없는 보관본이다. 현재 plugin처럼 문서에 올리지 않는다.
