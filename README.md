@@ -51,7 +51,7 @@ jq empty .claude-plugin/marketplace.json .agents/plugins/marketplace.json plugin
 | `project-setup` | setup-* 6개, si-project-docs, update-project-docs (+ `templates/`) |
 | `html-tools` | html-cheat-sheet-creator, html-db-schema-viewer-creator, html-docs-creator |
 | `excel-docs` | excel-doc-updater, excel-ui-test-doc-creator |
-| `prompt-tools` | prompt-master, prompt-modernizer, writing-great-skill |
+| `prompt-tools` | prompt-composer, prompt-master, prompt-modernizer, writing-great-skill (+ `snippets/`) |
 | `writing-tools` | docs-writing, ux-writing |
 | `personal-tools` | dev-blog-writing-hsryuuu (개인 전용 스킬 모음) |
 

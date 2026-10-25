@@ -24,7 +24,8 @@ agent-toolkit/
 │   ├── .claude-plugin/plugin.json
 │   ├── .codex-plugin/plugin.json
 │   ├── skills/<skill>/SKILL.md
-│   └── templates/          # 그 plugin 스킬이 쓰는 템플릿 (project-setup만)
+│   ├── templates/          # 그 plugin 스킬이 쓰는 템플릿 (project-setup만)
+│   └── snippets/           # prompt-composer가 읽는 프롬프트 조각 (prompt-tools만)
 ├── scripts/bump-plugin.sh  # plugin 하나의 두 manifest 버전을 함께 올린다
 ├── templates/rules/        # 외부 가이드라인 사본
 ├── docs/
