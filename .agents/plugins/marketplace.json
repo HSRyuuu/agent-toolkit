@@ -5,18 +5,6 @@
   },
   "plugins": [
     {
-      "name": "api-spec-docs",
-      "source": {
-        "source": "local",
-        "path": "./plugins/api-spec-docs"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
       "name": "atlassian-helper",
       "source": {
         "source": "local",
@@ -81,18 +69,6 @@
       "source": {
         "source": "local",
         "path": "./plugins/diff-review"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
-      "name": "excel-docs",
-      "source": {
-        "source": "local",
-        "path": "./plugins/excel-docs"
       },
       "policy": {
         "installation": "AVAILABLE",
@@ -237,18 +213,6 @@
       "source": {
         "source": "local",
         "path": "./plugins/trace"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Productivity"
-    },
-    {
-      "name": "ui-feature-spec-docs",
-      "source": {
-        "source": "local",
-        "path": "./plugins/ui-feature-spec-docs"
       },
       "policy": {
         "installation": "AVAILABLE",

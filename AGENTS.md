@@ -52,15 +52,9 @@ agent-toolkit/
 |---|---|---|---|
 | `main()` | Python CLI | `plugins/html-tools/skills/html-db-schema-viewer-creator/build.py` | DBML-to-static-site generator. |
 | `main()` | Python CLI | `plugins/html-tools/skills/html-db-schema-viewer-creator/tools/mysql_to_dbml.py` | MySQL schema extraction helper. |
-| `main()` | Python CLI | `plugins/excel-docs/skills/excel-ui-test-doc-creator/scripts/create_test_doc.py` | Test spec to xlsx writer. |
-| `main()` | Python CLI | `plugins/excel-docs/skills/excel-ui-test-doc-creator/scripts/profile_template.py` | Deterministic xlsx template profiler. |
-| `main()` | Python CLI | `plugins/excel-docs/skills/excel-ui-test-doc-creator/scripts/verify_test_doc.py` | Output xlsx verifier. |
-| `main()` | Python CLI | `plugins/excel-docs/skills/excel-doc-updater/scripts/profile_excel.py` | Form workbook profiler. |
-| `main()` | Python CLI | `plugins/excel-docs/skills/excel-doc-updater/scripts/compare_excel.py` | Before/after workbook diff. |
 | `main()` | Python CLI | `plugins/slack-helper/skills/slack-helper/scripts/slack_setup.py` / `slack_search.py` / `slack_read.py` | Slack Web API OAuth setup and read/search helpers using curl. |
 | `main()` | Python CLI | `plugins/datadog-helper/skills/datadog-helper/scripts/datadog_setup.py` / `datadog_logs.py` / `datadog_apm.py` | Datadog logs/APM read-only helpers using curl. |
 | `main()` | Python CLI | `plugins/atlassian-helper/skills/atlassian-helper/scripts/atlassian_setup.py` / `jira.py` / `confluence.py` | Jira + Confluence Cloud read/write helpers using curl; modify/delete guarded by an author check. |
-| `parse_docx()` / `parse_pdf()` | Python helpers | `plugins/ui-feature-spec-docs/skills/ui-feature-spec-docs/scripts/parse_design_doc.py` | Screen-doc parser. |
 
 ## CONVENTIONS
 

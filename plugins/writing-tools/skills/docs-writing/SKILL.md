@@ -6,9 +6,8 @@ description: >
   notes, or conversation context into a shareable report, announcement, or
   technical reference. Triggers: "이 내용 문서로 정리해줘", "공유용 문서로
   써줘", "보고서 작성해줘", "이 문서 사람 읽기 좋게 다듬어줘", "장황한데
-  줄여줘", "readable doc", "/docs-writing". Do NOT use for API 명세서 (use
-  `api-spec-docs`), 화면 단위 UI 스펙 (use `ui-feature-spec-docs`), 화면에
-  들어가는 버튼·에러·안내 문구 (use `ux-writing`), or personal dev-blog posts
+  줄여줘", "readable doc", "/docs-writing". Do NOT use for 화면에 들어가는
+  버튼·에러·안내 문구 (use `ux-writing`), or personal dev-blog posts
   (use `dev-blog-writing-hsryuuu`).
 ---
 

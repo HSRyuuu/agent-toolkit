@@ -9,16 +9,6 @@
   },
   "plugins": [
     {
-      "name": "api-spec-docs",
-      "source": "./plugins/api-spec-docs",
-      "description": "프론트엔드·QA 전달용 REST API 명세서 작성.",
-      "author": {
-        "name": "happyhsryu"
-      },
-      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
-      "repository": "https://github.com/HSRyuuu/agent-toolkit"
-    },
-    {
       "name": "atlassian-helper",
       "source": "./plugins/atlassian-helper",
       "description": "Jira·Confluence 조회와 작성.",
@@ -72,16 +62,6 @@
       "name": "diff-review",
       "source": "./plugins/diff-review",
       "description": "브랜치 변경사항을 요약·위험도·영향 진입점과 함께 리뷰용 HTML로 만든다.",
-      "author": {
-        "name": "happyhsryu"
-      },
-      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
-      "repository": "https://github.com/HSRyuuu/agent-toolkit"
-    },
-    {
-      "name": "excel-docs",
-      "source": "./plugins/excel-docs",
-      "description": "양식 기반 xlsx 갱신과 UI 테스트 문서 xlsx 생성.",
       "author": {
         "name": "happyhsryu"
       },
@@ -202,16 +182,6 @@
       "name": "trace",
       "source": "./plugins/trace",
       "description": "관찰된 결과의 원인을 증거 기반으로 추적한다.",
-      "author": {
-        "name": "happyhsryu"
-      },
-      "homepage": "https://github.com/HSRyuuu/agent-toolkit",
-      "repository": "https://github.com/HSRyuuu/agent-toolkit"
-    },
-    {
-      "name": "ui-feature-spec-docs",
-      "source": "./plugins/ui-feature-spec-docs",
-      "description": "프론트엔드 소스에서 화면별 기능 명세 도출.",
       "author": {
         "name": "happyhsryu"
       },

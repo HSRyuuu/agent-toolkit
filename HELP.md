@@ -25,11 +25,7 @@
 | 서비스·API·DB 구조를 마우스오버 팝업이 있는 HTML 지도로 | `archify-html` (`html-tools`) |
 | DB 스키마(DBML·DDL)를 정적 HTML 뷰어로 | `html-db-schema-viewer-creator` (`html-tools`) |
 | PRD·테이블 목록에서 Mermaid ERD(개념/논리/물리) | `create-mermaid-erd` |
-| 백엔드 소스에서 프론트·QA 전달용 REST API 명세서 | `api-spec-docs` |
-| 프론트 소스에서 화면별 기능 정의서 | `ui-feature-spec-docs` |
 | 기능 정의서·시나리오로 브라우저 UI 점검 | `ui-test-runner` |
-| 테스트 시나리오·결과를 단위테스트 산출물 Excel로 | `excel-ui-test-doc-creator` (`excel-docs`) |
-| 양식 기반 기존 Excel(인터페이스 정의서 등) 갱신 | `excel-doc-updater` (`excel-docs`) |
 | 남이 읽을 Markdown 문서(보고서·공지·정리) 쓰기 | `docs-writing` (`writing-tools`) |
 | 웹 UI 문구(버튼·에러·빈 화면 메시지) 쓰기·리뷰 | `ux-writing` (`writing-tools`) |
 | 내 블로그 말투로 글 쓰기 | `dev-blog-writing-hsryuuu` (`personal-tools`) |
@@ -54,7 +50,6 @@
 |---|---|
 | `project-setup` | `setup-agent-entrypoint`, `setup-codebase-context-map`, `setup-project-docs`, `setup-project-level-agent-skill`, `setup-project-setting-recommend`, `setup-self-improvement-loop`, `update-project-docs` |
 | `html-tools` | `archify-html`, `html-db-schema-viewer-creator` |
-| `excel-docs` | `excel-doc-updater`, `excel-ui-test-doc-creator` |
 | `prompt-tools` | `prompt-composer`, `prompt-modernizer`, `writing-great-skill` (+ `snippets/`) |
 | `writing-tools` | `docs-writing`, `ux-writing` |
 | `personal-tools` | `dev-blog-writing-hsryuuu` |
@@ -63,7 +58,7 @@
 
 - **연동:** `slack-helper`, `atlassian-helper`, `datadog-helper`, `postman-helper`
 - **작업 흐름:** `kb`, `daily-work-log`, `handoff`, `grill-me`, `trace`, `git-actions`, `dev-teacher`
-- **시각화·문서 생성:** `diff-review`, `create-mermaid-erd`, `api-spec-docs`, `ui-feature-spec-docs`
+- **시각화·문서 생성:** `diff-review`, `create-mermaid-erd`
 - **검증·운영:** `ui-test-runner`, `local-plugin-manager`
 
 ## 설치 없이 이 저장소에서만 쓰는 스킬
