@@ -769,6 +769,7 @@ _INLINE_RE = re.compile(
     r"``\s?(?P<code2>.+?)\s?``"
     r"|`(?P<code>[^`\n]+)`"
     r"|\*\*(?P<bold>[^*\n]+)\*\*"
+    r"|@\[(?P<mention>[^\]\n]+)\]\(account:(?P<account>[^)\s]+)\)"  # @[이름](account:<accountId>)
     r"|\[(?P<label>[^\]\n]+)\]\((?P<href>[^)\s]+)\)"
 )
 _FENCE_RE = re.compile(r"^(?:```|~~~)\s*([A-Za-z0-9_+#-]*)\s*$")
@@ -791,7 +792,10 @@ def _adf_inline(text: str) -> list[dict[str, Any]]:
             nodes.append({"type": "text", "text": text[pos : match.start()]})
         code = match.group("code2") or match.group("code")
         bold, label, href = match.group("bold", "label", "href")
-        if code is not None:
+        mention, account = match.group("mention", "account")
+        if mention is not None:
+            nodes.append({"type": "mention", "attrs": {"id": account, "text": f"@{mention}"}})
+        elif code is not None:
             nodes.append({"type": "text", "text": code, "marks": [{"type": "code"}]})
         elif bold is not None:
             # Bold wraps whatever is inside it, so recurse. ADF rejects a code
@@ -816,7 +820,7 @@ def _adf_inline(text: str) -> list[dict[str, Any]]:
         pos = match.end()
     if pos < len(text):
         nodes.append({"type": "text", "text": text[pos:]})
-    return [node for node in nodes if node.get("text")]
+    return [node for node in nodes if node.get("text") or node.get("type") == "mention"]
 
 
 def _storage_inline(text: str) -> str:
@@ -828,7 +832,10 @@ def _storage_inline(text: str) -> str:
             out.append(html.escape(text[pos : match.start()]))
         code = match.group("code2") or match.group("code")
         bold, label, href = match.group("bold", "label", "href")
-        if code is not None:
+        mention = match.group("mention")
+        if mention is not None:
+            out.append(html.escape(f"@{mention}"))  # Confluence 멘션은 지원하지 않는다: 글자만 남긴다
+        elif code is not None:
             out.append(f"<code>{html.escape(code)}</code>")
         elif bold is not None:
             out.append(f"<strong>{_storage_inline(bold)}</strong>")

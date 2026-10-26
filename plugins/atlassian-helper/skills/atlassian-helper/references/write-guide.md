@@ -109,6 +109,13 @@ python3 "<SKILL_DIR>/scripts/jira.py" create --project ABC --type Bug \
 python3 "<SKILL_DIR>/scripts/jira.py" comment ABC-123 --body "확인했습니다. 배포 후 재현 여부 다시 볼게요."
 ```
 
+사람을 멘션하려면 본문에 `@[표시 이름](account:<accountId>)` 로 쓴다. `@이름` 만 쓰면 평문으로 저장되어 알림이 가지 않는다.
+accountId 는 `jira.py assignable --project ABC --query 이름` 출력의 첫 열이다. 멘션은 Jira 에서만 동작하고, Confluence 본문에서는 `@이름` 글자만 남는다.
+
+```bash
+python3 "<SKILL_DIR>/scripts/jira.py" comment ABC-123 --body "@[홍길동](account:6327f07d9b32cfef93230686) 님, 확인 부탁드립니다."
+```
+
 티켓 간 링크 (남의 티켓에도 가능 — 코멘트처럼 추가만 한다). `key` 가 링크를 붙이는
 쪽(inward), `--to` 가 연결 대상(outward)이다:
 

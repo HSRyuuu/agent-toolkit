@@ -242,6 +242,20 @@ def case_text_to_adf_inline_marks() -> bool:
     )
 
 
+def case_text_to_adf_mention() -> bool:
+    doc = common.text_to_adf("@[홍길동](account:abc123) 님, **확인** 부탁드립니다.")
+    nodes = doc["content"][0]["content"]
+    storage = common.text_to_storage("@[홍길동](account:abc123) 님")
+    return check(
+        "text_to_adf turns @[이름](account:id) into a mention node, storage keeps plain text",
+        nodes[0] == {"type": "mention", "attrs": {"id": "abc123", "text": "@홍길동"}}
+        and nodes[1]["text"] == " 님, "
+        and "@홍길동" in storage
+        and "account:" not in storage,
+        f"{nodes} / {storage}",
+    )
+
+
 def case_inline_marks_nest() -> bool:
     doc = common.text_to_adf("앞 **`type`으로 분기** 뒤")
     nodes = doc["content"][0]["content"]
@@ -1320,6 +1334,7 @@ def main() -> int:
         case_text_to_adf_table,
         case_text_to_adf_table_needs_separator,
         case_text_to_adf_inline_marks,
+        case_text_to_adf_mention,
         case_inline_marks_nest,
         case_double_backtick_code_span,
         case_text_to_adf_code_block,
