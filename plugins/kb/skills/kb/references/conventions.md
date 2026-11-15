@@ -274,19 +274,7 @@ preamble, so hand-write the preamble and let the catalog be built.
 This applies to every mode that touches documents — write mode included, not
 just manage and lint.
 
-Default shape:
-
-```markdown
-# Knowledge Base Index
-
-이 문서는 KB의 문서 카탈로그이다. 자세한 사실은 각 원문 문서를 기준으로 확인한다.
-
-## Documents
-
-| Document | Summary | Tags | Updated |
-|---|---|---|---|
-| [Example](./example.md) | One-line summary. | `kb` | 2026-06-30 |
-```
+Default shape: [`../templates/index.md`](../templates/index.md). The generator owns everything between the `kb:documents` markers.
 
 The generator labels document status and groups explicit drafts/historical
 notes separately, with Inbox/Archived sections for reserved paths. Ordinary
