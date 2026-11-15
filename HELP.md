@@ -17,18 +17,11 @@
 |---|---|
 | 지식을 저장소(KB)에 저장하거나 찾기 | `kb` |
 | 오늘 한 일을 세션 기록에서 일일 업무 로그로 정리 | `daily-work-log` |
-| 이 대화를 다른 에이전트가 이어받을 인계 문서로 압축 | `handoff` |
 | 계획이나 결정을 집요하게 질문받으며 검증 | `grill-me` |
-| 결과가 왜 그렇게 나왔는지 가설을 경쟁시켜 원인 추적 | `trace` |
 | 커밋, 커밋 분리, PR, 충돌 해결, rebase | `git-actions` |
-| 현재 브랜치 변경을 사람이 보기 쉬운 단일 HTML로 리뷰 | `diff-review` |
 | 서비스·API·DB 구조를 마우스오버 팝업이 있는 HTML 지도로 | `archify-html` (`html-tools`) |
-| DB 스키마(DBML·DDL)를 정적 HTML 뷰어로 | `html-db-schema-viewer-creator` (`html-tools`) |
-| 기능 정의서·시나리오로 브라우저 UI 점검 | `ui-test-runner` |
 | 남이 읽을 Markdown 문서(보고서·공지·정리) 쓰기 | `docs-writing` (`writing-tools`) |
 | 웹 UI 문구(버튼·에러·빈 화면 메시지) 쓰기·리뷰 | `ux-writing` (`writing-tools`) |
-| 내 블로그 말투로 글 쓰기 | `dev-blog-writing-hsryuuu` (`personal-tools`) |
-| 코드 설명·개념 학습 (직접 `/dev-teacher`로만 호출) | `dev-teacher` |
 | Slack 메시지 검색·요약·멘션 정리·메시지 전송 | `slack-helper` |
 | Jira·Confluence 티켓 조회·문서 확인 | `atlassian-helper` |
 | Datadog 로그·APM 조회 | `datadog-helper` |
@@ -37,7 +30,6 @@
 | 낡은 프롬프트·CLAUDE.md를 최신 모델 기준으로 진단 | `prompt-modernizer` (`prompt-tools`) |
 | 스킬을 새로 쓰거나 점검·다이어트 | `writing-great-skill` (`prompt-tools`) |
 | 프로젝트를 분석해 에이전트 하네스(진입점·문서·규칙·로컬 스킬) 안내·설치·점검 | `project-setup` |
-| 로컬 plugin·marketplace 만들기·등록·갱신 | `local-plugin-manager` |
 
 ## 플러그인별 구성
 
@@ -47,17 +39,14 @@
 
 | 플러그인 | 스킬 |
 |---|---|
-| `html-tools` | `archify-html`, `html-db-schema-viewer-creator` |
+| `html-tools` | `archify-html` |
 | `prompt-tools` | `prompt-composer`, `prompt-modernizer`, `writing-great-skill` (+ `snippets/`) |
 | `writing-tools` | `docs-writing`, `ux-writing` |
-| `personal-tools` | `dev-blog-writing-hsryuuu` |
 
 ### 단독 플러그인
 
 - **연동:** `slack-helper`, `atlassian-helper`, `datadog-helper`, `postman-helper`
-- **작업 흐름:** `kb`, `daily-work-log`, `handoff`, `grill-me`, `trace`, `git-actions`, `dev-teacher`
-- **시각화·문서 생성:** `diff-review`
-- **검증·운영:** `ui-test-runner`, `local-plugin-manager`
+- **작업 흐름:** `kb`, `daily-work-log`, `grill-me`, `git-actions`, `project-setup`
 
 ## 설치 없이 이 저장소에서만 쓰는 스킬
 

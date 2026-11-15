@@ -50,9 +50,8 @@ jq empty .claude-plugin/marketplace.json .agents/plugins/marketplace.json plugin
 
 | 플러그인 | 포함 스킬 |
 |---|---|
-| `html-tools` | archify-html, html-db-schema-viewer-creator |
+| `html-tools` | archify-html |
 | `prompt-tools` | prompt-composer, prompt-modernizer, writing-great-skill (+ `snippets/`) |
 | `writing-tools` | docs-writing, ux-writing |
-| `personal-tools` | dev-blog-writing-hsryuuu (개인 전용 스킬 모음) |
 
 나머지는 스킬 이름 = 플러그인 이름인 1:1 플러그인이다.

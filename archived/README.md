@@ -16,8 +16,8 @@
 | 폴더 | 스킬 | 비고 |
 |---|---|---|
 | `coding-conventions/` | `springboot-java-convention`, `springboot-kotlin-standards`, `fastapi-guide`, `node-backend-patterns`, `rest-api-design` | 범용 예제와 `references/`를 걷어내고 고유 규칙만 남겼다 |
-| `html-tools/` | `html-docs-creator`, `html-cheat-sheet-creator` | 고정 디자인 템플릿(`base.html`)이 자산이다 |
+| `html-tools/` | `html-docs-creator`, `html-cheat-sheet-creator`, `html-db-schema-viewer-creator` | 고정 디자인 템플릿(`base.html`)이 자산이다. `html-db-schema-viewer-creator`는 최근 한 달 사용 기록이 없고 `archify-html`과 호출 조건이 겹쳐 보관한다 |
 | `agent-harness/` | `agent-harness-construction`, `agent-introspection-debugging` | harness-as-usual이 같은 규칙을 이미 갖고 있다 |
 | `si-project/` | `si-project-docs`, `excel-doc-updater`, `excel-ui-test-doc-creator`, `ui-feature-spec-docs`, `api-spec-docs` | SI 납품 문서(요구사항·설계서, 양식 엑셀, 기능 정의서, API 규격) 작업이 끝나 보관한다. 고정 양식과 스크립트가 자산이다 |
-| `others/` | `create-mermaid-erd` | 개념/논리/물리 3단계 Mermaid ERD 형식(예제 3개, `viewer.html`)을 더 쓰지 않아 보관한다 |
+| `others/` | `create-mermaid-erd`, `ui-test-runner`, `dev-teacher`, `diff-review`, `dev-blog-writing-hsryuuu` | `create-mermaid-erd`는 개념/논리/물리 3단계 Mermaid ERD 형식(예제 3개, `viewer.html`)을 더 쓰지 않아 보관한다. `ui-test-runner`, `dev-teacher`는 최근 한 달 사용 기록이 없다. `diff-review`는 설치해 쓰지 않는다. `dev-blog-writing-hsryuuu`는 설치해 쓰지 않는 개인 블로그 말투 스킬이다 |
 | `prompt-tools/` | `prompt-master` | 최신 모델 비적용 게이트만 걷어내고 작성 기법과 `references/`는 그대로 보존했다 |

@@ -120,6 +120,3 @@ push → 위 업데이트 명령. `plugins/` 변경은 plugin 단위 PR(제목 �
 
 전체 캐시 트리를 지우지 않는다. 지워야 한다면 `<marketplace>/<plugin>/<version>`
 경로까지만 지운다.
-
-플러그인이 아예 로드되지 않거나 다른 로컬 플러그인에서 같은 증상이 나면
-`local-plugin-manager` 스킬을 쓴다.

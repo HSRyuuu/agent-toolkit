@@ -7,7 +7,7 @@ templates, and future agent assets. Each plugin is installed on its own. This re
 skill/template files is the delivery path, and local plugin marketplace registration is the
 runtime surface.
 
-Skills ship as one plugin per skill (or per group of related skills; personal-only skills are grouped in `personal-tools`): `plugins/<plugin>/skills/<skill>/SKILL.md`. Claude Code and Codex read the same `plugins/` tree.
+Skills ship as one plugin per skill (or per group of related skills): `plugins/<plugin>/skills/<skill>/SKILL.md`. Claude Code and Codex read the same `plugins/` tree.
 
 ## STRUCTURE
 
@@ -50,8 +50,6 @@ agent-toolkit/
 
 | Symbol / Entry | Type | Location | Role |
 |---|---|---|---|
-| `main()` | Python CLI | `plugins/html-tools/skills/html-db-schema-viewer-creator/build.py` | DBML-to-static-site generator. |
-| `main()` | Python CLI | `plugins/html-tools/skills/html-db-schema-viewer-creator/tools/mysql_to_dbml.py` | MySQL schema extraction helper. |
 | `main()` | Python CLI | `plugins/project-setup/skills/project-setup/scripts/scan_project.py` / `check_harness.py` / `build_context_map.py` / `validate_context_map.py` | Read-only project profile scan, post-install harness contract check, and SOURCE_MAP/CODEBASE_CONTEXT generator for target projects. |
 | `main()` | Python CLI | `plugins/slack-helper/skills/slack-helper/scripts/slack_setup.py` / `slack_search.py` / `slack_read.py` | Slack Web API OAuth setup and read/search helpers using curl. |
 | `main()` | Python CLI | `plugins/datadog-helper/skills/datadog-helper/scripts/datadog_setup.py` / `datadog_logs.py` / `datadog_apm.py` | Datadog logs/APM read-only helpers using curl. |
