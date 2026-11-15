@@ -8,7 +8,7 @@ description: >
   써줘", "화면 문구 다듬어줘", "버튼 문구 정해줘", "에러 메시지 써줘", "빈
   화면 문구", "카피 점검해줘", "마이크로카피", "/ux-writing". Do NOT use for
   Markdown documents written for people to read (use `docs-writing`), personal
-  blog posts (use `dev-blog-writing-hsryuuu`), marketing landing copy, or
+  blog posts, marketing landing copy, or
   layout, styling, and component changes.
 ---
 
