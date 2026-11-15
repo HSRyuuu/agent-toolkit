@@ -7,7 +7,7 @@ description: >
   만들어줘", "이 스킬 리뷰해줘", "스킬 개선해줘", "SKILL.md 고쳐줘", "스킬이 안
   불려", "스킬 너무 길어", "/writing-great-skill". Do NOT use for one-off
   project docs or repository conventions that belong in AGENTS.md/CLAUDE.md,
-  for plugin/marketplace registration (use `local-plugin-manager`), or for
+  for plugin/marketplace registration, or for
   re-tuning an existing prompt to a newer model generation (use
   `prompt-modernizer`).
 ---
@@ -39,7 +39,7 @@ description: >
 | 새 스킬을 만든다 | **A. 신규 생성** |
 | 기존 스킬을 고친다 · 리뷰한다 · "왜 안 불리지" · "너무 길다" | **B. 수정·리뷰** |
 
-둘 다 아니면(플러그인 등록, 캐시, 로드 실패) `local-plugin-manager`다.
+둘 다 아니면(플러그인 등록, 캐시, 로드 실패) 이 스킬의 범위가 아니다.
 
 ---
 
