@@ -42,6 +42,14 @@ COMMAND_RE = re.compile(
     re.I,
 )
 COMMIT_RE = re.compile(r"\b[0-9a-f]{7,40}\b")
+# 텍스트 한도는 여기서만 정한다. 뒤 단계(번호 후보, digest, 근거 파일)는 다시 자르지 않는다.
+REQUEST_LIMIT = 260
+OUTCOME_LIMIT = 260
+# 세션의 마지막 작업 단위와 커밋·푸시·PR 단위는 결론과 링크가 뒤쪽에 있어서 길게 남긴다.
+OUTCOME_LONG_LIMIT = 1200
+DELIVERY_RE = re.compile(r"\bgit\s+(?:commit|push|merge)\b|\bgh\s+pr\s+(?:create|merge)\b|\bglab\s+mr\s+(?:create|merge)\b", re.I)
+PATCH_FILE_RE = re.compile(r"\*\*\* (?:Update|Add) File: ([^\s\\\"]+)")
+LINK_RE = re.compile(r"https?://[^\s<>\"'`)\]]+")
 # 사용자 메시지 자리에 하네스가 끼워 넣는 블록. 사용자 요청이 아니므로 통째로 지운다.
 INJECTED_BLOCK_TAGS = (
     "system-reminder",
@@ -55,7 +63,9 @@ INJECTED_BLOCK_TAGS = (
 IMAGE_PLACEHOLDER_RE = re.compile(r"\[Image(?: #\d+)?:[^\]]*\]")
 # 하네스·오케스트레이터가 보낸 메시지. 사용자 요청이 아니므로 버린다.
 HARNESS_MESSAGE_RE = re.compile(
-    r"^(?:<pasted_content[^>]*>\s*)?(?:The fork runs as its own separate session|This session began as a fork|You are working inside Orca)",
+    r"^(?:<pasted_content[^>]*>\s*)?(?:The fork runs as its own separate session|This session began as a fork|You are working inside Orca"
+    # 컨텍스트 요약문, 다른 세션이 보낸 메시지, 중단 표시
+    r"|This session is being continued from a previous conversation|Another Claude session sent a message|\[Request interrupted by user)",
     re.I,
 )
 
@@ -116,7 +126,7 @@ def to_local_date(value: Any, tz: tzinfo | None = None) -> date | None:
     return parsed.astimezone(tz).date()
 
 
-def clean_user_text(text: str, limit: int = 260) -> str:
+def clean_user_text(text: str, limit: int = REQUEST_LIMIT) -> str:
     text = strip_injected_blocks(text)
     text = re.sub(r"^\[[^\]]+\]\([^)]*SKILL\.md\)\s*", "", text.strip())
     leading = text.lstrip()
@@ -207,6 +217,36 @@ def extract_commits(text: str, limit: int = 12) -> list[str]:
     return commits
 
 
+def extract_links(text: str, limit: int = 10) -> list[str]:
+    links: list[str] = []
+    for match in LINK_RE.findall(text):
+        value = match.rstrip(".,:;*")
+        if value not in links:
+            links.append(value)
+        if len(links) >= limit:
+            break
+    return links
+
+
+def extract_delivery_commands(command_texts: list[str]) -> list[str]:
+    found: list[str] = []
+    for text in command_texts:
+        for match in DELIVERY_RE.findall(text):
+            value = re.sub(r"\s+", " ", match).lower()
+            if value not in found:
+                found.append(value)
+    return found
+
+
+def apply_outcome_limits(work_units: list[dict[str, Any]]) -> None:
+    """마지막 단위와 커밋·푸시·PR 단위만 긴 결과를 남기고, 나머지는 짧게 자른다."""
+    last_index = len(work_units) - 1
+    for index, unit in enumerate(work_units):
+        if index == last_index or unit.get("delivery_commands"):
+            continue
+        unit["outcome"] = compact(str(unit.get("outcome") or ""), OUTCOME_LIMIT)
+
+
 def has_edit_signal(tool_names: list[str], signal_text: str) -> bool:
     if any(name in EDIT_TOOLS for name in tool_names):
         return True
@@ -282,9 +322,9 @@ def work_unit_title(cwd: Any, user_request: str) -> str:
     return f"{project_name(cwd)} - {request}"
 
 
-def work_unit_outcome(result_snippets: list[str], flags: dict[str, bool]) -> str:
-    if result_snippets:
-        return compact(result_snippets[-1], 320)
+def work_unit_outcome(final_text: str, flags: dict[str, bool]) -> str:
+    if final_text:
+        return compact(final_text, OUTCOME_LONG_LIMIT)
     signals = []
     if flags.get("has_edit_signal"):
         signals.append("수정")
@@ -310,6 +350,10 @@ def build_work_unit(
     tool_names: list[str],
     signal_text: str,
     started_at: Any = None,
+    final_text: str = "",
+    edited_files: list[str] | None = None,
+    command_texts: list[str] | None = None,
+    assistant_text: str = "",
 ) -> dict[str, Any]:
     unique_tools = sorted(set(tool_names))
     flags = signal_flags(unique_tools, signal_text)
@@ -326,7 +370,10 @@ def build_work_unit(
         "started_at": started_at,
         "title": work_unit_title(cwd, user_request),
         "user_request": user_request,
-        "outcome": work_unit_outcome(result_snippets, flags),
+        "outcome": work_unit_outcome(final_text or (result_snippets[-1] if result_snippets else ""), flags),
+        "edited_files": list(dict.fromkeys(edited_files or []))[:30],
+        "delivery_commands": extract_delivery_commands(command_texts or []),
+        "links": extract_links(assistant_text),
         "changed_paths": paths if flags.get("has_edit_signal") else [],
         "mentioned_paths": paths,
         "commands": commands,

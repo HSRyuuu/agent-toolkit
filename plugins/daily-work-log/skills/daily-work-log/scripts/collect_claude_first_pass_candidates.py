@@ -10,16 +10,19 @@ from pathlib import Path
 from typing import Any
 
 from first_pass_candidate_utils import (
+    apply_outcome_limits,
     clean_user_text,
     build_work_unit,
     classification_hints,
     compact,
     confidence,
+    EDIT_TOOLS,
     extract_paths,
     first_pass_summary_with_units,
     infer_title,
     load_jsonl,
     now_iso,
+    OUTCOME_LIMIT,
     SCHEMA_VERSION,
     score_candidate,
     signal_flags,
@@ -121,6 +124,28 @@ def collect_tool_names(content: Any) -> list[str]:
     return names
 
 
+def collect_tool_inputs(content: Any) -> tuple[list[str], list[str]]:
+    """tool_use 입력에서 고친 파일 경로와 실행한 셸 명령을 꺼낸다."""
+    edited: list[str] = []
+    commands: list[str] = []
+    if not isinstance(content, list):
+        return edited, commands
+    for item in content:
+        if not isinstance(item, dict) or item.get("type") != "tool_use":
+            continue
+        tool_input = item.get("input")
+        if not isinstance(tool_input, dict):
+            continue
+        if item.get("name") in EDIT_TOOLS:
+            path = tool_input.get("file_path") or tool_input.get("notebook_path")
+            if isinstance(path, str) and path:
+                edited.append(path)
+        command = tool_input.get("command")
+        if isinstance(command, str):
+            commands.append(command)
+    return edited, commands
+
+
 def has_tool_result(content: Any) -> bool:
     if not isinstance(content, list):
         return False
@@ -197,6 +222,10 @@ def candidate_from_file(path: Path, target_date: date | None = None, tz: tzinfo 
                         tool_names=unit_tools,
                         signal_text=unit_signal,
                         started_at=current_unit.get("first_timestamp"),
+                        final_text=str(current_unit.get("final_text") or ""),
+                        edited_files=list(current_unit.get("edited_files") or []),
+                        command_texts=list(current_unit.get("command_texts") or []),
+                        assistant_text="\n".join(current_unit.get("assistant_texts") or []),
                     )
                 )
         current_unit = None
@@ -269,13 +298,16 @@ def candidate_from_file(path: Path, target_date: date | None = None, tz: tzinfo 
         elif role == "assistant":
             if current_unit is None and ignored_user_message:
                 continue
-            snippets = [compact(text, 260) for text in texts]
+            snippets = [compact(text, OUTCOME_LIMIT) for text in texts]
             result_snippets.extend(snippets)
             unit = ensure_unit()
             if timestamp_for_unit and unit.get("first_timestamp") is None:
                 unit["first_timestamp"] = timestamp_for_unit
             unit["result_snippets"].extend(snippets)
             unit["signal_chunks"].extend(texts)
+            if texts:
+                unit["final_text"] = texts[-1]
+                unit.setdefault("assistant_texts", []).extend(texts)
         elif content_has_tool_result:
             if current_unit is None and ignored_user_message:
                 continue
@@ -297,8 +329,13 @@ def candidate_from_file(path: Path, target_date: date | None = None, tz: tzinfo 
                 unit["first_timestamp"] = timestamp_for_unit
             unit["tool_names"].extend(names)
             unit["signal_chunks"].append(row_text)
+            if role == "assistant":
+                edited, commands = collect_tool_inputs(content)
+                unit.setdefault("edited_files", []).extend(edited)
+                unit.setdefault("command_texts", []).extend(commands)
 
     flush_unit()
+    apply_outcome_limits(work_units)
 
     if target_date is not None:
         clean_requests = [str(unit.get("user_request")) for unit in work_units if unit.get("user_request")][:5]
