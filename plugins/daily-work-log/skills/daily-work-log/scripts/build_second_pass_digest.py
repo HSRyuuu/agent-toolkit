@@ -149,8 +149,11 @@ def compact_unit(unit: dict[str, Any], candidate: dict[str, Any], source: str | 
         "work_unit_id": unit.get("work_unit_id"),
         "started_at": unit.get("started_at"),
         "title": compact(str(unit.get("title") or ""), 140),
-        "user_request": compact(str(unit.get("user_request") or ""), 500),
-        "outcome": compact(str(unit.get("outcome") or ""), 700),
+        "user_request": str(unit.get("user_request") or ""),
+        "outcome": str(unit.get("outcome") or ""),
+        "edited_files": unit.get("edited_files") or [],
+        "delivery_commands": unit.get("delivery_commands") or [],
+        "links": unit.get("links") or [],
         "classification_hints": unit.get("classification_hints") or [],
         "mentioned_paths": (unit.get("mentioned_paths") or [])[:30],
         "changed_paths": (unit.get("changed_paths") or [])[:30],
@@ -194,7 +197,7 @@ def build_digest(target_date: str, state_root: Path, numbered_path: Path, select
         tests: list[str] = []
         git_evidence: list[str] = []
 
-        seen_units: set[tuple[Any, Any, Any]] = set()
+        seen_units: dict[tuple[Any, Any, Any], int] = {}
         for ref in group.get("candidate_refs") or []:
             work_unit_ids = ref.get("work_unit_ids") or []
             for work_unit_id in work_unit_ids:
@@ -211,11 +214,16 @@ def build_digest(target_date: str, state_root: Path, numbered_path: Path, select
                 candidate = item["candidate"]
                 unit = item["work_unit"]
                 # 포크 세션은 원래 세션 기록을 그대로 복사한다. work_unit_id는 이어 쓴 세션끼리도 겹치므로 내용으로 거른다.
-                content_key = (unit.get("started_at"), unit.get("user_request"), unit.get("outcome"))
-                if content_key in seen_units:
-                    continue
-                seen_units.add(content_key)
+                # 같은 단위가 한 세션에서는 마지막 단위라 길고 다른 세션에서는 짧을 수 있어, 결과는 앞부분만 비교하고 긴 쪽을 남긴다.
+                outcome = str(unit.get("outcome") or "")
+                content_key = (unit.get("started_at"), unit.get("user_request"), outcome[:200])
                 compacted = compact_unit(unit, candidate, item.get("source"), str(item.get("section") or ""))
+                if content_key in seen_units:
+                    kept = work_units[seen_units[content_key]]
+                    if len(outcome) > len(kept["outcome"]):
+                        work_units[seen_units[content_key]] = compacted
+                    continue
+                seen_units[content_key] = len(work_units)
                 work_units.append(compacted)
                 add_unique(session_files, [candidate.get("file")], limit=12)
                 add_unique(source_projects, [candidate.get("cwd")], limit=12)

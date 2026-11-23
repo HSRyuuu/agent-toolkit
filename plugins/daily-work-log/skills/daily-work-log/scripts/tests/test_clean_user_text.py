@@ -47,6 +47,12 @@ class CleanUserTextTests(unittest.TestCase):
         self.assertEqual(clean_user_text('<pasted_content id="1"> You are working inside Orca, a multi-agent IDE.'), "")
         self.assertEqual(clean_user_text('<pasted_content id="2"> TEC-922 작업 지시'), '<pasted_content id="2"> TEC-922 작업 지시')
 
+    def test_session_noise_messages_are_dropped(self) -> None:
+        self.assertEqual(clean_user_text("This session is being continued from a previous conversation that ran out of context."), "")
+        self.assertEqual(clean_user_text('Another Claude session sent a message:\n<agent-message from="a">hi</agent-message>'), "")
+        self.assertEqual(clean_user_text("[Request interrupted by user for tool use]"), "")
+
+
 
 if __name__ == "__main__":
     unittest.main()

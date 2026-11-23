@@ -52,6 +52,32 @@ class BuildSecondPassDigestTests(unittest.TestCase):
         requests = [u["user_request"] for u in digest["selected_details"][0]["work_units"]]
         self.assertEqual(requests, ["C", "A", "B"])
 
+    def test_fork_copy_keeps_longer_outcome(self) -> None:
+        # 같은 단위가 원래 세션에서는 마지막 단위라 길고, 포크에서는 중간 단위라 짧다.
+        prefix = "가" * 250
+        short = {**unit(1, "2026-07-02T01:00:00Z", "A"), "outcome": prefix + "..."}
+        long = {**unit(1, "2026-07-02T01:00:00Z", "A"), "outcome": prefix + "나" * 500}
+        candidates = [
+            {"source": "claude", "file": "/fork.jsonl", "session_id": "s1", "work_units": [short]},
+            {"source": "claude", "file": "/orig.jsonl", "session_id": "s1", "work_units": [long]},
+        ]
+        refs = [{"source": "claude", "session_id": "s1", "file": c["file"], "work_unit_ids": ["claude:s1:1"]} for c in candidates]
+        with TemporaryDirectory() as tmp:
+            state_root = Path(tmp)
+            day = state_root / DATE[:4] / DATE
+            day.mkdir(parents=True)
+            (day / "claude-candidates.json").write_text(json.dumps({"source": "claude", "candidates": candidates}), encoding="utf-8")
+            numbered_path = day / "numbered-candidates.json"
+            numbered_path.write_text(
+                json.dumps({"displayed_candidates": [{"number": 1, "title": "t", "list_section": "top", "candidate_refs": refs}]}),
+                encoding="utf-8",
+            )
+            digest = build_digest(DATE, state_root, numbered_path, "1")
+
+        units = digest["selected_details"][0]["work_units"]
+        self.assertEqual(len(units), 1)
+        self.assertEqual(units[0]["outcome"], long["outcome"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -13,6 +13,9 @@ from first_pass_candidate_utils import DEFAULT_STATE_ROOT, compact, default_outp
 
 
 SCHEMA_VERSION = "daily-work-log.numbered-candidates.v1"
+# 한도에 걸려 숨는 후보는 점수가 낮은 짧은 세션이라, 넉넉히 잡아도 읽는 양이 거의 늘지 않는다.
+DEFAULT_TOP_LIMIT = 40
+DEFAULT_OTHER_LIMIT = 10
 
 NOISE_RE = re.compile(
     r"(<turn_aborted>|<local-command|local-command-|continue from where you left off|please run /login|login successful)",
@@ -154,8 +157,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="1차 후보 JSON에서 번호가 부여된 후보 목록을 만든다.")
     parser.add_argument("--date", required=True, help="대상 날짜 YYYY-MM-DD")
     parser.add_argument("--state-root", default=str(DEFAULT_STATE_ROOT), help="기본값: ~/.daily-work-log")
-    parser.add_argument("--top-limit", type=int, default=15)
-    parser.add_argument("--other-limit", type=int, default=5)
+    parser.add_argument("--top-limit", type=int, default=DEFAULT_TOP_LIMIT)
+    parser.add_argument("--other-limit", type=int, default=DEFAULT_OTHER_LIMIT)
     parser.add_argument("--include-supporting", action="store_true")
     parser.add_argument("--output", help="기본값은 ~/.daily-work-log/YYYY/YYYY-MM-DD/numbered-candidates.json")
     parser.add_argument("--stdout", action="store_true")

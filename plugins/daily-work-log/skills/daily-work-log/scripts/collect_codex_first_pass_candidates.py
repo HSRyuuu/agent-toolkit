@@ -5,11 +5,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from datetime import date, timedelta, tzinfo
 from pathlib import Path
 from typing import Any
 
 from first_pass_candidate_utils import (
+    apply_outcome_limits,
     clean_user_text,
     build_work_unit,
     classification_hints,
@@ -20,6 +22,8 @@ from first_pass_candidate_utils import (
     infer_title,
     load_jsonl,
     now_iso,
+    OUTCOME_LIMIT,
+    PATCH_FILE_RE,
     SCHEMA_VERSION,
     score_candidate,
     signal_flags,
@@ -30,6 +34,8 @@ from first_pass_candidate_utils import (
 
 
 DEFAULT_SESSIONS_ROOT = Path.home() / ".codex" / "sessions"
+# Codex `exec` 도구는 JS 스크립트 안에서 `tools.exec_command(...)`처럼 실제 도구를 부른다.
+INNER_TOOL_RE = re.compile(r"\btools\.(\w+)")
 
 
 def text_blocks(content: Any) -> list[str]:
@@ -46,6 +52,24 @@ def text_blocks(content: Any) -> list[str]:
             if isinstance(text, str):
                 texts.append(text)
     return texts
+
+
+def call_tool_names(payload: dict[str, Any]) -> list[str]:
+    """도구 호출 row의 도구 이름. `exec`는 스크립트 안에서 부른 `tools.<이름>`을 돌려준다."""
+    name = payload.get("name")
+    if payload.get("type") == "custom_tool_call" and isinstance(payload.get("input"), str):
+        inner = list(dict.fromkeys(INNER_TOOL_RE.findall(payload["input"])))
+        if inner:
+            return inner
+    return [name] if isinstance(name, str) else []
+
+
+def call_text(payload: dict[str, Any]) -> str:
+    """명령과 patch를 찾을 텍스트. `exec` 입력은 JS 문자열이라 `\\n`을 줄바꿈으로 되돌린다."""
+    text = json.dumps(payload, ensure_ascii=False)
+    if payload.get("type") == "custom_tool_call" and isinstance(payload.get("input"), str):
+        text = payload["input"].replace("\\n", "\n")
+    return text
 
 
 def session_files_for_date(root: Path, target_date: date) -> list[Path]:
@@ -121,6 +145,10 @@ def candidate_from_file(path: Path, target_date: date | None = None, tz: tzinfo 
                         tool_names=unit_tools,
                         signal_text=unit_signal,
                         started_at=current_unit.get("first_timestamp"),
+                        final_text=str(current_unit.get("final_text") or ""),
+                        edited_files=list(current_unit.get("edited_files") or []),
+                        command_texts=list(current_unit.get("command_texts") or []),
+                        assistant_text="\n".join(current_unit.get("assistant_texts") or []),
                     )
                 )
         current_unit = None
@@ -171,7 +199,7 @@ def candidate_from_file(path: Path, target_date: date | None = None, tz: tzinfo 
             elif role == "assistant":
                 if current_unit is None and ignored_user_message:
                     continue
-                snippets = [compact(text, 260) for text in texts]
+                snippets = [compact(text, OUTCOME_LIMIT) for text in texts]
                 result_snippets.extend(snippets)
                 signal_chunks.extend(texts)
                 unit = ensure_unit()
@@ -179,23 +207,26 @@ def candidate_from_file(path: Path, target_date: date | None = None, tz: tzinfo 
                     unit["first_timestamp"] = timestamp
                 unit["result_snippets"].extend(snippets)
                 unit["signal_chunks"].extend(texts)
-        elif payload_type == "function_call":
+                if texts:
+                    unit["final_text"] = texts[-1]
+                    unit.setdefault("assistant_texts", []).extend(texts)
+        elif payload_type in {"function_call", "custom_tool_call"}:
             if current_unit is None and ignored_user_message:
                 continue
-            name = payload.get("name")
-            if isinstance(name, str):
+            unit = ensure_unit()
+            for name in call_tool_names(payload):
                 tool_names.append(name)
-                unit = ensure_unit()
-                if timestamp and unit.get("first_timestamp") is None:
-                    unit["first_timestamp"] = timestamp
                 unit["tool_names"].append(name)
-            payload_text = json.dumps(payload, ensure_ascii=False)[:4000]
+            full_payload_text = call_text(payload)
+            payload_text = full_payload_text[:4000]
             signal_chunks.append(payload_text)
             unit = ensure_unit()
             if timestamp and unit.get("first_timestamp") is None:
                 unit["first_timestamp"] = timestamp
             unit["signal_chunks"].append(payload_text)
-        elif payload_type == "function_call_output":
+            unit.setdefault("command_texts", []).append(full_payload_text)
+            unit.setdefault("edited_files", []).extend(PATCH_FILE_RE.findall(full_payload_text))
+        elif payload_type in {"function_call_output", "custom_tool_call_output"}:
             if current_unit is None and ignored_user_message:
                 continue
             payload_text = json.dumps(payload, ensure_ascii=False)[:4000]
@@ -206,6 +237,7 @@ def candidate_from_file(path: Path, target_date: date | None = None, tz: tzinfo 
             unit["signal_chunks"].append(payload_text)
 
     flush_unit()
+    apply_outcome_limits(work_units)
 
     if target_date is not None:
         clean_requests = [str(unit.get("user_request")) for unit in work_units if unit.get("user_request")][:5]

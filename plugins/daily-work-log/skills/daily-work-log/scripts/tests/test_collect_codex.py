@@ -90,6 +90,29 @@ class CodexCollectorDateTests(unittest.TestCase):
             candidate = candidate_from_file(path, date(2026, 7, 2), self.tz)
             self.assertEqual([unit["user_request"] for unit in candidate["work_units"]], ["대상 날짜 요청"])
 
+    def test_exec_custom_tool_call_is_read(self) -> None:
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "a.jsonl"
+            patch = 'text(await tools.apply_patch("*** Begin Patch\\n*** Update File: /work/alpha/src/a.css\\n@@\\n-x\\n+y\\n*** End Patch"));'
+            commit = 'text(await tools.exec_command({cmd:"git commit -m fix && git push"}));'
+            rows = [meta(), user_row("2026-07-02T01:00:00Z", "스타일 고치고 커밋해")]
+            for script in (patch, commit):
+                rows.append(
+                    {
+                        "timestamp": "2026-07-02T01:01:00Z",
+                        "type": "response_item",
+                        "payload": {"type": "custom_tool_call", "name": "exec", "call_id": "c", "input": script},
+                    }
+                )
+            rows.append(assistant_row("2026-07-02T01:02:00Z"))
+            write_jsonl(path, rows)
+
+            candidate = candidate_from_file(path, date(2026, 7, 2), self.tz)
+            unit = candidate["work_units"][0]
+            self.assertEqual(candidate["tool_names"], ["apply_patch", "exec_command"])
+            self.assertEqual(unit["edited_files"], ["/work/alpha/src/a.css"])
+            self.assertEqual(unit["delivery_commands"], ["git commit", "git push"])
+
 
 if __name__ == "__main__":
     unittest.main()

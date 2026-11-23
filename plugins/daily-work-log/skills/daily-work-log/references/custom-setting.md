@@ -8,10 +8,10 @@
 |---|---|---|
 | `impact-items` | 문서 맨 위 `## Impact`에 모을 라벨과 각 라벨이 찾을 근거 | `[{"name": "TODO", "description": "완결되지 않은 것으로 보이는 것"}]` |
 | 본문 템플릿 | `~/.daily-work-log/daily-work-log-template.md`. `###` 항목의 부가 슬롯과 자유 형식 영역을 바꿀 수 있다 | `- 관련 링크` 슬롯 삭제 |
-| 수집·검색 한도 | 상위 후보 수, 기타 후보 수, subagent/sidechain 세션 포함 여부, 검색 결과 수 | `"top-limit": 15`, `"other-limit": 5`, `"include-supporting": false`, `"search-limit": 20` |
+| 수집·검색 한도 | 상위 후보 수, 기타 후보 수, subagent/sidechain 세션 포함 여부, 검색 결과 수 | `"top-limit": 40`, `"other-limit": 10`, `"include-supporting": false`, `"search-limit": 20` |
 | `log_root` | 최종 Markdown을 저장하는 로그 루트 | `"/Users/me/work-log"` |
 
-표시 후보는 모두 기록에 들어가므로, `top-limit`과 `other-limit`을 더한 값이 하루 기록 건수의 상한이다.
+표시 후보는 세션 단위이고 모두 기록에 들어간다. `top-limit`과 `other-limit`을 더한 값이 하루에 보는 세션 수의 상한이다. 한도에 걸려 숨는 것은 점수가 낮은 짧은 세션이라, 기본값은 넉넉하게 잡혀 있다. 숨긴 후보가 있으면 `evidence.md` 맨 위에 개수가 나온다.
 
 본문 템플릿에서 frontmatter 4개 필드, `# YYYY-MM-DD 업무 기록` 제목, `## 한눈에 보기`와 표, `###` 항목의 `요약:`, `<!-- 이 아래는 자유 형식 -->` 마커는 바꿀 수 없다. 상세 규칙은 `references/how-to-set-template.md`를 따른다.
 
@@ -24,8 +24,8 @@
     {"name": "Jira Ticket", "description": "Jira 이슈 키(예: PROJ-1234)가 언급된 것"},
     {"name": "PR/MR 기록", "description": "생성/머지/리뷰한 PR 또는 MR"}
   ],
-  "top-limit": 15,
-  "other-limit": 5,
+  "top-limit": 40,
+  "other-limit": 10,
   "include-supporting": false,
   "search-limit": 20
 }
@@ -35,14 +35,11 @@
 
 ## 에이전트가 적용하는 방법
 
-작성 모드와 검색 모드를 시작할 때 `config.json`을 한 번 읽고, 값이 있으면 아래 스크립트 옵션으로 넘긴다.
-
-| 키 | 스크립트 옵션 |
+| 키 | 적용 방법 |
 |---|---|
-| `top-limit` | `build_numbered_candidates.py --top-limit` |
-| `other-limit` | `build_numbered_candidates.py --other-limit` |
-| `include-supporting` | `true`면 Codex·Claude 수집 스크립트와 `build_numbered_candidates.py`에 `--include-supporting` |
-| `search-limit` | `search_work_logs.py --limit`. 사용자가 이번 검색에서 건수를 말하면 그 값이 우선 |
+| `top-limit`, `other-limit`, `include-supporting`, `impact-items` | `build_day_evidence.py`가 `config.json`에서 직접 읽는다. 에이전트가 옵션으로 넘기지 않는다 |
+| `search-limit` | 에이전트가 읽어 `search_work_logs.py --limit`으로 넘긴다. 사용자가 이번 검색에서 건수를 말하면 그 값이 우선 |
+| `log_root` | 에이전트가 읽어 저장 위치로 쓴다. `search_work_logs.py`는 직접 읽는다 |
 
 ## 설정을 바꾸는 방법
 

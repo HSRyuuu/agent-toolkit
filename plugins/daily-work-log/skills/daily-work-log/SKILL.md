@@ -18,82 +18,34 @@ description: >
 
 1. 템플릿 파일 `~/.daily-work-log/daily-work-log-template.md`가 있는지 확인한다.
 2. 대상 날짜를 결정한다. 기본값은 시스템 로컬 타임존 기준 오늘이며, 사용자가 "어제"나 특정 날짜, 기간을 말하면 그 날짜들을 사용한다.
-3. `~/.daily-work-log/config.json`을 읽어 `references/custom-setting.md` 기준으로 사용자 설정을 적용하고, 로그 루트를 확정한다. 로그 루트는 아래 "출력 위치" 규칙으로 정해지지 않을 때만 이 시점에 묻는다.
-4. 대상 날짜마다 서브에이전트를 하나씩 띄워 아래 "날짜별 작성 절차"를 맡긴다. 상세는 "날짜별 서브에이전트" 절을 따른다.
+3. `~/.daily-work-log/config.json`을 읽어 로그 루트를 확정한다. 로그 루트는 아래 "출력 위치" 규칙으로 정해지지 않을 때만 이 시점에 묻는다.
+4. 대상 날짜마다 서브에이전트를 하나씩 띄워 `references/write-daily-log.md`의 절차를 맡긴다. 상세는 "날짜별 서브에이전트" 절을 따른다.
 5. 서브에이전트 결과를 모아 아래 "완료 보고" 형식으로 기록 목록과 `impact-items` 현황을 보여주고, 뺄 항목이 있는지 묻는다.
-6. 사용자가 빼거나 바꾸라고 하면 저장한 Markdown과 `final-info.json`을 고친다.
+6. 사용자가 빼거나 바꾸라고 하면 저장한 Markdown을 고친다.
 
 1~3번은 메인 에이전트가 처리한다. 사용자에게 물어야 하는 것은 모두 이 단계에서 끝낸다. 4번부터 완료 보고 전까지는 사용자에게 묻지 않는다. 판단이 애매한 항목도 일단 기록에 넣고, 완료 보고에서 사용자가 빼게 한다.
 
-### 날짜별 작성 절차
-
-한 날짜에 대해 아래 스크립트를 순서대로 실행하고, "날짜별 서브에이전트" 절의 필수 체크리스트대로 `final-info.json`을 보강한 뒤 최종 Markdown을 써서 로그 루트 아래 `YYYY/MM/YYYY-MM-DD.md`에 저장한다. 반환 형식의 `checks`가 모두 맞으면 끝이다. `N`은 `numbered-candidates.json`의 `displayed_candidates` 마지막 번호다.
-
-```bash
-python3 <skill-base-dir>/scripts/collect_codex_first_pass_candidates.py --date YYYY-MM-DD
-python3 <skill-base-dir>/scripts/collect_claude_first_pass_candidates.py --date YYYY-MM-DD
-python3 <skill-base-dir>/scripts/build_numbered_candidates.py --date YYYY-MM-DD
-python3 <skill-base-dir>/scripts/build_second_pass_digest.py --date YYYY-MM-DD --selection 1-N
-python3 <skill-base-dir>/scripts/build_final_info_skeleton.py --date YYYY-MM-DD
-python3 <skill-base-dir>/scripts/print_digest_group.py --date YYYY-MM-DD [--group <group_id>]
-```
-
-각 스크립트가 하는 일과 옵션은 `references/collect-first-pass-candidates.md`, `references/collect-second-pass-details.md`에 있다.
-
 ## 날짜별 서브에이전트
 
-날짜별 작성 절차는 세션 후보와 digest JSON이 날짜당 수백 KB라서 메인 컨텍스트에서 돌리지 않는다. 날짜가 하나여도 서브에이전트에 맡긴다.
+하루치 근거는 수만 토큰이라서 메인 컨텍스트에서 읽지 않는다. 날짜가 하나여도 서브에이전트에 맡긴다.
 
 - Claude Code에서는 Agent 도구로 날짜마다 서브에이전트를 하나씩 띄우고, `model`은 `sonnet`으로 지정한다. 날짜가 여럿이면 한 메시지에서 모두 띄워 병렬로 돌린다.
-- 서브에이전트를 띄울 수 없는 환경(Codex 등)에서는 메인 에이전트가 날짜별 작성 절차를 날짜 순서대로 직접 수행한다.
+- 서브에이전트를 띄울 수 없는 환경(Codex 등)에서는 메인 에이전트가 `references/write-daily-log.md`를 읽고 날짜 순서대로 직접 수행한다.
 - 날짜마다 중간 산출물 디렉터리가 따로라서 병렬 실행끼리 충돌하지 않는다.
 
-서브에이전트 프롬프트에는 아래를 모두 넣는다. 서브에이전트는 이 대화를 보지 못한다.
+서브에이전트 프롬프트에는 아래만 넣는다. 서브에이전트는 이 대화를 보지 못한다. 작성 규칙과 반환 형식은 프롬프트에 옮겨 적지 않는다.
 
-- 이 스킬의 base directory와 `SKILL.md` 경로. "날짜별 작성 절차", "필수 Frontmatter", "최종 Markdown 구조", "참조 표기 규칙", "Impact 섹션 (opt-in)", "작성 언어", "안전 규칙" 절과 `references/collect-first-pass-candidates.md`, `references/collect-second-pass-details.md`를 읽고 따르라는 지시
-- 대상 날짜, 확정된 로그 루트, 템플릿 경로
-- `config.json`에서 읽은 스크립트 옵션 값(`top-limit`, `other-limit`, `include-supporting`)
-- 지켜야 할 것: 사용자에게 묻지 않는다. `config.json`과 템플릿 파일을 쓰지 않는다. 그 날짜의 중간 산출물 디렉터리와 최종 Markdown 한 파일만 쓴다.
-- 아래 필수 체크리스트를 그대로 옮긴 것
-- 아래 반환 형식
+- 이 스킬의 base directory와, `references/write-daily-log.md`를 읽고 그대로 따르라는 지시. 이 스킬의 다른 문서는 읽지 않아도 된다고 적는다.
+- 대상 날짜와 확정된 로그 루트
 
-필수 체크리스트 (서브에이전트 프롬프트에 그대로 넣는다):
+메인 에이전트는 반환값의 `checks`를 확인한다. 아래 중 하나면 그 날짜의 서브에이전트를 한 번 다시 띄운다.
 
-1. 템플릿 파일을 먼저 읽고, 최종 Markdown을 그 구조로 쓴다.
-2. 표시 후보 전체(`--selection 1-N`)로 digest를 만든다. 후보를 임의로 빼지 않는다.
-3. digest는 크므로 Read로 앞부분만 보고 판단하지 않는다. `python3 <skill-base-dir>/scripts/print_digest_group.py --date YYYY-MM-DD`로 묶음 목록을 보고, `--group <group_id>`로 묶음마다 work unit 전체를 시간순으로 출력해 마지막 work unit까지 읽는다. 출력을 파일로 남길 때는 그 날짜의 중간 산출물 디렉터리 안에만 둔다. 다른 날짜의 서브에이전트가 병렬로 돌기 때문이다.
-4. `final-info.json`의 `selected_items`를 보강한다. `impact-items`가 있으면 `impact.findings`도 채운다. skeleton 상태로 두지 않는다. `final-info.json`은 후보 단위 그대로 둔다.
-5. 최종 Markdown에서는 같은 주제의 후보를 한 항목으로 합친다. 같은 Jira 티켓의 작업, 같은 repo에서 이어진 작업, 포크 세션과 원래 세션, 추가 지시 세션과 원래 작업이 여기에 해당한다. 주제가 다르면 합치지 않는다. 한 후보는 한 항목에만 넣는다. 합친 항목은 원래 후보 번호를 모두 반환 형식에 적는다.
-6. 같은 대상에 대한 기록이 여러 번 나오면 시간순으로 마지막 work unit을 기준으로 쓴다. 순서는 digest의 `work_units[].started_at`으로 판단한다. 커밋·머지·배포 같은 진행 상태뿐 아니라 결정, 결론, 수치, 남은 일도 같다. 앞의 결과가 뒤에서 바뀌었으면 뒤의 것을 따르고, 앞의 것은 진행 과정으로만 남긴다.
-7. 원인 규명, 결론, 확정한 결정이 있으면 그 항목의 `요약:`과 `## Impact`의 결정사항에 남긴다. 구현 설명 속에 묻어 두지 않는다.
-8. 최종 Markdown의 frontmatter 4개 필드를 채운다. `summary`는 한 문장으로 쓰고, `tags`는 나중에 검색할 핵심 키워드 10~15개로 쓴다. 둘 다 비워 두지 않는다.
-9. `impact-items`가 있고 근거가 있으면 `## Impact` 섹션을 쓴다.
-10. `## 한눈에 보기` 표에 합친 뒤의 모든 항목을 넣는다.
-11. 모든 항목마다 `###` 섹션을 쓴다. 각 섹션에는 `요약:`과 `- 구분:`을 두고, 근거에 repo·파일·링크가 있으면 참조 슬롯(`코드 경로`, `관련 파일`, `관련 링크`)을 채운다.
-12. 모든 항목마다 상세(맥락, 진행 과정, 판단 근거, 남은 일)를 자유 형식 영역에 쓰고, `<!-- 이 아래는 자유 형식 -->` 주석 라인은 지운다.
-13. 항목이 많아도 위 단계를 줄이거나 생략하지 않는다.
+- `skipped`가 있다.
+- `evidence_lines`, `candidates`, `item_sections`, `free_form_detail` 중 두 수가 다른 것이 있다.
 
-서브에이전트 반환 형식:
+다시 띄울 때는 빠진 것을 프롬프트에 적고, 이미 저장된 Markdown을 보완하게 한다. 수집은 다시 돌리지 않고 저장된 `evidence.md`를 읽게 한다. 다시 돌려도 빠지면 완료 보고에 그 날짜와 빠진 항목을 한 줄로 알린다. `reference_slots`가 작은 것은 근거에 repo·파일이 없을 수 있으므로 다시 돌리는 조건이 아니다.
 
-```text
-date: YYYY-MM-DD
-saved: <최종 Markdown 절대 경로 | none>
-items:
-- <후보 번호, 합쳤으면 쉼표로 모두> | <top|other, 섞이면 top> | <구분> | <제목> | <한 줄 요약>
-impact:
-- <name>: <근거 건수>
-checks:
-- template: <done | skipped>
-- final_info_impact: <done | n/a | skipped>
-- item_sections: <### 항목 수>/<items 수>
-- reference_slots: <참조 슬롯이 있는 항목 수>/<items 수>
-- free_form_detail: <상세를 쓴 항목 수>/<items 수>
-notes: <근거가 약한 항목, 실패한 단계, 참조 슬롯이 없는 항목과 그 이유. 없으면 none>
-```
-
-메인 에이전트는 `checks`를 확인한다. `skipped`가 있거나 `item_sections` 또는 `free_form_detail`의 두 수가 다르면, 그 날짜의 서브에이전트를 한 번 다시 띄운다. 이때 빠진 항목을 프롬프트에 적고, 이미 저장된 Markdown과 `final-info.json`을 보완하게 한다. 다시 돌려도 빠지면 완료 보고에 그 날짜와 빠진 항목을 한 줄로 알린다. `reference_slots`가 작은 것은 근거에 repo·파일이 없을 수 있으므로 다시 돌리는 조건이 아니다.
-
-그 날짜에 표시 후보가 하나도 없으면 Markdown을 만들지 않고 `saved: none`과 `items:` 빈 목록을 돌려준다. 메인 에이전트는 이 반환값만으로 완료 보고를 만들고, 중간 산출물 JSON을 다시 읽지 않는다.
+그 날짜에 표시 후보가 하나도 없으면 서브에이전트가 `saved: none`과 빈 `items:`를 돌려준다. 메인 에이전트는 반환값만으로 완료 보고를 만들고, 중간 산출물을 다시 읽지 않는다.
 
 ## 스크립트 실행 기준
 
@@ -109,19 +61,9 @@ notes: <근거가 약한 항목, 실패한 단계, 참조 슬롯이 없는 항�
 
 업무 기록 초안을 쓰기 전에 이 파일이 있는지 먼저 확인한다. 파일이 없으면 `references/how-to-set-template.md`를 읽고, 사용자와 대화하며 템플릿을 만든 뒤 일일 업무 기록 작성을 진행한다.
 
-## 1차 후보 수집
+## 중간 산출물
 
-Codex/Claude 세션에서 업무 기록 후보를 찾을 때는 원시 JSONL을 LLM이 직접 읽지 않는다. 먼저 `references/collect-first-pass-candidates.md`를 읽고, Codex와 Claude 전용 수집 스크립트로 `work_units`가 포함된 압축 후보 카드 JSON을 만든다.
-
-기본 저장 위치:
-
-```text
-~/.daily-work-log/YYYY/YYYY-MM-DD/
-```
-
-이 날짜 디렉터리 아래에 해당 날짜의 1차 후보, 번호 후보, 2차 상세 탐색, 최종 정보 JSON 같은 중간 산출물을 모두 모은다. 파일명으로 단계와 역할을 구분한다.
-
-예:
+원시 세션 JSONL은 LLM이 직접 읽지 않는다. `scripts/build_day_evidence.py`가 수집부터 근거 파일 생성까지 한 번에 돌린다. 날짜마다 아래 디렉터리에 중간 산출물이 모인다.
 
 ```text
 ~/.daily-work-log/YYYY/YYYY-MM-DD/
@@ -129,10 +71,10 @@ Codex/Claude 세션에서 업무 기록 후보를 찾을 때는 원시 JSONL을 
 ├── claude-candidates.json
 ├── numbered-candidates.json
 ├── second-pass-digest.json
-└── final-info.json
+└── evidence.md
 ```
 
-2차 상세 탐색 전에는 반드시 `scripts/build_numbered_candidates.py`로 `numbered-candidates.json`을 만든다. 완료 보고에서 보여주는 번호는 이 파일의 `displayed_candidates[].number`를 그대로 사용한다. 이후 사용자가 "4,5"처럼 뺄 번호를 말하면, 대화 중 임의로 다시 번호를 매기지 말고 저장된 `numbered-candidates.json`을 기준으로 해석한다.
+에이전트가 읽는 것은 `evidence.md`다. 완료 보고의 번호는 `numbered-candidates.json`의 `displayed_candidates[].number`이고, `evidence.md`의 후보 번호와 같다. 사용자가 "4,5"처럼 뺄 번호를 말하면 대화 중 임의로 다시 번호를 매기지 말고 이 번호로 해석한다. 각 스크립트가 하는 일은 `references/collect-pipeline.md`에 있다.
 
 ## 완료 보고
 
@@ -182,7 +124,7 @@ Codex/Claude 세션에서 업무 기록 후보를 찾을 때는 원시 JSONL을 
 |---|---|---|
 | Impact 항목 | 기록 맨 위 `## Impact`에 매번 모아 볼 내용 | Jira 티켓, PR/MR, TODO |
 | 본문 템플릿 | 작업 항목의 참조 슬롯과 자유 형식 영역 구성 | `관련 링크` 슬롯 빼기 |
-| 후보 수 | 하루에 기록할 최대 작업 수 | 상위 15 + 기타 5 |
+| 후보 수 | 하루에 볼 최대 세션 수 | 상위 40 + 기타 10 |
 | 보조 세션 포함 | subagent·sidechain 세션도 후보로 볼지 | 포함 안 함 |
 | 검색 결과 수 | 검색 모드에서 보여줄 최대 건수 | 20건 |
 | 로그 저장 위치 | 최종 Markdown을 저장할 폴더 | `~/work-log` |
@@ -197,134 +139,26 @@ Codex/Claude 세션에서 업무 기록 후보를 찾을 때는 원시 JSONL을 
 사용자 답변 처리:
 
 - 합친 항목의 번호를 모두 받으면 그 항목 전체를 지운다. 일부 번호만 받으면 그 후보에서 온 내용만 항목에서 덜어 낸다.
-- 뺄 번호를 받으면 최종 Markdown에서 그 항목의 `## 한눈에 보기` 표 행, `###` 항목, 자유 형식 상세, `## Impact`의 관련 근거를 지우고, `tags`와 `summary`를 남은 항목 기준으로 다시 맞춘다. `final-info.json`의 `selected_candidates`와 `selected_items`에서도 같은 항목을 지운다.
+- 뺄 번호를 받으면 최종 Markdown에서 그 항목의 `## 한눈에 보기` 표 행, `###` 항목, 자유 형식 상세, `## Impact`의 관련 근거를 지우고, `tags`와 `summary`를 남은 항목 기준으로 다시 맞춘다.
 - `impact-items` 추가 요청에는 `name`과 `description`이 모두 필요하다. `description`이 없으면 "이 항목은 어떤 근거를 찾으면 되나요?"처럼 짧게 되물어 채운다.
 - 수정 요청은 언급된 필드(`name` 또는 `description`)만 바꾸고, 삭제는 `name`으로 지정한다. `config.json`의 다른 필드는 유지한다.
-- 뺄 항목 반영은 메인 에이전트가 저장된 Markdown과 `final-info.json`을 직접 고친다.
-- `impact-items`가 바뀌면 메인 에이전트가 `config.json`을 갱신한 뒤, 날짜마다 `sonnet` 서브에이전트를 띄워 `second-pass-digest.json`(필요하면 원본 세션 work unit)을 다시 확인하고 `final-info.json`의 `impact`와 최종 Markdown의 `## Impact`만 새 목록 기준으로 다시 채우게 한다. 서브에이전트를 띄울 수 없으면 메인 에이전트가 직접 한다.
+- 뺄 항목 반영은 메인 에이전트가 저장된 Markdown을 직접 고친다.
+- `impact-items`가 바뀌면 메인 에이전트가 `config.json`을 갱신한 뒤, 날짜마다 `sonnet` 서브에이전트를 띄운다. 서브에이전트는 `build_day_evidence.py --date YYYY-MM-DD --render-only`로 `evidence.md`를 다시 만들어 읽고, `references/write-daily-log.md`의 "Impact 섹션" 규칙대로 최종 Markdown의 `## Impact`만 다시 쓴다. 서브에이전트를 띄울 수 없으면 메인 에이전트가 직접 한다.
 - 고친 뒤에는 바뀐 내용만 한두 줄로 알린다. 전체 보고를 반복하지 않는다.
 - "없음", "그대로"처럼 변경이 없으면 추가 질문 없이 마친다.
 
-## 2차 상세 탐색
+## 작성 규칙
 
-`second-pass-digest.json`은 표시 후보가 가리키는 work unit, 세션 파일, 관련 경로만 압축한 중간 자료다. `final-info.json`은 이 skeleton을 LLM이 검토하고 보강해서 완성한다. 스크립트 출력은 확정 문장이 아니라 구조화 근거이므로, 최종 작성 전에 사실·추정·민감정보를 다시 확인한다.
+frontmatter, 본문 구조, 참조 표기, `## Impact`, 작성 언어 규칙은 `references/write-daily-log.md`가 정본이다. 메인 에이전트가 저장된 Markdown을 고칠 때도 그 문서의 규칙을 따른다.
 
-최종 Markdown에 들어갈 근거는 긴 원문 발췌보다 다시 찾아볼 수 있는 참조(사용자가 만든 계획·메모 문서, 확인한 코드 경로)를 우선한다. 기록에 포함한 후보 목록은 `final-info.json`의 최상위 `selected_candidates` 배열에 함께 기록한다.
-
-## 필수 Frontmatter
-
-모든 일일 업무 기록은 아래 frontmatter 구조를 유지해야 한다.
-
-```yaml
----
-date: YYYY-MM-DD
-type: daily-work-log
-summary: ""
-tags: []
----
-```
-
-이 네 가지 frontmatter 필드는 필수다. 제거하거나, 이름을 바꾸거나, 다른 스키마로 대체하지 않는다.
-
-`type`은 문서 종류를 제한적으로 식별하는 필드다. 허용값은 `daily-work-log`, `decision-record`, `trouble-shooting`, `learning-note` 네 가지만 사용한다. 이 스킬이 작성하는 일일 업무 기록의 `type` 값은 `daily-work-log`로 둔다. 일일 업무 기록을 모아보거나 필터링하는 용도는 `tags`가 아니라 `type: daily-work-log`를 기준으로 한다.
-
-`tags`는 검색 키워드 필드다. 템플릿이나 초기 초안에는 `tags: []`를 둘 수 있지만, 최종 저장본에서는 문서 작성을 완료한 뒤 "나중에 이 문서를 검색한다면 어떤 키워드로 찾을까?"를 기준으로 에이전트가 판단해 핵심 키워드 10~15개로 작성한다. 태그 값은 고정 목록으로 제한하지 않으며, `daily-work-log`를 의무적으로 넣지 않는다.
-
-## 최종 Markdown 구조
-
-이 문서는 에이전트가 한 번 작성하면 끝나는 문서다. 이후에는 사람이 다시 읽거나 에이전트가 검색하므로, 위쪽은 빠르게 훑을 수 있는 요약, 아래쪽은 자유 형식 상세라는 2단 구조를 유지한다.
-
-frontmatter 바로 아래에는 `# YYYY-MM-DD 업무 기록` 제목을 둔다.
-
-`~/.daily-work-log/config.json`의 `impact-items` 배열에 값이 하나라도 있으면, 템플릿 파일 내용과 무관하게 제목 바로 아래·`## 한눈에 보기`보다 위에 `## Impact` 섹션을 추가한다. 상세 규칙은 아래 "Impact 섹션" 절을 따른다.
-
-첫 본문 섹션은 반드시 `## 한눈에 보기`로 시작한다. 이 섹션에는 선택된 작업 목록을 자유 형식으로 요약한 표를 둔다.
-
-```markdown
-| 구분 | 제목 | 요약 |
-|---|---|---|
-```
-
-`## 한눈에 보기` 아래에는 별도의 `## 작업 요약` 섹션을 만들지 않는다. 표 바로 다음에 각 선택 항목을 `### 항목 제목`으로 이어서 작성한다.
-
-각 `###` 항목은 요약이 중심이며, 아래 순서를 따른다.
-
-1. `요약:` — **필수**. `###` 제목 바로 아래에 둔다. 무엇을 왜 했고 어떻게 판단했는지, 나중에 이 항목만 읽어도 기억을 복원할 수 있게 쓴다.
-2. `- 구분:` — 분석/문제해결/결정 같은 대표 성격 하나.
-3. 참조 목록 — `코드 경로`, `관련 파일`, `관련 링크` 슬롯 중 필요한 것만 사용한다. 표기는 아래 "참조 표기 규칙"을 따르고, 2-depth list까지 허용한다.
-
-맥락, 진행/확인, 판단/배운 점, 결론, 남은 일 같은 상세 소제목은 필수가 아니며 `###` 항목 안에 고정 슬롯으로 넣지 않는다. 상세 내용이 필요하면 초안 작성 중에는 `<!-- 이 아래는 자유 형식 -->` 마커 아래에 작성한다.
-
-```markdown
-### API 응답 정책 정리
-
-요약:
-- `order-api`의 응답 정책과 예외 흐름을 확인하고 일지에 남길 수준으로 정리했다.
-
-- 구분: 분석
-- 코드 경로
-  - `order-api` git repository
-- 관련 파일
-  - `order-api` `OrderController.java`, `ErrorResponse.java`
-  - /Users/hsryuuu/dev/personal/example-project/_inbox/api-response-plan.md
-- 관련 링크
-  - API design note(응답 정책 참고): https://example.com/api-design
-```
-
-템플릿 맨 아래에는 반드시 아래 주석 마커를 둔다. 이 마커는 템플릿/초안 작성 단계에서 요약 영역과 자유 형식 상세 영역을 구분하기 위한 작업용 경계다. 마커 위쪽 `###` 항목들은 최대한 요약으로 유지하고, 각 항목의 상세 내용(맥락, 진행 과정, 판단 근거, 배운 점, 남은 일 등)은 에이전트가 이 마커 아래에 자유 형식으로 작성한다. 사용자가 그날의 맥락에 맞춰 직접 덧붙이는 메모도 이 아래에 둔다. 단, 최종 Markdown 저장본에서는 `<!-- 이 아래는 자유 형식 -->` 주석 라인을 제거하고, 그 아래에 작성한 상세 내용만 일반 본문으로 남긴다.
-
-```markdown
-<!-- 이 아래는 자유 형식 -->
-```
-
-## 참조 표기 규칙
-
-참조는 "나중에 다시 찾을 수 있는 최소 표기"를 기준으로 세 종류로 구분한다.
-
-- **git repo로 관리되는 소스코드**: repo 이름만으로 식별할 수 있으므로 full path를 쓰지 않는다. 코드 경로는 `` `repo-name` git repository ``, 파일은 `` `repo-name` `FileName.java` `` 형태로 짧게 쓴다.
-- **로컬 전용 파일**: git이나 온라인 어디에도 없어서 local path 없이는 다시 찾을 수 없는 파일만 절대 경로(full path)로 쓴다.
-- **인터넷 링크**: `링크 명(요약): URL` 형태로 쓴다.
-
-repo 이름, 파일명, 명령어, 코드 식별자, 설정 키 같은 기술 식별자는 본문에서도 백틱(`인라인 코드`)을 적극 활용한다.
-
-Claude/Codex 세션 파일(`~/.claude/projects/...`, `~/.codex/sessions/...`)은 언제든 캐시 정리하듯 삭제될 수 있는 파일이므로, 최종 Markdown에 세션/근거 참조로 남기지 않는다. 세션 경로는 `final-info.json` 같은 중간 산출물까지만 유지한다.
-
-## Impact 섹션 (opt-in)
-
-`~/.daily-work-log/config.json`의 `impact-items`는 사용자가 매번 최종 Markdown 맨 위에서 바로 확인하고 싶은 항목을 직접 정의하는 객체 배열이다. 각 객체는 `name`(섹션에 쓸 라벨)과 `description`(이 라벨에 해당하는 근거가 무엇인지 LLM이 판단할 기준)을 가진다. 예:
+`impact-items`는 opt-in이다. `config.json`에 없거나 빈 배열이면 `## Impact`를 만들지 않는다. `log_root`와 달리 값이 없다고 묻지 않는다. 사용자가 먼저 언급하거나 설정을 요청할 때만 `config.json`에 저장한다. 각 원소는 `name`(섹션에 쓸 라벨)과 `description`(이 라벨에 해당하는 근거를 판단할 기준)을 가진다.
 
 ```json
 [
   {"name": "개발 완료", "description": "개발 완료로 보이는 것"},
-  {"name": "TODO", "description": "완결되지 않은것으로 보이는 것"}
+  {"name": "TODO", "description": "완결되지 않은 것으로 보이는 것"}
 ]
 ```
-
-- opt-in이다. `impact-items`가 없거나 빈 배열이면 `## Impact`를 만들지 않고 기존 동작과 완전히 동일하게 작성한다. `log_root`와 달리 값이 없다고 물어보지 않는다. 사용자가 먼저 언급하거나 설정을 요청할 때만 config에 저장한다.
-- `impact-items`에 값이 하나라도 있으면 `## Impact`를 제목 바로 아래·`## 한눈에 보기`보다 위에 넣는다. 이 위치와 존재 여부는 사용자의 템플릿 파일 내용과 무관하게 항상 이 규칙을 따른다.
-- 섹션 안 라벨과 순서는 `impact-items` 배열의 `name`과 순서를 그대로 사용한다. 각 라벨은 `- **{name}**` 형태로 굵게 표시한다. 최종 Markdown에는 `description`을 그대로 노출하지 않는다 — `description`은 2차 탐색에서 LLM이 근거를 판단하는 기준으로만 쓴다.
-- 그날 어떤 선택 항목에서도 근거를 찾지 못한 라벨은 생략한다. 빈 그룹을 만들지 않는다. 모든 라벨이 비면 `## Impact` 섹션 자체를 생략한다.
-- 근거가 repo에 종속된 항목(예: PR/MR 기록, git branch)은 repo별로 묶어서 표기한다. 표기 방식은 위 "참조 표기 규칙"을 그대로 따른다(repo 이름은 short-form, 로컬 전용 파일만 full path).
-- 2차 상세 탐색에서 LLM이 선택 후보의 원문을 읽으며 각 `impact-items` 항목의 `description`을 기준으로 해당 근거가 있는지 함께 확인해서 채운다. 근거가 없으면 지어내지 않고 빈 채로 둔다.
-- 인증정보, 고객 식별자, 회사 소스코드 원문을 그대로 옮기지 않는 안전 규칙은 `## Impact`에도 동일하게 적용된다.
-
-예시:
-
-```markdown
-## Impact
-
-- **Jira Ticket**
-  - PROJ-1234, PROJ-1250
-- **PR/MR 기록**
-  - `order-api`: `feature/PROJ-1234-refund` → PR #482 (merged)
-  - `payment-api`: `fix/PROJ-1250-timeout` → MR !210 (open)
-- **최종 개발 결정 사항**
-  - API 응답 정책은 기존 구조를 유지하고 예외 흐름만 추가하기로 결정함
-```
-
-## 작성 언어
-
-일일 업무 기록 본문은 기본적으로 한글로 작성한다. 다만 frontmatter key, 고정 `type` 값, `tags`, 파일 경로, 명령어, 코드 식별자, 기술 용어처럼 영어가 더 자연스럽거나 관례적인 항목은 영어를 유지한다.
 
 ## 출력 위치
 
@@ -340,7 +174,7 @@ Claude/Codex 세션 파일(`~/.claude/projects/...`, `~/.codex/sessions/...`)은
 - 경로를 말하지 않았으면 `config.json`의 `log_root`를 재사용하고, 재사용한 경로를 한 줄로 알린다.
 - 둘 다 없으면 1차 수집 전에 로그 루트를 묻고 `config.json`에 저장한다. 수집 이후에는 끝까지 묻지 않으므로 이 질문을 저장 직전까지 미루지 않는다.
 
-`config.json`에 둘 수 있는 키(`log_root`, `impact-items`, 수집·검색 한도)와 예시는 `references/custom-setting.md`에 있다. 모든 키는 선택이며, `impact-items`의 `## Impact` 섹션 규칙은 위 "Impact 섹션 (opt-in)" 절을 따른다.
+`config.json`에 둘 수 있는 키(`log_root`, `impact-items`, 수집·검색 한도)와 예시는 `references/custom-setting.md`에 있다. 모든 키는 선택이다.
 
 도구 설정, low-level JSON, cache, template 파일은 `~/.daily-work-log/` 아래에 둔다. 최종 Markdown 로그만 위 규칙에 따라 사용자가 지정한 로그 루트 아래에 둔다.
 
@@ -370,6 +204,5 @@ python3 <skill-base-dir>/scripts/search_work_logs.py --date 2026-07-01 --json
 
 ## 안전 규칙
 
-- 인증 정보, 원본 private log, 고객 식별자, 회사 소스코드를 업무 기록에 그대로 복사하지 않는다.
-- 근거 자료는 사용자의 업무 기록 언어로 요약한다.
+- 인증 정보, 원본 private log, 고객 식별자, 회사 소스코드를 업무 기록에 그대로 복사하지 않는다. 상세는 `references/write-daily-log.md` "안전 규칙"을 따른다.
 - 이 스킬은 `~/.daily-work-log/`와 확정된 로그 루트 아래에만 쓴다. 두 곳에 쓸 때는 다시 묻지 않는다. 서브에이전트도 저장 전에 다시 묻지 않는다.
